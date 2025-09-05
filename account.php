@@ -56,7 +56,7 @@ $currentPage = 'account';
             <div class="dashboard-section" style="margin: 3rem 0;">
                 <h2 class="section-title">
                     <i class="bi bi-book"></i>
-                    Learning Progress
+                    Learning progress
                 </h2>
                 
                 <?php if (!empty($dashboardData['learning_progress'])): ?>

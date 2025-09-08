@@ -5844,7 +5844,7 @@ body {
 .chat-icon-btn {
   position: fixed !important;
   bottom: 30px !important;
-  right: 30px !important;
+  left: 30px !important;
   background-color: #2563eb !important;
   color: white !important;
   padding: 0 !important;
@@ -5852,7 +5852,7 @@ body {
   box-shadow: 0 0 20px rgba(37, 99, 235, 0.8) !important;
   transition: all 0.2s ease !important;
   z-index: 99999 !important;
-  border: 3px solid #ffffff !important;
+  border: none !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
@@ -5897,8 +5897,8 @@ body {
 /* Mobile responsiveness for chat icon */
 @media (max-width: 768px) {
   .chat-icon-btn {
-    bottom: 20px !important;
-    right: 20px !important;
+    bottom: 80px !important;
+    left: 20px !important;
     width: 60px !important;
     height: 60px !important;
     min-width: 60px !important;

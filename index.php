@@ -471,6 +471,13 @@ include 'includes/header.php';
         </section>
     </main>
 
+    <!-- Chat Icon -->
+    <button onclick="toggleChatOptions()" class="chat-icon-btn" id="chatIconBtn">
+        <svg class="chat-icon-svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    </button>
+
     <?php include 'includes/footer.php'; ?>
 
     <!-- Scripts with defer for better performance -->
@@ -553,6 +560,55 @@ include 'includes/header.php';
         // Initialize enhanced glow effect
         document.addEventListener('DOMContentLoaded', enhanceBullbearGlow);
         window.addEventListener('load', enhanceBullbearGlow);
+        
+        // Chat icon functionality
+        function toggleChatOptions() {
+            // For now, this will show an alert. You can replace this with actual chat functionality
+            alert('Chat feature coming soon! This will connect you with our support team.');
+        }
+        
+        // Add keyboard support for chat icon
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatIconBtn = document.getElementById('chatIconBtn');
+            if (chatIconBtn) {
+                // Make sure the chat icon is visible and round
+                chatIconBtn.style.display = 'flex';
+                chatIconBtn.style.visibility = 'visible';
+                chatIconBtn.style.opacity = '1';
+                chatIconBtn.style.position = 'fixed';
+                chatIconBtn.style.bottom = '30px';
+                chatIconBtn.style.right = '30px';
+                chatIconBtn.style.zIndex = '99999';
+                chatIconBtn.style.backgroundColor = '#2563eb';
+                chatIconBtn.style.width = '80px';
+                chatIconBtn.style.height = '80px';
+                chatIconBtn.style.borderRadius = '50%';
+                chatIconBtn.style.minWidth = '80px';
+                chatIconBtn.style.minHeight = '80px';
+                chatIconBtn.style.maxWidth = '80px';
+                chatIconBtn.style.maxHeight = '80px';
+                chatIconBtn.style.aspectRatio = '1/1';
+                
+                console.log('Chat icon found and made visible!');
+                
+                chatIconBtn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleChatOptions();
+                    }
+                });
+            } else {
+                console.error('Chat icon button not found!');
+                // Try to create it manually
+                const newChatBtn = document.createElement('button');
+                newChatBtn.id = 'chatIconBtn';
+                newChatBtn.className = 'chat-icon-btn';
+                newChatBtn.innerHTML = '<svg class="chat-icon-svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>';
+                newChatBtn.onclick = toggleChatOptions;
+                document.body.appendChild(newChatBtn);
+                console.log('Chat icon created manually!');
+            }
+        });
     </script>
 </body>
 </html>

@@ -211,7 +211,10 @@ if (isDatabaseAvailable()) {
             </div>
             
             <!-- Profile Button - Dynamic based on login status -->
-            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id']): ?>
+            <?php 
+            $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+            ?>
+            <?php if ($isLoggedIn): ?>
                 <button class="profile-btn" onclick="showProfileMenu()" aria-label="User Account">
                     <i class="bi bi-person-circle"></i>
                 </button>
@@ -258,7 +261,7 @@ if (isDatabaseAvailable()) {
             <i class="bi bi-envelope"></i>
             <span>Contact</span>
         </a>
-        <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id']): ?>
+        <?php if ($isLoggedIn): ?>
             <button class="bottom-nav-item" onclick="showProfileMenu()" data-section="profile">
                 <i class="bi bi-person"></i>
                 <span>Account</span>

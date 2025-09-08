@@ -496,15 +496,19 @@ function closeIOSBanner() {
 }
 
 function showProfileMenu() {
+    console.log('Profile menu clicked - checking authentication...');
     // Check authentication status via AJAX
     fetch('./check_auth.php')
         .then(response => response.json())
         .then(data => {
+            console.log('Auth check response:', data);
             if (data.authenticated) {
                 // User is logged in, show profile menu
+                console.log('User is authenticated, showing profile menu');
                 showProfileMenuContent(data.user);
             } else {
                 // User is not logged in, redirect to login
+                console.log('User is not authenticated, redirecting to login');
                 window.location.href = './login.php';
             }
         })
@@ -516,6 +520,7 @@ function showProfileMenu() {
 }
 
 function showProfileMenuContent(userData) {
+    console.log('Creating profile menu with user data:', userData);
     const userName = userData.full_name || userData.username || 'User';
     const userEmail = userData.email || '';
     
@@ -803,11 +808,35 @@ function checkAuthAndRedirect() {
 }
 
 function logout() {
-    // localStorage DISABLED
-    // localStorage.removeItem('isLoggedIn');
-    // localStorage.removeItem('userEmail');
-    // localStorage.removeItem('userName');
-    window.location.href = '/login.php';
+    console.log('Logout initiated...');
+    
+    // Call logout endpoint
+    fetch('./logout.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Logout response:', data);
+        if (data.success) {
+            console.log('Logout successful, redirecting to login...');
+            // Close profile menu
+            closeProfileMenu();
+            // Redirect to login page
+            window.location.href = './login.php';
+        } else {
+            console.error('Logout failed:', data.message);
+            // Fallback: redirect anyway
+            window.location.href = './login.php';
+        }
+    })
+    .catch(error => {
+        console.error('Logout error:', error);
+        // Fallback: redirect anyway
+        window.location.href = './login.php';
+    });
 }
 
 // Global function to access tools (can be called from anywhere)

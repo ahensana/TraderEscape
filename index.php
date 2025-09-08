@@ -563,8 +563,8 @@ include 'includes/header.php';
         
         // Chat icon functionality
         function toggleChatOptions() {
-            // For now, this will show an alert. You can replace this with actual chat functionality
-            alert('Chat feature coming soon! This will connect you with our support team.');
+            // Redirect to chat page
+            window.location.href = './chat.php';
         }
         
         // Add keyboard support for chat icon

@@ -64,28 +64,6 @@ function getCurrentUser() {
     }
 }
 
-/**
- * Log user activity
- * @param int $user_id
- * @param string $activity_type
- * @param string $description
- * @param string $ip_address
- * @param string $user_agent
- * @return bool
- */
-function logUserActivity($user_id, $activity_type, $description, $ip_address = null, $user_agent = null) {
-    try {
-        $pdo = getDB();
-        $stmt = $pdo->prepare("
-            INSERT INTO user_activity_log (user_id, activity_type, description, ip_address, user_agent) 
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        return $stmt->execute([$user_id, $activity_type, $description, $ip_address, $user_agent]);
-    } catch (Exception $e) {
-        error_log("Error logging user activity: " . $e->getMessage());
-        return false;
-    }
-}
 
 /**
  * Get user dashboard data

@@ -1,3 +1,28 @@
+<?php
+/**
+ * Trading Tools Page for TraderEscape
+ * Protected page - requires user authentication
+ */
+
+session_start();
+require_once __DIR__ . '/includes/auth_functions.php';
+require_once __DIR__ . '/includes/db_functions.php';
+
+// Require user to be logged in to access tools
+requireAuth();
+
+$currentUser = getCurrentUser();
+$currentPage = 'tools';
+
+// Get trading tools from database
+$tradingTools = getTradingTools();
+
+// Track page view
+trackPageView('tools', $currentUser['id'], $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
+
+// Log user activity
+logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'tools']));
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -89,55 +114,6 @@
             top: 6px;
         }
         
-        /* Logout button styles */
-        .logout-container {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-        
-        .logout-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 2px solid rgba(239, 68, 68, 0.3);
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2);
-        }
-        
-        .logout-btn i {
-            font-size: 1rem;
-        }
-        
-        @media (max-width: 768px) {
-            .logout-container {
-                top: 1rem;
-                right: 1rem;
-            }
-            
-            .logout-btn span {
-                display: none;
-            }
-            
-            .logout-btn {
-                padding: 0.75rem;
-                border-radius: 50%;
-            }
-        }
         
         .navbar {
             position: fixed;
@@ -156,10 +132,17 @@
             align-items: center;
             position: relative;
             padding-top: 80px;
-            padding-bottom: 2rem;
+            padding-bottom: 1rem;
             background: transparent;
             color: white;
             text-align: center;
+        }
+        
+        /* Reduce spacing for content sections after hero */
+        .hero-section + .disclaimer-section,
+        .hero-section + .tools-section {
+            padding-top: 2rem;
+            padding-bottom: 4rem;
         }
         
         .hero-content {
@@ -334,10 +317,19 @@
                 </a>
             </div>
             
-            <!-- Profile Button -->
-            <button class="profile-btn" onclick="showProfileMenu()" aria-label="User Profile Menu">
-                <i class="bi bi-person-circle"></i>
-            </button>
+            <!-- Profile Button - Dynamic based on login status -->
+            <?php 
+            $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+            ?>
+            <?php if ($isLoggedIn): ?>
+                <button class="profile-btn" onclick="showProfileMenu()" aria-label="User Account">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+            <?php else: ?>
+                <a href="./login.php" class="profile-btn" aria-label="Login">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+            <?php endif; ?>
         </div>
     </nav>
 
@@ -378,10 +370,17 @@
             <i class="bi bi-envelope"></i>
             <span>Contact</span>
         </a>
-        <a href="#" class="bottom-nav-item" data-section="profile" onclick="showProfileMenu()">
-            <i class="bi bi-person"></i>
-            <span>Profile</span>
-        </a>
+        <?php if ($isLoggedIn): ?>
+            <button class="bottom-nav-item" onclick="showProfileMenu()" data-section="profile">
+                <i class="bi bi-person"></i>
+                <span>Account</span>
+            </button>
+        <?php else: ?>
+            <a href="./login.php" class="bottom-nav-item" data-section="profile">
+                <i class="bi bi-person"></i>
+                <span>Login</span>
+            </a>
+        <?php endif; ?>
     </nav>
 
     <!-- Mobile Menu Overlay -->
@@ -477,136 +476,47 @@
                     <p class="section-subtitle">Educational tools to enhance your market analysis skills</p>
                 </div>
                 <div class="tools-grid" role="list">
-                    <div class="tool-card glassmorphism" data-aos="zoom-in" role="listitem">
-                        <div class="tool-header">
-                            <h3>Position Size Calculator</h3>
-                            <span class="tool-badge">Risk Management</span>
-                        </div>
-                        <div class="tool-content">
-                            <div class="calculator-form">
-                                <div class="form-group">
-                                    <label for="account-size">Account Size (₹)</label>
-                                    <input type="number" id="account-size" placeholder="100000" class="form-input">
+                    <?php if (!empty($tradingTools)): ?>
+                        <?php foreach ($tradingTools as $index => $tool): ?>
+                            <div class="tool-card glassmorphism" data-aos="zoom-in" data-aos-delay="<?php echo $index * 100; ?>" role="listitem" data-tool-id="<?php echo $tool['id']; ?>">
+                                <div class="tool-header">
+                                    <h3><?php echo htmlspecialchars($tool['name']); ?></h3>
+                                    <span class="tool-badge"><?php echo ucfirst($tool['tool_type']); ?></span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="risk-percentage">Risk Percentage (%)</label>
-                                    <input type="number" id="risk-percentage" placeholder="2" class="form-input">
-                                </div>
-                                <div class="form-group">
-                                    <label for="stop-loss">Stop Loss (₹)</label>
-                                    <input type="number" id="stop-loss" placeholder="10" class="form-input">
-                                </div>
-                                <button class="btn btn-primary" onclick="calculatePosition()">Calculate</button>
-                            </div>
-                            <div class="calculator-result" id="position-result">
-                                <div class="result-item">
-                                    <span class="result-label">Position Size:</span>
-                                    <span class="result-value" id="position-size">-</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label">Risk Amount:</span>
-                                    <span class="result-value" id="risk-amount">-</span>
+                                <div class="tool-content">
+                                    <p><?php echo htmlspecialchars($tool['description']); ?></p>
+                                    <div class="tool-features">
+                                        <div class="feature-item">
+                                            <i class="bi bi-<?php echo $tool['tool_type'] === 'calculator' ? 'calculator' : ($tool['tool_type'] === 'analyzer' ? 'graph-up' : ($tool['tool_type'] === 'simulator' ? 'play-circle' : ($tool['tool_type'] === 'chart' ? 'bar-chart' : 'gear'))); ?>"></i>
+                                            <span><?php echo ucfirst($tool['tool_type']); ?></span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-<?php echo $tool['requires_auth'] ? 'shield-check' : 'unlock'; ?>"></i>
+                                            <span><?php echo $tool['requires_auth'] ? 'Protected' : 'Public'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="tool-actions">
+                                        <button class="btn btn-primary" onclick="openTool(<?php echo $tool['id']; ?>, '<?php echo htmlspecialchars($tool['slug']); ?>')">
+                                            <i class="bi bi-play-circle"></i> Use Tool
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="viewToolDetails(<?php echo $tool['id']; ?>)">
+                                            <i class="bi bi-info-circle"></i> Details
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="tool-card glassmorphism" data-aos="zoom-in" data-aos-delay="100" role="listitem">
-                        <div class="tool-header">
-                            <h3>Risk-Reward Calculator</h3>
-                            <span class="tool-badge">Analysis</span>
-                        </div>
-                        <div class="tool-content">
-                            <div class="calculator-form">
-                                <div class="form-group">
-                                    <label for="entry-price">Entry Price (₹)</label>
-                                    <input type="number" id="entry-price" placeholder="100" class="form-input">
-                                </div>
-                                <div class="form-group">
-                                    <label for="target-price">Target Price (₹)</label>
-                                    <input type="number" id="target-price" placeholder="110" class="form-input">
-                                </div>
-                                <div class="form-group">
-                                    <label for="stop-loss-price">Stop Loss (₹)</label>
-                                    <input type="number" id="stop-loss-price" placeholder="95" class="form-input">
-                                </div>
-                                <button class="btn btn-primary" onclick="calculateRiskReward()">Calculate</button>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="tool-card glassmorphism" role="listitem">
+                            <div class="tool-header">
+                                <h3>No Tools Available</h3>
+                                <span class="tool-badge">Coming Soon</span>
                             </div>
-                            <div class="calculator-result" id="risk-reward-result">
-                                <div class="result-item">
-                                    <span class="result-label">Risk-Reward Ratio:</span>
-                                    <span class="result-value" id="risk-reward-ratio">-</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label">Potential Profit:</span>
-                                    <span class="result-value" id="potential-profit">-</span>
-                                </div>
+                            <div class="tool-content">
+                                <p>We're working on adding more trading tools. Check back soon!</p>
                             </div>
                         </div>
-                    </div>
-                    <div class="tool-card glassmorphism" data-aos="zoom-in" data-aos-delay="200" role="listitem">
-                        <div class="tool-header">
-                            <h3>Sample Equity Curve</h3>
-                            <span class="tool-badge">Demo Data</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="equityChart" aria-label="Sample equity curve chart showing educational data"></canvas>
-                        </div>
-                        <div class="tool-stats">
-                            <div class="stat">
-                                <span class="stat-label">Total Return</span>
-                                <span class="stat-value">+45.2%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Max Drawdown</span>
-                                <span class="stat-value">-12.8%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tool-card glassmorphism" data-aos="zoom-in" data-aos-delay="300" role="listitem">
-                        <div class="tool-header">
-                            <h3>Monthly Study Progress</h3>
-                            <span class="tool-badge">Demo Data</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="progressChart" aria-label="Monthly study progress chart showing educational data"></canvas>
-                        </div>
-                        <div class="tool-stats">
-                            <div class="stat">
-                                <span class="stat-label">Completion Rate</span>
-                                <span class="stat-value">87%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Avg Score</span>
-                                <span class="stat-value">92%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tool-card glassmorphism" data-aos="zoom-in" data-aos-delay="400" role="listitem">
-                        <div class="tool-header">
-                            <h3>Risk Management Tool</h3>
-                            <span class="tool-badge">Advanced</span>
-                        </div>
-                        <div class="tool-content">
-                            <p>Comprehensive risk management and trade journaling tool for educational purposes.</p>
-                            <div class="tool-features">
-                                <div class="feature-item">
-                                    <i class="bi bi-calculator"></i>
-                                    <span>Position Sizing</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="bi bi-graph-up"></i>
-                                    <span>Trade Journal</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="bi bi-shield-check"></i>
-                                    <span>Risk Analysis</span>
-                                </div>
-                            </div>
-                            <button class="btn btn-primary" onclick="openRiskManagement()">
-                                <span>Open Risk Management Tool</span>
-                            </button>
-                        </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
@@ -709,45 +619,8 @@
         </button>
     </div>
     
-    <!-- Logout Button -->
-    <div class="logout-container">
-        <button class="logout-btn" onclick="logout()" aria-label="Logout">
-            <i class="bi bi-box-arrow-right"></i>
-            <span>Logout</span>
-        </button>
-    </div>
 
-    <!-- Authentication Check Script -->
-    <script>
-        // Check if user is logged in
-        document.addEventListener('DOMContentLoaded', function() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            if (isLoggedIn !== 'true') {
-                // Redirect to login page if not logged in
-                window.location.href = './login.php';
-                return;
-            }
-            
-            // Display user info if logged in
-            const userEmail = localStorage.getItem('userEmail');
-            const userName = localStorage.getItem('userName');
-            if (userName) {
-                // Update profile button or add welcome message
-                const profileBtn = document.querySelector('.profile-btn');
-                if (profileBtn) {
-                    profileBtn.setAttribute('title', `Welcome, ${userName}`);
-                }
-            }
-        });
-        
-        // Logout function
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('userName');
-            window.location.href = '/login.html';
-        }
-    </script>
+    <!-- Authentication is now handled server-side -->
     
     <!-- Scripts with defer for better performance -->
     <script src="./assets/app.js?v=<?php echo time(); ?>" defer></script>
@@ -790,7 +663,94 @@
         
         // Risk Management Tool
         function openRiskManagement() {
-            window.open('/riskmanagement.html', '_blank', 'width=1400,height=800,scrollbars=yes,resizable=yes');
+            window.open('/riskmanagement.php', '_blank', 'width=1400,height=800,scrollbars=yes,resizable=yes');
+        }
+        
+        // Tool interaction functions
+        function openTool(toolId, toolSlug) {
+            // Log tool usage
+            fetch('./track_tool_usage.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tool_id: toolId,
+                    action: 'open'
+                })
+            }).catch(error => console.log('Tool usage tracking failed:', error));
+            
+            // Open tool based on slug
+            switch(toolSlug) {
+                case 'position-size-calculator':
+                    showPositionCalculator();
+                    break;
+                case 'risk-reward-calculator':
+                    showRiskRewardCalculator();
+                    break;
+                case 'profit-loss-calculator':
+                    showProfitLossCalculator();
+                    break;
+                case 'margin-calculator':
+                    showMarginCalculator();
+                    break;
+                case 'portfolio-analyzer':
+                    showPortfolioAnalyzer();
+                    break;
+                case 'market-simulator':
+                    showMarketSimulator();
+                    break;
+                case 'chart-analysis-tool':
+                    showChartAnalysisTool();
+                    break;
+                default:
+                    alert('Tool is coming soon!');
+            }
+        }
+        
+        function viewToolDetails(toolId) {
+            // Log tool details view
+            fetch('./track_tool_usage.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tool_id: toolId,
+                    action: 'view_details'
+                })
+            }).catch(error => console.log('Tool usage tracking failed:', error));
+            
+            alert('Tool details coming soon!');
+        }
+        
+        // Tool implementations
+        function showPositionCalculator() {
+            alert('Position Size Calculator - Coming Soon!');
+        }
+        
+        function showRiskRewardCalculator() {
+            alert('Risk-Reward Calculator - Coming Soon!');
+        }
+        
+        function showProfitLossCalculator() {
+            alert('Profit-Loss Calculator - Coming Soon!');
+        }
+        
+        function showMarginCalculator() {
+            alert('Margin Calculator - Coming Soon!');
+        }
+        
+        function showPortfolioAnalyzer() {
+            alert('Portfolio Analyzer - Coming Soon!');
+        }
+        
+        function showMarketSimulator() {
+            alert('Market Simulator - Coming Soon!');
+        }
+        
+        function showChartAnalysisTool() {
+            alert('Chart Analysis Tool - Coming Soon!');
         }
     </script>
     
@@ -813,5 +773,8 @@
             });
         });
     </script>
+    
+    <!-- Include app.js for profile menu functionality -->
+    <script src="./assets/app.js"></script>
 </body>
 </html>

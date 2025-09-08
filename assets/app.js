@@ -797,14 +797,23 @@ function initAuthentication() {
 }
 
 function checkAuthAndRedirect() {
-    const isLoggedIn = false; // localStorage DISABLED
-    if (isLoggedIn === 'true') {
-        // User is logged in, redirect to tools
-        window.location.href = '/tools.php';
-    } else {
-        // User is not logged in, redirect to login page
-        window.location.href = '/login.php';
-    }
+    // Check authentication status via AJAX
+    fetch('./check_auth.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.authenticated) {
+                // User is logged in, redirect to tools
+                window.location.href = './tools.php';
+            } else {
+                // User is not logged in, redirect to login page
+                window.location.href = './login.php';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking auth:', error);
+            // Fallback: redirect to login
+            window.location.href = './login.php';
+        });
 }
 
 function logout() {

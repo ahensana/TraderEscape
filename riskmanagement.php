@@ -1,3 +1,24 @@
+<?php
+/**
+ * Risk Management Tool for TraderEscape
+ * Protected page - requires user authentication
+ */
+
+session_start();
+require_once __DIR__ . '/includes/auth_functions.php';
+require_once __DIR__ . '/includes/db_functions.php';
+
+// Require user to be logged in to access risk management tool
+requireAuth();
+
+$currentUser = getCurrentUser();
+
+// Track page view
+trackPageView('riskmanagement', $currentUser['id'], $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
+
+// Log user activity
+logUserActivity($currentUser['id'], 'page_view', 'Viewed risk management tool', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'riskmanagement']));
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

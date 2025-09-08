@@ -4,50 +4,82 @@
  * Information about cookie usage
  */
 
+session_start();
+require_once __DIR__ . '/includes/db_functions.php';
+
 // Get current page for header
 $currentPage = 'cookies';
+
+// Track page view
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+trackPageView('cookies', $userId, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
+
+// Log user activity if logged in
+if ($userId) {
+    logUserActivity($userId, 'page_view', 'Viewed cookies page', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'cookies']));
+}
 ?>
 <?php include 'includes/header.php'; ?>
 
+<style>
+/* Reduce spacing for content sections after hero */
+.hero-section {
+    padding-bottom: 1rem;
+}
+
+.hero-section + .disclaimer-section {
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
+</style>
+
 <main id="main-content" role="main" style="padding-top: 0;">
         <!-- Hero Section -->
-        <section style="
-        min-height: 40vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        padding-top: 0;
-        padding-bottom: 1rem;
-            background: transparent;
-            color: white;
-            text-align: center;
-    " id="hero">
-            <div style="max-width: 800px; padding: 1rem;">
-                <h1 style="
-                    font-size: 3rem;
-                    font-weight: bold;
-                    margin-bottom: 1rem;
-                    color: white;
-                ">
-                <span style="display: block;">Cookies</span>
-                <span style="
-                    display: block;
-                    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                ">Policy</span>
-                </h1>
-                <p style="
-                    font-size: 1.5rem;
-                    color: #e2e8f0;
-                margin-bottom: 1rem;
-            ">Understanding Our Cookie Usage</p>
-            <p style="
-                font-size: 1.1rem;
-                color: #cbd5e1;
-                line-height: 1.6;
-            ">This policy explains how we use cookies and similar technologies to enhance your browsing experience on The Trader's Escape platform.</p>
+        <section class="hero-section" id="hero" aria-labelledby="hero-title">
+            <div class="hero-content">
+                <div class="container">
+                    <div class="hero-grid">
+                        <div class="hero-text">
+                            <h1 class="hero-title" id="hero-title">
+                                <span class="title-line">Cookies</span>
+                                <span class="title-line highlight">Policy</span>
+                            </h1>
+                            <p class="hero-subtitle">Understanding Our Cookie Usage</p>
+                            <p class="hero-description">This policy explains how we use cookies and similar technologies to enhance your browsing experience on The Trader's Escape platform.</p>
+                            <div class="hero-disclaimer" role="alert" aria-label="Important disclaimer">
+                                <span class="disclaimer-icon">⚠️</span>
+                                <span>We provide educational content and do not provide any tips or calls. You are responsible for your own actions.</span>
+                            </div>
+                            <div class="hero-buttons">
+                                <a href="#cookies-content" class="btn btn-primary">
+                                    <span>Read Policy</span>
+                                </a>
+                                <a href="./contact.php" class="btn btn-secondary">
+                                    <span>Contact Us</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="hero-visual">
+                            <div class="tools-hero-container">
+                                <div class="tools-icon-grid">
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-cookie"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-gear"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-eye"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-sliders"></i>
+                                    </div>
+                                </div>
+                                <div class="tools-glow"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

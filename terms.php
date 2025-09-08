@@ -4,50 +4,82 @@
  * Terms and conditions of use
  */
 
+session_start();
+require_once __DIR__ . '/includes/db_functions.php';
+
 // Get current page for header
 $currentPage = 'terms';
+
+// Track page view
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+trackPageView('terms', $userId, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
+
+// Log user activity if logged in
+if ($userId) {
+    logUserActivity($userId, 'page_view', 'Viewed terms page', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'terms']));
+}
 ?>
 <?php include 'includes/header.php'; ?>
 
+<style>
+/* Reduce spacing for content sections after hero */
+.hero-section {
+    padding-bottom: 1rem;
+}
+
+.hero-section + .disclaimer-section {
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
+</style>
+
 <main id="main-content" role="main" style="padding-top: 0;">
         <!-- Hero Section -->
-        <section style="
-        min-height: 40vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        padding-top: 0;
-        padding-bottom: 1rem;
-            background: transparent;
-            color: white;
-            text-align: center;
-        " id="hero">
-            <div style="max-width: 800px; padding: 1rem;">
-                <h1 style="
-                    font-size: 3rem;
-                    font-weight: bold;
-                    margin-bottom: 1rem;
-                    color: white;
-                ">
-                <span style="display: block;">Terms of</span>
-                    <span style="
-                        display: block;
-                        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                ">Service</span>
-                </h1>
-                <p style="
-                    font-size: 1.5rem;
-                    color: #e2e8f0;
-                    margin-bottom: 1rem;
-            ">Platform Usage Terms</p>
-                <p style="
-                    font-size: 1.1rem;
-                    color: #cbd5e1;
-                    line-height: 1.6;
-            ">By using The Trader's Escape platform, you agree to these terms and conditions. Please read them carefully before proceeding.</p>
+        <section class="hero-section" id="hero" aria-labelledby="hero-title">
+            <div class="hero-content">
+                <div class="container">
+                    <div class="hero-grid">
+                        <div class="hero-text">
+                            <h1 class="hero-title" id="hero-title">
+                                <span class="title-line">Terms of</span>
+                                <span class="title-line highlight">Service</span>
+                            </h1>
+                            <p class="hero-subtitle">Platform Usage Terms</p>
+                            <p class="hero-description">By using The Trader's Escape platform, you agree to these terms and conditions. Please read them carefully before proceeding.</p>
+                            <div class="hero-disclaimer" role="alert" aria-label="Important disclaimer">
+                                <span class="disclaimer-icon">⚠️</span>
+                                <span>We provide educational content and do not provide any tips or calls. You are responsible for your own actions.</span>
+                            </div>
+                            <div class="hero-buttons">
+                                <a href="#terms-content" class="btn btn-primary">
+                                    <span>Read Terms</span>
+                                </a>
+                                <a href="./contact.php" class="btn btn-secondary">
+                                    <span>Contact Us</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="hero-visual">
+                            <div class="tools-hero-container">
+                                <div class="tools-icon-grid">
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-file-text"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-person-check"></i>
+                                    </div>
+                                </div>
+                                <div class="tools-glow"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

@@ -1,4 +1,18 @@
-<?php include 'includes/header.php'; ?>
+<?php 
+session_start();
+require_once __DIR__ . '/includes/db_functions.php';
+
+// Track page view
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+trackPageView('home', $userId, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
+
+// Log user activity if logged in
+if ($userId) {
+    logUserActivity($userId, 'page_view', 'Viewed home page', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'home']));
+}
+
+include 'includes/header.php'; 
+?>
 
     <!-- Critical CSS inline for faster rendering -->
     <style>

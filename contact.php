@@ -75,45 +75,65 @@ $currentPage = 'contact';
 ?>
 <?php include 'includes/header.php'; ?>
 
+<style>
+/* Reduce spacing for content sections after hero */
+.hero-section {
+    padding-bottom: 1rem;
+}
+
+.hero-section + .disclaimer-section {
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
+</style>
+
 <main id="main-content" role="main" style="padding-top: 0;">
         <!-- Hero Section -->
-        <section style="
-        min-height: 40vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        padding-top: 0;
-        padding-bottom: 1rem;
-            background: transparent;
-            color: white;
-            text-align: center;
-        " id="hero">
-        <div style="max-width: 800px; padding: 1rem; background: transparent;">
-                <h1 style="
-                    font-size: 3rem;
-                    font-weight: bold;
-                    margin-bottom: 1rem;
-                    color: white;
-                ">
-                <span style="display: block;">Get In</span>
-                    <span style="
-                        display: block;
-                        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                ">Touch</span>
-                </h1>
-                <p style="
-                    font-size: 1.5rem;
-                    color: #e2e8f0;
-                    margin-bottom: 1rem;
-            ">We're Here to Help</p>
-                <p style="
-                    font-size: 1.1rem;
-                    color: #cbd5e1;
-                    line-height: 1.6;
-            ">Have questions about our platform, tools, or educational content? Reach out to our team and we'll get back to you as soon as possible.</p>
+        <section class="hero-section" id="hero" aria-labelledby="hero-title">
+            <div class="hero-content">
+                <div class="container">
+                    <div class="hero-grid">
+                        <div class="hero-text">
+                            <h1 class="hero-title" id="hero-title">
+                                <span class="title-line">Get In</span>
+                                <span class="title-line highlight">Touch</span>
+                            </h1>
+                            <p class="hero-subtitle">We're Here to Help</p>
+                            <p class="hero-description">Have questions about our platform, tools, or educational content? Reach out to our team and we'll get back to you as soon as possible.</p>
+                            <div class="hero-disclaimer" role="alert" aria-label="Important disclaimer">
+                                <span class="disclaimer-icon">⚠️</span>
+                                <span>We provide educational content and do not provide any tips or calls. You are responsible for your own actions.</span>
+                            </div>
+                            <div class="hero-buttons">
+                                <a href="#contact-form" class="btn btn-primary">
+                                    <span>Send Message</span>
+                                </a>
+                                <a href="./tools.php" class="btn btn-secondary">
+                                    <span>Explore Tools</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="hero-visual">
+                            <div class="tools-hero-container">
+                                <div class="tools-icon-grid">
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-envelope"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-chat-dots"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-headset"></i>
+                                    </div>
+                                    <div class="tool-icon" aria-hidden="true">
+                                        <i class="bi bi-question-circle"></i>
+                                    </div>
+                                </div>
+                                <div class="tools-glow"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

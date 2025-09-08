@@ -13,6 +13,7 @@ header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 require_once __DIR__ . '/includes/auth_functions.php';
+require_once __DIR__ . '/includes/db_functions.php';
 
 try {
     // Debug information
@@ -24,6 +25,9 @@ try {
     ];
     
     if (isLoggedIn()) {
+        // Log logout activity before destroying session
+        logUserActivity($_SESSION['user_id'], 'logout', 'User logged out', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['action' => 'logout']));
+        
         logoutUser();
         echo json_encode([
             'success' => true, 

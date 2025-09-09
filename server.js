@@ -72,6 +72,20 @@ const upload = multer({
 // Store connected users
 const connectedUsers = new Map();
 const messageHistory = [];
+// Track recent disconnections to detect page refreshes
+const recentDisconnections = new Map(); // baseId -> timestamp
+
+// Clean up old disconnection records every 30 seconds
+setInterval(() => {
+  const now = Date.now();
+  const maxAge = 30000; // 30 seconds
+
+  for (const [baseId, timestamp] of recentDisconnections.entries()) {
+    if (now - timestamp > maxAge) {
+      recentDisconnections.delete(baseId);
+    }
+  }
+}, 30000);
 
 // Routes - Note: PHP files should be served by XAMPP, not Node.js
 app.get("/", (req, res) => {
@@ -151,17 +165,32 @@ io.on("connection", (socket) => {
     // Send message history to new user
     socket.emit("message-history", messageHistory.slice(-50)); // Last 50 messages
 
-    // Notify others about new user
-    socket.broadcast.emit("user-joined", {
-      message: `${user.name} joined the chat`,
-      user: user,
-    });
+    // Check if this is a reconnection (same baseId already exists OR recently disconnected)
+    const isReconnection =
+      Array.from(connectedUsers.values()).some(
+        (existingUser) =>
+          existingUser.baseId === user.baseId &&
+          existingUser.socketId !== socket.id
+      ) || recentDisconnections.has(user.baseId);
 
-    console.log(
-      `${user.name} (${user.id}) joined the chat from ${
-        user.deviceInfo.deviceType || "Unknown"
-      } (${user.deviceInfo.browser || "Unknown"})`
-    );
+    if (!isReconnection) {
+      // Only notify about new user joining if it's not a reconnection
+      socket.broadcast.emit("user-joined", {
+        message: `${user.name} joined the chat`,
+        user: user,
+      });
+      console.log(
+        `${user.name} (${user.id}) joined the chat from ${
+          user.deviceInfo.deviceType || "Unknown"
+        } (${user.deviceInfo.browser || "Unknown"})`
+      );
+    } else {
+      console.log(
+        `${user.name} reconnected (page refresh) - not showing join message`
+      );
+      // Clean up the recent disconnection tracking since user reconnected
+      recentDisconnections.delete(user.baseId);
+    }
   });
 
   // Handle new messages
@@ -176,7 +205,7 @@ io.on("connection", (socket) => {
       senderId: user.id, // This will now be the client's user ID
       timestamp: new Date(),
       color: user.color,
-      file: messageData.file || null, // Support file attachments
+      files: messageData.files || null, // Support multiple file attachments
     };
 
     // Store message in history
@@ -258,7 +287,7 @@ io.on("connection", (socket) => {
       senderId: user.id,
       timestamp: new Date(),
       color: user.color,
-      file: messageData.file || null,
+      files: messageData.files || null,
     };
 
     messageHistory.push(message);
@@ -266,15 +295,8 @@ io.on("connection", (socket) => {
       messageHistory.shift();
     }
 
+    // Only emit in PHP format for PHP chat
     io.emit("new-message", message);
-    io.emit("new_message", {
-      id: message.id,
-      username: user.name,
-      content: message.text,
-      file: message.file,
-      timestamp: message.timestamp,
-      type: message.file ? "file" : "user",
-    });
 
     console.log(
       `Message from ${user.name}: ${messageData.content}${
@@ -315,17 +337,37 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const user = connectedUsers.get(socket.id);
     if (user) {
+      // Track this disconnection for potential page refresh detection
+      recentDisconnections.set(user.baseId, Date.now());
+
       // Remove user entry
       connectedUsers.delete(socket.id);
 
       // Update user list for remaining clients
       io.emit("user-list", Array.from(connectedUsers.values()));
 
-      // Notify others about user leaving
-      socket.broadcast.emit("user-left", {
-        message: `${user.name} left the chat`,
-        user: user,
-      });
+      // Add a small delay before notifying about user leaving
+      // This helps detect if it's a page refresh (user reconnects quickly)
+      setTimeout(() => {
+        // Check if user has reconnected (same baseId exists in connectedUsers)
+        const hasReconnected = Array.from(connectedUsers.values()).some(
+          (existingUser) => existingUser.baseId === user.baseId
+        );
+
+        if (!hasReconnected) {
+          // Only notify if user hasn't reconnected (genuine disconnect)
+          socket.broadcast.emit("user-left", {
+            message: `${user.name} left the chat`,
+            user: user,
+          });
+          console.log(`${user.name} left the chat`);
+        } else {
+          console.log(`${user.name} reconnected (page refresh detected)`);
+        }
+
+        // Clean up the recent disconnection tracking
+        recentDisconnections.delete(user.baseId);
+      }, 1000); // 1 second delay
 
       console.log(`${user.name} disconnected`);
     }

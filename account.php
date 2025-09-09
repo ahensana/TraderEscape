@@ -15,6 +15,12 @@ $currentPage = 'account';
 $userStats = getUserStats($currentUser['id']);
 $userDashboardData = getUserDashboardData($currentUser['id']);
 
+// Get trading profiles and risk data
+$tradingProfiles = getTradingProfiles($currentUser['id']);
+$riskMetrics = getRiskMetrics($currentUser['id']);
+$portfolioPositions = getPortfolioPositions($currentUser['id']);
+$recentTrades = getRecentTrades($currentUser['id'], 10);
+
 // Track page view
 trackPageView('account', $currentUser['id'], $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
 
@@ -95,6 +101,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = 'Error changing password: ' . $e->getMessage();
                     }
                 }
+                break;
+                
+            case 'save_trading_profile':
+                $profileData = [
+                    'profile_name' => trim($_POST['profile_name'] ?? ''),
+                    'account_size' => floatval($_POST['account_size'] ?? 0),
+                    'risk_percentage' => floatval($_POST['risk_percentage'] ?? 2),
+                    'max_daily_loss_percentage' => floatval($_POST['max_daily_loss_percentage'] ?? 5),
+                    'max_open_risk_percentage' => floatval($_POST['max_open_risk_percentage'] ?? 10),
+                    'preferred_trading_style' => $_POST['preferred_trading_style'] ?? 'swing_trading',
+                    'risk_tolerance' => $_POST['risk_tolerance'] ?? 'moderate',
+                    'max_positions' => intval($_POST['max_positions'] ?? 5),
+                    'is_default' => isset($_POST['is_default']) && $_POST['is_default']
+                ];
+                
+                if (empty($profileData['profile_name']) || $profileData['account_size'] <= 0) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Please fill in all required fields']);
+                    exit;
+                }
+                
+                $profileId = saveTradingProfile($currentUser['id'], $profileData);
+                if ($profileId) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Profile saved successfully']);
+                    exit;
+                } else {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Failed to save profile']);
+                    exit;
+                }
+                break;
+                
+            case 'set_default_profile':
+                $profileId = intval($_POST['profile_id'] ?? 0);
+                if ($profileId > 0) {
+                    try {
+                        $pdo = getDB();
+                        // First, unset all default profiles for this user
+                        $stmt = $pdo->prepare("UPDATE user_trading_profiles SET is_default = FALSE WHERE user_id = ?");
+                        $stmt->execute([$currentUser['id']]);
+                        
+                        // Set the selected profile as default
+                        $stmt = $pdo->prepare("UPDATE user_trading_profiles SET is_default = TRUE WHERE id = ? AND user_id = ?");
+                        $result = $stmt->execute([$profileId, $currentUser['id']]);
+                        
+                        if ($result) {
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => true, 'message' => 'Default profile updated']);
+                            exit;
+                        }
+                    } catch (Exception $e) {
+                        error_log("Error setting default profile: " . $e->getMessage());
+                    }
+                }
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Failed to set default profile']);
+                exit;
+                break;
+                
+            case 'acknowledge_alert':
+                $alertId = intval($_POST['alert_id'] ?? 0);
+                if ($alertId > 0) {
+                    $result = acknowledgeRiskAlert($currentUser['id'], $alertId);
+                    if ($result) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => true, 'message' => 'Alert acknowledged']);
+                        exit;
+                    }
+                }
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Failed to acknowledge alert']);
+                exit;
                 break;
         }
     }
@@ -686,6 +765,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
     }
 
+    /* Badge Styles */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .badge-primary {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+
+    .text-success {
+        color: #10b981 !important;
+    }
+
+    .text-danger {
+        color: #ef4444 !important;
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+        border-color: rgba(245, 158, 11, 0.4);
+        color: #f59e0b;
+    }
+
     /* Enhanced spacing for footer */
     .dashboard-layout {
         margin-bottom: 6rem;
@@ -781,6 +905,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <a href="#activity" class="nav-item" data-section="activity">
                             <i class="bi bi-graph-up"></i>
                             <span>Activity</span>
+                        </a>
+                        <a href="#trading-profiles" class="nav-item" data-section="trading-profiles">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Trading Profiles</span>
+                        </a>
+                        <a href="#risk-management" class="nav-item" data-section="risk-management">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Risk Management</span>
+                        </a>
+                        <a href="#portfolio" class="nav-item" data-section="portfolio">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Portfolio</span>
                         </a>
                         <a href="#preferences" class="nav-item" data-section="preferences">
                             <i class="bi bi-gear"></i>
@@ -992,6 +1128,279 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="activity-content">
                                     <p>No learning progress yet. Begin your trading education journey!</p>
                                     <a href="./tools.php" class="btn btn-secondary">Start Learning</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trading Profiles Section -->
+                    <div class="dashboard-section" id="trading-profiles">
+                        <div class="section-header">
+                            <h2><i class="bi bi-person-badge"></i> Trading Profiles</h2>
+                            <p>Manage your trading profiles and risk settings</p>
+                        </div>
+                        
+                        <div class="info-cards">
+                            <?php if (empty($tradingProfiles)): ?>
+                                <div class="info-card">
+                                    <h3><i class="bi bi-plus-circle"></i> Create Your First Trading Profile</h3>
+                                    <div class="activity-content">
+                                        <p>Set up your trading profile to start using our risk management tools effectively.</p>
+                                        <button class="btn btn-primary" onclick="showCreateProfileModal()">
+                                            <i class="bi bi-plus"></i> Create Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($tradingProfiles as $profile): ?>
+                                    <div class="info-card">
+                                        <h3>
+                                            <i class="bi bi-person-badge"></i> 
+                                            <?php echo htmlspecialchars($profile['profile_name']); ?>
+                                            <?php if ($profile['is_default']): ?>
+                                                <span class="badge badge-primary">Default</span>
+                                            <?php endif; ?>
+                                        </h3>
+                                        <div class="info-list">
+                                            <div class="info-item">
+                                                <span class="label">Account Size:</span>
+                                                <span class="value">₹<?php echo number_format($profile['account_size'], 2); ?></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="label">Risk per Trade:</span>
+                                                <span class="value"><?php echo $profile['risk_percentage']; ?>%</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="label">Max Daily Loss:</span>
+                                                <span class="value"><?php echo $profile['max_daily_loss_percentage']; ?>%</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="label">Trading Style:</span>
+                                                <span class="value"><?php echo ucwords(str_replace('_', ' ', $profile['preferred_trading_style'])); ?></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="label">Risk Tolerance:</span>
+                                                <span class="value"><?php echo ucwords($profile['risk_tolerance']); ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="quick-actions" style="margin-top: 1rem;">
+                                            <button class="btn btn-secondary" onclick="editProfile(<?php echo $profile['id']; ?>)">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </button>
+                                            <?php if (!$profile['is_default']): ?>
+                                                <button class="btn btn-primary" onclick="setDefaultProfile(<?php echo $profile['id']; ?>)">
+                                                    <i class="bi bi-star"></i> Set Default
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                                
+                                <div class="info-card">
+                                    <h3><i class="bi bi-plus-circle"></i> Add New Profile</h3>
+                                    <div class="activity-content">
+                                        <p>Create additional trading profiles for different strategies or market conditions.</p>
+                                        <button class="btn btn-primary" onclick="showCreateProfileModal()">
+                                            <i class="bi bi-plus"></i> Create Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Risk Management Section -->
+                    <div class="dashboard-section" id="risk-management">
+                        <div class="section-header">
+                            <h2><i class="bi bi-shield-check"></i> Risk Management</h2>
+                            <p>Monitor your risk metrics and alerts</p>
+                        </div>
+                        
+                        <div class="stats-grid">
+                            <?php if ($riskMetrics): ?>
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="bi bi-graph-up"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-number"><?php echo $riskMetrics['win_rate']; ?>%</div>
+                                        <div class="stat-label">Win Rate</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="bi bi-currency-dollar"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-number"><?php echo $riskMetrics['profit_factor']; ?></div>
+                                        <div class="stat-label">Profit Factor</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-number"><?php echo $riskMetrics['max_drawdown']; ?>%</div>
+                                        <div class="stat-label">Max Drawdown</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="bi bi-shield-exclamation"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-number"><?php echo $riskMetrics['total_risk']; ?>%</div>
+                                        <div class="stat-label">Current Risk</div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="info-card" style="grid-column: 1 / -1;">
+                                    <h3><i class="bi bi-info-circle"></i> No Risk Data Available</h3>
+                                    <div class="activity-content">
+                                        <p>Start trading to see your risk metrics and performance analytics.</p>
+                                        <a href="./tools.php" class="btn btn-primary">
+                                            <i class="bi bi-tools"></i> Start Trading
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="info-cards">
+                            <div class="info-card">
+                                <h3><i class="bi bi-exclamation-triangle"></i> Risk Alerts</h3>
+                                <div class="activity-content">
+                                    <?php 
+                                    $riskAlerts = getRiskAlerts($currentUser['id'], 5);
+                                    if (empty($riskAlerts)): 
+                                    ?>
+                                        <p>No active risk alerts. Your trading is within safe limits.</p>
+                                    <?php else: ?>
+                                        <?php foreach ($riskAlerts as $alert): ?>
+                                            <div class="alert alert-<?php echo $alert['severity'] === 'critical' ? 'error' : 'warning'; ?>">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                                <div>
+                                                    <strong><?php echo ucwords(str_replace('_', ' ', $alert['alert_type'])); ?></strong>
+                                                    <p><?php echo htmlspecialchars($alert['alert_message']); ?></p>
+                                                </div>
+                                                <button class="btn btn-sm btn-secondary" onclick="acknowledgeAlert(<?php echo $alert['id']; ?>)">
+                                                    Dismiss
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h3><i class="bi bi-graph-up"></i> Performance Summary</h3>
+                                <div class="info-list">
+                                    <?php if ($riskMetrics): ?>
+                                        <div class="info-item">
+                                            <span class="label">Total Trades:</span>
+                                            <span class="value"><?php echo $riskMetrics['total_trades']; ?></span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Winning Trades:</span>
+                                            <span class="value"><?php echo $riskMetrics['winning_trades']; ?></span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Losing Trades:</span>
+                                            <span class="value"><?php echo $riskMetrics['losing_trades']; ?></span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Average Win:</span>
+                                            <span class="value">₹<?php echo number_format($riskMetrics['avg_win'], 2); ?></span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Average Loss:</span>
+                                            <span class="value">₹<?php echo number_format($riskMetrics['avg_loss'], 2); ?></span>
+                                        </div>
+                                    <?php else: ?>
+                                        <p>No performance data available yet.</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Section -->
+                    <div class="dashboard-section" id="portfolio">
+                        <div class="section-header">
+                            <h2><i class="bi bi-graph-up-arrow"></i> Portfolio Overview</h2>
+                            <p>Track your current positions and portfolio performance</p>
+                        </div>
+                        
+                        <div class="info-cards">
+                            <div class="info-card">
+                                <h3><i class="bi bi-briefcase"></i> Current Positions</h3>
+                                <div class="activity-content">
+                                    <?php if (empty($portfolioPositions)): ?>
+                                        <p>No active positions. Start trading to build your portfolio!</p>
+                                        <a href="./tools.php" class="btn btn-primary">
+                                            <i class="bi bi-tools"></i> Start Trading
+                                        </a>
+                                    <?php else: ?>
+                                        <div class="info-list">
+                                            <?php foreach ($portfolioPositions as $position): ?>
+                                                <div class="info-item">
+                                                    <div>
+                                                        <strong><?php echo htmlspecialchars($position['symbol']); ?></strong>
+                                                        <span class="badge badge-<?php echo $position['side'] === 'Long' ? 'success' : 'danger'; ?>">
+                                                            <?php echo $position['side']; ?>
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="label">Qty:</span>
+                                                        <span class="value"><?php echo $position['quantity']; ?></span>
+                                                        <span class="label">P&L:</span>
+                                                        <span class="value <?php echo $position['unrealized_pnl'] >= 0 ? 'text-success' : 'text-danger'; ?>">
+                                                            ₹<?php echo number_format($position['unrealized_pnl'], 2); ?>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h3><i class="bi bi-clock-history"></i> Recent Trades</h3>
+                                <div class="activity-content">
+                                    <?php if (empty($recentTrades)): ?>
+                                        <p>No recent trades. Your trading history will appear here.</p>
+                                    <?php else: ?>
+                                        <div class="info-list">
+                                            <?php foreach ($recentTrades as $trade): ?>
+                                                <div class="info-item">
+                                                    <div>
+                                                        <strong><?php echo htmlspecialchars($trade['symbol']); ?></strong>
+                                                        <span class="badge badge-<?php echo $trade['side'] === 'Long' ? 'success' : 'danger'; ?>">
+                                                            <?php echo $trade['side']; ?>
+                                                        </span>
+                                                        <span class="badge badge-<?php echo $trade['trade_status'] === 'closed' ? 'primary' : 'warning'; ?>">
+                                                            <?php echo ucwords($trade['trade_status']); ?>
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="label">Date:</span>
+                                                        <span class="value"><?php echo date('M j', strtotime($trade['trade_date'])); ?></span>
+                                                        <?php if ($trade['pnl'] !== null): ?>
+                                                            <span class="label">P&L:</span>
+                                                            <span class="value <?php echo $trade['pnl'] >= 0 ? 'text-success' : 'text-danger'; ?>">
+                                                                ₹<?php echo number_format($trade['pnl'], 2); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -1343,6 +1752,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             break;
                         case '5':
                             e.preventDefault();
+                            this.showSection('trading-profiles');
+                            break;
+                        case '6':
+                            e.preventDefault();
+                            this.showSection('risk-management');
+                            break;
+                        case '7':
+                            e.preventDefault();
+                            this.showSection('portfolio');
+                            break;
+                        case '8':
+                            e.preventDefault();
                             this.showSection('preferences');
                             break;
                     }
@@ -1372,7 +1793,176 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
 
-    // Add CSS for animations
+    // Trading Profile Functions
+    function showCreateProfileModal() {
+        // Create modal for profile creation
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create Trading Profile</h3>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label for="profile_name">Profile Name</label>
+                            <input type="text" id="profile_name" name="profile_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="account_size">Account Size (₹)</label>
+                            <input type="number" id="account_size" name="account_size" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="risk_percentage">Risk per Trade (%)</label>
+                            <input type="number" id="risk_percentage" name="risk_percentage" step="0.01" value="2" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="max_daily_loss_percentage">Max Daily Loss (%)</label>
+                            <input type="number" id="max_daily_loss_percentage" name="max_daily_loss_percentage" step="0.01" value="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="max_open_risk_percentage">Max Open Risk (%)</label>
+                            <input type="number" id="max_open_risk_percentage" name="max_open_risk_percentage" step="0.01" value="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="preferred_trading_style">Trading Style</label>
+                            <select id="preferred_trading_style" name="preferred_trading_style" required>
+                                <option value="scalping">Scalping</option>
+                                <option value="day_trading">Day Trading</option>
+                                <option value="swing_trading" selected>Swing Trading</option>
+                                <option value="position_trading">Position Trading</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="risk_tolerance">Risk Tolerance</label>
+                            <select id="risk_tolerance" name="risk_tolerance" required>
+                                <option value="conservative">Conservative</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="aggressive">Aggressive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="max_positions">Max Positions</label>
+                            <input type="number" id="max_positions" name="max_positions" value="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="is_default" name="is_default">
+                                Set as Default Profile
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function closeModal() {
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    function saveProfile() {
+        const form = document.getElementById('profileForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Convert checkbox to boolean
+        data.is_default = document.getElementById('is_default').checked;
+        
+        // Send AJAX request to save profile
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'save_trading_profile',
+                ...data
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                closeModal();
+                location.reload(); // Refresh to show new profile
+            } else {
+                alert('Error saving profile: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving profile');
+        });
+    }
+
+    function editProfile(profileId) {
+        // Similar to create but with existing data
+        alert('Edit profile functionality coming soon!');
+    }
+
+    function setDefaultProfile(profileId) {
+        if (confirm('Set this as your default trading profile?')) {
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'set_default_profile',
+                    profile_id: profileId
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Error setting default profile');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error setting default profile');
+            });
+        }
+    }
+
+    function acknowledgeAlert(alertId) {
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'acknowledge_alert',
+                alert_id: alertId
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error acknowledging alert');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error acknowledging alert');
+        });
+    }
+
+    // Add CSS for animations and modal
     const style = document.createElement('style');
     style.textContent = `
         @keyframes fadeInUp {
@@ -1388,6 +1978,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .field-error, .field-success {
             animation: slideIn 0.3s ease-out;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid rgba(59, 130, 246, 0.2);
         }
     `;
     document.head.appendChild(style);

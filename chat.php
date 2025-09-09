@@ -650,11 +650,15 @@ class CommunityChat {
     generateRandomUser() {
         const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
         
+        // Generate device info
+        const deviceInfo = this.getDeviceInfo();
+        
         if (window.userData && window.userData.username) {
             return {
                 id: 'user_' + window.userData.id,
                 name: window.userData.full_name || window.userData.username,
-                color: colors[Math.floor(Math.random() * colors.length)]
+                color: colors[Math.floor(Math.random() * colors.length)],
+                deviceInfo: deviceInfo
             };
         } else {
             let guestId = localStorage.getItem('chat_guest_id');
@@ -666,10 +670,37 @@ class CommunityChat {
             const names = ['Guest', 'Anonymous', 'Visitor'];
             return {
                 id: guestId,
-                name: names[Math.floor(Math.random() * names.length)],
-                color: colors[Math.floor(Math.random() * colors.length)]
+                name: names[Math.floor(Math.random() * names.length)] + '_' + deviceInfo.deviceType,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                deviceInfo: deviceInfo
             };
         }
+    }
+    
+    getDeviceInfo() {
+        const userAgent = navigator.userAgent;
+        let deviceType = 'Desktop';
+        let browser = 'Unknown';
+        
+        // Detect device type
+        if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+            deviceType = 'Mobile';
+        } else if (/Tablet|iPad/i.test(userAgent)) {
+            deviceType = 'Tablet';
+        }
+        
+        // Detect browser
+        if (userAgent.includes('Chrome')) browser = 'Chrome';
+        else if (userAgent.includes('Firefox')) browser = 'Firefox';
+        else if (userAgent.includes('Safari')) browser = 'Safari';
+        else if (userAgent.includes('Edge')) browser = 'Edge';
+        
+        return {
+            deviceType: deviceType,
+            browser: browser,
+            userAgent: userAgent.substring(0, 50) + '...',
+            timestamp: new Date().toISOString()
+        };
     }
     
     initializeElements() {
@@ -701,10 +732,11 @@ class CommunityChat {
                 this.socket.emit('user-join', {
                     name: this.currentUser.name,
                     color: this.currentUser.color,
-                    userId: this.currentUser.id
+                    userId: this.currentUser.id,
+                    deviceInfo: this.currentUser.deviceInfo
                 });
                 this.hasJoined = true;
-                console.log('Sent user-join event');
+                console.log('Sent user-join event with device info:', this.currentUser.deviceInfo);
             } else {
                 console.log('Already joined, skipping user-join event');
             }
@@ -974,13 +1006,14 @@ class CommunityChat {
         users.forEach(user => {
             const userElement = document.createElement('div');
             userElement.className = 'online-user';
+            const deviceInfo = user.deviceInfo ? `${user.deviceInfo.deviceType} (${user.deviceInfo.browser})` : 'Unknown Device';
             userElement.innerHTML = `
                 <div class="online-user-avatar" style="background-color: ${user.color}">
                     ${user.name.charAt(0).toUpperCase()}
                 </div>
                 <div class="online-user-info">
                     <p class="online-user-name">${user.name}</p>
-                    <p class="online-user-status">Online</p>
+                    <p class="online-user-status">${deviceInfo}</p>
                 </div>
                 <div class="online-user-indicator"></div>
             `;

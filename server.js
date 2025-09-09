@@ -45,16 +45,21 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const userId = userData.userId || socket.id; // Use client's user ID if provided
+    // Create unique user ID combining userId and socket.id for better identification
+    const baseUserId = userData.userId || `guest_${socket.id.substring(0, 6)}`;
+    const uniqueUserId = `${baseUserId}_${socket.id.substring(0, 6)}`;
+
     const user = {
-      id: userId,
+      id: uniqueUserId,
+      baseId: baseUserId, // Keep original user ID for reference
       name: userData.name || `User_${socket.id.substring(0, 6)}`,
       color: userData.color || "#3b82f6",
       joinTime: new Date(),
       socketId: socket.id, // Store socket ID for reference
+      deviceInfo: userData.deviceInfo || "Unknown Device",
     };
 
-    // Store user with socket.id as key, but use userId in messages
+    // Store user with socket.id as key
     connectedUsers.set(socket.id, user);
 
     // Send user list to all clients
@@ -69,7 +74,9 @@ io.on("connection", (socket) => {
       user: user,
     });
 
-    console.log(`${user.name} joined the chat`);
+    console.log(
+      `${user.name} (${user.id}) joined the chat from ${user.deviceInfo}`
+    );
   });
 
   // Handle new messages

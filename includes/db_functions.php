@@ -321,4 +321,181 @@ function getCookieConsentDetails($sessionId = null) {
         return false;
     }
 }
+
+/**
+ * Get user trading profiles
+ */
+function getTradingProfiles($userId) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("SELECT * FROM user_trading_profiles WHERE user_id = ? ORDER BY is_default DESC, created_at ASC");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Error getting trading profiles for user $userId: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get user risk metrics
+ */
+function getRiskMetrics($userId) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("
+            SELECT rm.*, utp.profile_name 
+            FROM risk_metrics rm 
+            JOIN user_trading_profiles utp ON rm.profile_id = utp.id 
+            WHERE rm.user_id = ? 
+            ORDER BY rm.calculation_date DESC 
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetch();
+    } catch (Exception $e) {
+        error_log("Error getting risk metrics for user $userId: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get user portfolio positions
+ */
+function getPortfolioPositions($userId) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("
+            SELECT pp.*, utp.profile_name 
+            FROM portfolio_positions pp 
+            JOIN user_trading_profiles utp ON pp.profile_id = utp.id 
+            WHERE pp.user_id = ? 
+            ORDER BY pp.last_updated DESC
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Error getting portfolio positions for user $userId: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get recent trades
+ */
+function getRecentTrades($userId, $limit = 10) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("
+            SELECT tj.*, utp.profile_name 
+            FROM trade_journal tj 
+            JOIN user_trading_profiles utp ON tj.profile_id = utp.id 
+            WHERE tj.user_id = ? 
+            ORDER BY tj.trade_date DESC, tj.created_at DESC 
+            LIMIT ?
+        ");
+        $stmt->execute([$userId, $limit]);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Error getting recent trades for user $userId: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Create or update trading profile
+ */
+function saveTradingProfile($userId, $profileData) {
+    try {
+        $pdo = getDB();
+        
+        if (isset($profileData['id']) && $profileData['id']) {
+            // Update existing profile
+            $stmt = $pdo->prepare("
+                UPDATE user_trading_profiles 
+                SET profile_name = ?, account_size = ?, risk_percentage = ?, 
+                    max_daily_loss_percentage = ?, max_open_risk_percentage = ?, 
+                    preferred_trading_style = ?, risk_tolerance = ?, max_positions = ?
+                WHERE id = ? AND user_id = ?
+            ");
+            $result = $stmt->execute([
+                $profileData['profile_name'],
+                $profileData['account_size'],
+                $profileData['risk_percentage'],
+                $profileData['max_daily_loss_percentage'],
+                $profileData['max_open_risk_percentage'],
+                $profileData['preferred_trading_style'],
+                $profileData['risk_tolerance'],
+                $profileData['max_positions'],
+                $profileData['id'],
+                $userId
+            ]);
+            return $result ? $profileData['id'] : false;
+        } else {
+            // Create new profile
+            $stmt = $pdo->prepare("
+                INSERT INTO user_trading_profiles 
+                (user_id, profile_name, account_size, risk_percentage, max_daily_loss_percentage, 
+                 max_open_risk_percentage, preferred_trading_style, risk_tolerance, max_positions, is_default)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $result = $stmt->execute([
+                $userId,
+                $profileData['profile_name'],
+                $profileData['account_size'],
+                $profileData['risk_percentage'],
+                $profileData['max_daily_loss_percentage'],
+                $profileData['max_open_risk_percentage'],
+                $profileData['preferred_trading_style'],
+                $profileData['risk_tolerance'],
+                $profileData['max_positions'],
+                $profileData['is_default'] ?? false
+            ]);
+            return $result ? $pdo->lastInsertId() : false;
+        }
+    } catch (Exception $e) {
+        error_log("Error saving trading profile for user $userId: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get user risk alerts
+ */
+function getRiskAlerts($userId, $limit = 10) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("
+            SELECT ra.*, utp.profile_name 
+            FROM risk_alerts ra 
+            JOIN user_trading_profiles utp ON ra.profile_id = utp.id 
+            WHERE ra.user_id = ? AND ra.is_acknowledged = FALSE 
+            ORDER BY ra.created_at DESC 
+            LIMIT ?
+        ");
+        $stmt->execute([$userId, $limit]);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Error getting risk alerts for user $userId: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Acknowledge risk alert
+ */
+function acknowledgeRiskAlert($userId, $alertId) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("
+            UPDATE risk_alerts 
+            SET is_acknowledged = TRUE, acknowledged_at = NOW() 
+            WHERE id = ? AND user_id = ?
+        ");
+        return $stmt->execute([$alertId, $userId]);
+    } catch (Exception $e) {
+        error_log("Error acknowledging risk alert $alertId for user $userId: " . $e->getMessage());
+        return false;
+    }
+}
 ?>

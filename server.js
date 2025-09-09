@@ -37,13 +37,24 @@ io.on("connection", (socket) => {
 
   // Handle user joining
   socket.on("user-join", (userData) => {
+    // Check if user already exists to prevent duplicate joins
+    if (connectedUsers.has(socket.id)) {
+      console.log(
+        `User already exists for socket ${socket.id}, ignoring duplicate join`
+      );
+      return;
+    }
+
+    const userId = userData.userId || socket.id; // Use client's user ID if provided
     const user = {
-      id: userData.userId || socket.id, // Use client's user ID if provided
+      id: userId,
       name: userData.name || `User_${socket.id.substring(0, 6)}`,
       color: userData.color || "#3b82f6",
       joinTime: new Date(),
+      socketId: socket.id, // Store socket ID for reference
     };
 
+    // Store user with socket.id as key, but use userId in messages
     connectedUsers.set(socket.id, user);
 
     // Send user list to all clients
@@ -122,6 +133,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const user = connectedUsers.get(socket.id);
     if (user) {
+      // Remove user entry
       connectedUsers.delete(socket.id);
 
       // Update user list for remaining clients

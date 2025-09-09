@@ -10,87 +10,111 @@ if (isset($_SESSION['user_id'])) {
 ?>
 
 <style>
+    /* Modern Chat Container */
     .chat-container {
         display: flex;
         height: calc(100vh - 80px);
-        background: #0f172a;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         margin-top: 80px;
+        border-radius: 20px 20px 0 0;
+        overflow: hidden;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
     }
     
+    /* Sidebar */
     .chat-sidebar {
-        width: 300px;
-        background: rgba(15, 23, 42, 0.95);
-        border-right: 1px solid #334155;
+        width: 320px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
         display: flex;
         flex-direction: column;
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
     }
     
     .chat-header {
         padding: 20px;
-        border-bottom: 1px solid #334155;
-        background: #1e293b;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
     }
     
     .chat-header h2 {
-        color: white;
         margin: 0;
         font-size: 1.5rem;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
-    .online-users {
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-    }
-    
-    .user-item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        color: white;
-        transition: background 0.2s;
-    }
-    
-    .user-item:hover {
-        background: rgba(59, 130, 246, 0.1);
-    }
-    
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #3b82f6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        font-weight: bold;
-        color: white;
-    }
-    
-    .user-info {
-        flex: 1;
-    }
-    
-    .user-name {
-        font-weight: 500;
-        margin-bottom: 2px;
-    }
-    
-    .user-status {
-        font-size: 0.8rem;
-        color: #10b981;
-    }
-    
+    /* Main Chat Area */
     .chat-main {
         flex: 1;
         display: flex;
         flex-direction: column;
-        background: #0f172a;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
     }
     
+    .chat-controls {
+        padding: 15px 20px;
+        background: rgba(255, 255, 255, 0.8);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chat-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+    
+    .chat-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .action-btn {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+    
+    .action-btn:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+    
+    .clear-chat-btn {
+        background: #ff6b6b;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    
+    .clear-chat-btn:hover {
+        background: #ff5252;
+        transform: translateY(-1px);
+    }
+    
+    /* Messages Area */
     .chat-messages {
         flex: 1;
         padding: 20px;
@@ -98,8 +122,7 @@ if (isset($_SESSION['user_id'])) {
         display: flex;
         flex-direction: column;
         min-height: 0;
-        background: #0f172a;
-        border: 1px solid #334155;
+        background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
     }
     
     .message {
@@ -107,7 +130,19 @@ if (isset($_SESSION['user_id'])) {
         align-items: flex-start;
         gap: 12px;
         max-width: 70%;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
+        animation: messageSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .message.own {
@@ -122,36 +157,42 @@ if (isset($_SESSION['user_id'])) {
     }
     
     .message-avatar {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        background: #3b82f6;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
+        font-size: 16px;
         color: white;
-        font-size: 0.9rem;
         flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 3px solid rgba(255, 255, 255, 0.3);
     }
     
     .message-content {
-        background: #1e293b;
+        background: white;
         padding: 12px 16px;
-        border-radius: 18px;
-        color: white;
+        border-radius: 20px;
+        color: #333;
         word-wrap: break-word;
         position: relative;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 100%;
     }
     
     .message.own .message-content {
-        background: #3b82f6;
-        border-bottom-right-radius: 4px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom-right-radius: 6px;
     }
     
     .message:not(.own) .message-content {
-        background: #1e293b;
-        border-bottom-left-radius: 4px;
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
     
     .message-info {
@@ -162,56 +203,89 @@ if (isset($_SESSION['user_id'])) {
     }
     
     .message-sender {
-        font-weight: 500;
-        font-size: 0.9rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        opacity: 0.8;
     }
     
     .message-time {
-        font-size: 0.8rem;
-        color: #94a3b8;
+        font-size: 0.75rem;
+        opacity: 0.6;
     }
     
     .message-text {
+        font-size: 0.95rem;
         line-height: 1.4;
+        word-break: break-word;
     }
     
+    .message-text .emoji {
+        font-size: 1.2em;
+    }
+    
+    /* Input Area */
     .chat-input-container {
         padding: 20px;
-        border-top: 1px solid #334155;
-        background: #1e293b;
-        flex-shrink: 0;
-        border: 2px solid #3b82f6;
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(20px);
     }
     
-    .chat-input-form {
+    .chat-form {
         display: flex;
         gap: 12px;
-        align-items: center;
-    }
-    
-    .chat-input {
-        flex: 1;
-        background: #0f172a;
-        border: 2px solid #334155;
+        align-items: flex-end;
+        background: white;
         border-radius: 25px;
-        padding: 12px 20px;
-        color: white;
-        font-size: 1rem;
+        padding: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .input-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .emoji-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.2s;
+        color: #666;
+    }
+    
+    .emoji-btn:hover {
+        background: #f8f9fa;
+        transform: scale(1.1);
+    }
+    
+    .message-input {
+        flex: 1;
+        border: none;
         outline: none;
-        transition: border-color 0.2s;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        background: transparent;
+        color: #333;
+        resize: none;
         min-height: 20px;
+        max-height: 120px;
+        font-family: inherit;
     }
     
-    .chat-input:focus {
-        border-color: #3b82f6;
-    }
-    
-    .chat-input::placeholder {
-        color: #64748b;
+    .message-input::placeholder {
+        color: #999;
     }
     
     .send-button {
-        background: #3b82f6;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
         border: none;
         border-radius: 50%;
         width: 48px;
@@ -219,86 +293,195 @@ if (isset($_SESSION['user_id'])) {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
     .send-button:hover {
-        background: #2563eb;
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .send-button:active {
+        transform: scale(0.95);
     }
     
     .send-button:disabled {
-        background: #64748b;
+        background: #ccc;
         cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
     }
     
-    .typing-indicator {
-        padding: 10px 20px;
-        color: #94a3b8;
-        font-style: italic;
-        font-size: 0.9rem;
+    /* Online Users */
+    .online-users {
+        padding: 20px;
+        flex: 1;
+        overflow-y: auto;
     }
     
-    .connection-status {
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        padding: 10px 15px;
-        border-radius: 8px;
-        color: white;
-        font-size: 0.9rem;
-        z-index: 1000;
-        transition: all 0.3s;
-    }
-    
-    .connection-status.connected {
-        background: #10b981;
-    }
-    
-    .connection-status.disconnected {
-        background: #ef4444;
-    }
-    
-    .connection-status.connecting {
-        background: #f59e0b;
-    }
-    
-    .chat-controls {
-        padding: 15px 20px;
-        border-bottom: 1px solid #334155;
+    .online-user {
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
     }
     
-    .clear-chat-btn {
-        background: #ef4444;
+    .online-user:hover {
+        background: rgba(102, 126, 234, 0.1);
+        transform: translateX(5px);
+    }
+    
+    .online-user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
         color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .online-user-info {
+        flex: 1;
+    }
+    
+    .online-user-name {
+        color: #333;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin: 0;
+    }
+    
+    .online-user-status {
+        color: #666;
+        font-size: 0.8rem;
+        margin: 0;
+    }
+    
+    .online-user-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    }
+    
+    /* Typing Indicator */
+    .typing-indicator {
+        padding: 8px 20px;
+        color: #666;
+        font-style: italic;
         font-size: 0.9rem;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
+    }
+    
+    .typing-dots {
+        display: flex;
+        gap: 4px;
+    }
+    
+    .typing-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #666;
+        animation: typingDot 1.4s infinite ease-in-out;
+    }
+    
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes typingDot {
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Emoji Picker */
+    .emoji-picker {
+        position: absolute;
+        bottom: 80px;
+        right: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        display: none;
+        z-index: 1000;
+        max-width: 300px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .emoji-picker.show {
+        display: block;
+        animation: emojiPickerSlide 0.3s ease-out;
+    }
+    
+    @keyframes emojiPickerSlide {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .emoji-item {
+        padding: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 1.2rem;
         transition: all 0.2s;
     }
     
-    .clear-chat-btn:hover {
-        background: #dc2626;
-        transform: translateY(-1px);
+    .emoji-item:hover {
+        background: #f8f9fa;
+        transform: scale(1.2);
     }
     
-    .clear-chat-btn:active {
-        transform: translateY(0);
+    /* System Messages */
+    .message.system {
+        align-self: center;
+        margin: 10px 0;
     }
     
+    .message.system .message-content {
+        background: rgba(0, 0, 0, 0.1);
+        color: #666;
+        font-style: italic;
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        border-radius: 20px;
+    }
+    
+    /* Mobile Responsive */
     @media (max-width: 768px) {
         .chat-container {
             height: calc(100vh - 60px);
             margin-top: 60px;
-            top: 60px;
+            border-radius: 0;
         }
         
         .chat-sidebar {
@@ -306,28 +489,58 @@ if (isset($_SESSION['user_id'])) {
             position: absolute;
             left: -100%;
             transition: left 0.3s;
-            z-index: 100;
+            z-index: 1000;
+            height: 100%;
         }
         
         .chat-sidebar.open {
             left: 0;
         }
         
+        .chat-messages {
+            padding: 15px;
+        }
+        
         .message {
             max-width: 85%;
-        }
-        
-        .message.own {
-            margin-left: auto;
-        }
-        
-        .message:not(.own) {
-            margin-right: auto;
         }
         
         .chat-input-container {
             padding: 15px;
         }
+        
+        .message-input {
+            font-size: 16px;
+        }
+        
+        .emoji-picker {
+            right: 10px;
+            bottom: 70px;
+            max-width: 280px;
+        }
+    }
+    
+    /* Scrollbar Styling */
+    .chat-messages::-webkit-scrollbar,
+    .online-users::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track,
+    .online-users::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb,
+    .online-users::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.3);
+        border-radius: 3px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover,
+    .online-users::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.5);
     }
 </style>
 
@@ -335,7 +548,7 @@ if (isset($_SESSION['user_id'])) {
     <!-- Sidebar -->
     <div class="chat-sidebar" id="chatSidebar">
         <div class="chat-header">
-            <h2>Community Chat</h2>
+            <h2>💬 Community Chat</h2>
         </div>
         <div class="online-users" id="onlineUsers">
             <!-- Online users will be populated here -->
@@ -345,12 +558,19 @@ if (isset($_SESSION['user_id'])) {
     <!-- Main Chat Area -->
     <div class="chat-main">
         <div class="chat-controls">
-            <button class="clear-chat-btn" onclick="clearChat()" title="Clear All Messages">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/>
-                </svg>
-                Clear Chat
-            </button>
+            <h3 class="chat-title">💬 Community Chat</h3>
+            <div class="chat-actions">
+                <button class="action-btn" onclick="toggleSidebar()" title="Toggle Users">
+                    <span>👥</span>
+                    Users
+                </button>
+                <button class="clear-chat-btn" onclick="clearChat()" title="Clear All Messages">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/>
+                    </svg>
+                    Clear
+                </button>
+            </div>
         </div>
         <div class="chat-messages" id="chatMessages">
             <!-- Messages will be populated here -->
@@ -358,21 +578,30 @@ if (isset($_SESSION['user_id'])) {
         
         <div class="typing-indicator" id="typingIndicator" style="display: none;">
             <span id="typingText"></span>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
         </div>
         
         <div class="chat-input-container">
-            <form class="chat-input-form" id="chatForm">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="messageInput" 
-                    placeholder="Type your message..." 
-                    autocomplete="off"
-                    required
-                >
-                <button type="submit" class="send-button" id="sendButton">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            <form class="chat-form" id="chatForm">
+                <div class="input-wrapper">
+                    <button type="button" class="emoji-btn" onclick="toggleEmojiPicker()" title="Add Emoji">
+                        😊
+                    </button>
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Type your message here..."
+                        rows="1"
+                    ></textarea>
+                </div>
+                <button type="submit" class="send-button" id="sendButton" title="Send Message">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
                     </svg>
                 </button>
             </form>
@@ -380,8 +609,12 @@ if (isset($_SESSION['user_id'])) {
     </div>
 </div>
 
-<!-- Connection Status -->
-<div class="connection-status" id="connectionStatus">Connecting...</div>
+<!-- Emoji Picker -->
+<div class="emoji-picker" id="emojiPicker">
+    <div class="emoji-grid" id="emojiGrid">
+        <!-- Emojis will be populated here -->
+    </div>
+</div>
 
 <!-- Socket.IO CDN -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -398,22 +631,25 @@ class CommunityChat {
         this.currentUser = this.generateRandomUser();
         this.isTyping = false;
         this.typingTimer = null;
-        this.sentMessageIds = new Set(); // Track sent message IDs to prevent duplicates
+        this.sentMessageIds = new Set();
+        this.hasJoined = false;
+        this.emojiPickerVisible = false;
         
         console.log('User data from server:', window.userData);
         console.log('Generated user:', this.currentUser);
         console.log('Current user ID:', this.currentUser.id);
+        console.log('User ID type:', typeof this.currentUser.id);
         
         this.initializeElements();
         this.initializeSocket();
         this.bindEvents();
         this.showWelcomeMessage();
+        this.initializeEmojiPicker();
     }
     
     generateRandomUser() {
-        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+        const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
         
-        // Use real user data if available, otherwise generate random
         if (window.userData && window.userData.username) {
             return {
                 id: 'user_' + window.userData.id,
@@ -421,10 +657,15 @@ class CommunityChat {
                 color: colors[Math.floor(Math.random() * colors.length)]
             };
         } else {
-            // Fallback for non-logged-in users
+            let guestId = localStorage.getItem('chat_guest_id');
+            if (!guestId) {
+                guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('chat_guest_id', guestId);
+            }
+            
             const names = ['Guest', 'Anonymous', 'Visitor'];
             return {
-                id: 'user_' + Math.random().toString(36).substr(2, 9),
+                id: guestId,
                 name: names[Math.floor(Math.random() * names.length)],
                 color: colors[Math.floor(Math.random() * colors.length)]
             };
@@ -439,8 +680,9 @@ class CommunityChat {
         this.onlineUsersContainer = document.getElementById('onlineUsers');
         this.typingIndicator = document.getElementById('typingIndicator');
         this.typingText = document.getElementById('typingText');
-        this.connectionStatus = document.getElementById('connectionStatus');
         this.chatSidebar = document.getElementById('chatSidebar');
+        this.emojiPicker = document.getElementById('emojiPicker');
+        this.emojiGrid = document.getElementById('emojiGrid');
         
         console.log('Elements initialized:', {
             messagesContainer: !!this.messagesContainer,
@@ -450,36 +692,34 @@ class CommunityChat {
     }
     
     initializeSocket() {
-        this.updateConnectionStatus('connecting');
-        
-        // Connect to Socket.IO server
         this.socket = io('http://localhost:3000');
         
         this.socket.on('connect', () => {
             console.log('Connected to server');
-            this.updateConnectionStatus('connected');
-            this.addSystemMessage('Connected to community chat!');
             
-            // Join the chat with user data
-            this.socket.emit('user-join', {
-                name: this.currentUser.name,
-                color: this.currentUser.color
-            });
+            if (!this.hasJoined) {
+                this.socket.emit('user-join', {
+                    name: this.currentUser.name,
+                    color: this.currentUser.color,
+                    userId: this.currentUser.id
+                });
+                this.hasJoined = true;
+                console.log('Sent user-join event');
+            } else {
+                console.log('Already joined, skipping user-join event');
+            }
         });
         
         this.socket.on('connect_error', (error) => {
             console.error('Connection error:', error);
-            this.updateConnectionStatus('disconnected');
             this.addSystemMessage('Failed to connect to chat server. Using offline mode.');
         });
         
         this.socket.on('disconnect', () => {
             console.log('Disconnected from server');
-            this.updateConnectionStatus('disconnected');
             this.addSystemMessage('Disconnected from chat. Trying to reconnect...');
         });
         
-        // Handle new messages
         this.socket.on('new-message', (messageData) => {
             console.log('Received new message:', messageData);
             console.log('Message ID:', messageData.id);
@@ -490,13 +730,11 @@ class CommunityChat {
             console.log('Is own message?', isOwn);
             console.log('Sender ID:', messageData.senderId, 'Current user ID:', this.currentUser.id);
             
-            // Check if we already have this message (prevent duplicates)
             if (this.sentMessageIds.has(messageData.id)) {
                 console.log('Ignoring duplicate message:', messageData.id);
                 return;
             }
             
-            // Only add message if it's not from ourselves (to avoid duplicates)
             if (!isOwn) {
                 console.log('Adding message from other user');
                 this.addMessage(messageData, isOwn);
@@ -505,12 +743,14 @@ class CommunityChat {
             }
         });
         
-        // Handle message history
         this.socket.on('message-history', (messages) => {
+            console.log('Received message history:', messages.length, 'messages');
+            console.log('Current user ID:', this.currentUser.id);
+            
             messages.forEach(message => {
                 const isOwn = message.senderId === this.currentUser.id;
+                console.log('History message from:', message.sender, 'isOwn:', isOwn);
                 
-                // Check if we already have this message (prevent duplicates)
                 if (this.sentMessageIds.has(message.id)) {
                     console.log('Ignoring duplicate message in history:', message.id);
                     return;
@@ -520,12 +760,11 @@ class CommunityChat {
             });
         });
         
-        // Handle user list updates
         this.socket.on('user-list', (users) => {
+            console.log('Received user list:', users);
             this.updateOnlineUsers(users);
         });
         
-        // Handle user join/leave notifications
         this.socket.on('user-joined', (data) => {
             this.addSystemMessage(data.message);
         });
@@ -534,36 +773,25 @@ class CommunityChat {
             this.addSystemMessage(data.message);
         });
         
-        // Send user data to server when connecting
-        this.socket.emit('user-join', {
-            name: this.currentUser.name,
-            color: this.currentUser.color,
-            userId: this.currentUser.id
-        });
-        
-        // Handle typing indicators
         this.socket.on('user-typing', (data) => {
             this.showTypingIndicator(data.userName, data.isTyping);
         });
         
-        // Handle chat cleared event
         this.socket.on('chat-cleared', (data) => {
             const messagesContainer = document.getElementById('chatMessages');
             if (messagesContainer) {
                 messagesContainer.innerHTML = '';
                 
-                // Add a system message
                 const systemMessage = document.createElement('div');
                 systemMessage.className = 'message system';
                 systemMessage.style.justifyContent = 'center';
                 systemMessage.innerHTML = `
-                    <div class="message-content" style="background: #374151; color: #9ca3af; font-style: italic;">
+                    <div class="message-content" style="background: rgba(0, 0, 0, 0.1); color: #666; font-style: italic;">
                         ${data.message}
                     </div>
                 `;
                 messagesContainer.appendChild(systemMessage);
                 
-                // Scroll to bottom
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         });
@@ -572,12 +800,12 @@ class CommunityChat {
     bindEvents() {
         this.chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            console.log('Form submitted');
             this.sendMessage();
         });
         
         this.messageInput.addEventListener('input', () => {
             this.handleTyping();
+            this.autoResize();
         });
         
         this.messageInput.addEventListener('keydown', (e) => {
@@ -587,14 +815,20 @@ class CommunityChat {
             }
         });
         
-        // Mobile sidebar toggle
+        // Close emoji picker when clicking outside
         document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768) {
-                if (!this.chatSidebar.contains(e.target) && this.chatSidebar.classList.contains('open')) {
-                    this.chatSidebar.classList.remove('open');
-                }
+            if (!this.emojiPicker.contains(e.target) && !e.target.closest('.emoji-btn')) {
+                hideEmojiPicker();
             }
         });
+    }
+    
+    initializeEmojiPicker() {
+        const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
+        
+        this.emojiGrid.innerHTML = emojis.map(emoji => 
+            `<div class="emoji-item" onclick="insertEmoji('${emoji}')">${emoji}</div>`
+        ).join('');
     }
     
     sendMessage() {
@@ -605,10 +839,8 @@ class CommunityChat {
         console.log('Socket connected:', this.socket ? this.socket.connected : 'No socket');
         
         if (this.socket && this.socket.connected) {
-            // Generate unique message ID
             const messageId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
-            // Add message immediately to show it on the right side
             const messageData = {
                 id: messageId,
                 text: message,
@@ -618,20 +850,17 @@ class CommunityChat {
                 color: this.currentUser.color
             };
             
-            // Track this message ID to prevent duplicates
             this.sentMessageIds.add(messageId);
             console.log('Generated message ID:', messageId);
             console.log('Adding own message immediately:', messageData);
             this.addMessage(messageData, true);
             
-            // Send message through socket
             console.log('Sending message via socket');
             this.socket.emit('message', {
                 text: message,
-                messageId: messageId // Include the ID so server can echo it back
+                messageId: messageId
             });
         } else {
-            // Fallback for offline mode
             console.log('Using offline mode - socket not connected');
             const messageData = {
                 id: Date.now(),
@@ -648,36 +877,8 @@ class CommunityChat {
         }
         
         this.messageInput.value = '';
+        this.autoResize();
         this.stopTyping();
-    }
-    
-    simulateResponse(originalMessage) {
-        const responses = [
-            "That's interesting!",
-            "I agree with that.",
-            "Thanks for sharing!",
-            "Good point!",
-            "I hadn't thought of that.",
-            "That makes sense.",
-            "I see what you mean.",
-            "Absolutely!"
-        ];
-        
-        setTimeout(() => {
-            const response = responses[Math.floor(Math.random() * responses.length)];
-            const otherUser = this.generateRandomUser();
-            
-            const messageData = {
-                id: Date.now(),
-                text: response,
-                sender: otherUser.name,
-                senderId: otherUser.id,
-                timestamp: new Date(),
-                color: otherUser.color
-            };
-            
-            this.addMessage(messageData, false);
-        }, 1000 + Math.random() * 3000);
     }
     
     addMessage(messageData, isOwn = false) {
@@ -687,14 +888,13 @@ class CommunityChat {
         const messageElement = document.createElement('div');
         messageElement.className = `message ${isOwn ? 'own' : ''}`;
         
-        // Handle timestamp - convert to Date if it's a string
         let timestamp;
         if (messageData.timestamp instanceof Date) {
             timestamp = messageData.timestamp;
         } else if (typeof messageData.timestamp === 'string') {
             timestamp = new Date(messageData.timestamp);
         } else {
-            timestamp = new Date(); // fallback to current time
+            timestamp = new Date();
         }
         
         const timeString = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -722,7 +922,7 @@ class CommunityChat {
         messageElement.className = 'message system';
         messageElement.style.justifyContent = 'center';
         messageElement.innerHTML = `
-            <div class="message-content" style="background: #374151; color: #9ca3af; font-style: italic;">
+            <div class="message-content">
                 ${text}
             </div>
         `;
@@ -734,7 +934,6 @@ class CommunityChat {
     showWelcomeMessage() {
         if (window.userData && window.userData.username) {
             this.addSystemMessage(`Welcome to the community chat, ${this.currentUser.name}!`);
-            this.addSystemMessage('Connected to real-time chat server!');
         } else {
             this.addSystemMessage(`Welcome to the community chat, ${this.currentUser.name}!`);
             this.addSystemMessage('You are chatting as a guest. Sign in to use your real name.');
@@ -744,9 +943,7 @@ class CommunityChat {
     handleTyping() {
         if (!this.isTyping) {
             this.isTyping = true;
-            if (this.socket && this.socket.connected) {
-                this.socket.emit('typing', true);
-            }
+            this.socket.emit('typing', true);
         }
         
         clearTimeout(this.typingTimer);
@@ -758,30 +955,17 @@ class CommunityChat {
     stopTyping() {
         if (this.isTyping) {
             this.isTyping = false;
-            if (this.socket && this.socket.connected) {
-                this.socket.emit('typing', false);
-            }
+            this.socket.emit('typing', false);
         }
     }
     
-    updateConnectionStatus(status) {
-        this.connectionStatus.className = `connection-status ${status}`;
-        
-        switch(status) {
-            case 'connected':
-                this.connectionStatus.textContent = 'Connected';
-                break;
-            case 'disconnected':
-                this.connectionStatus.textContent = 'Disconnected';
-                break;
-            case 'connecting':
-                this.connectionStatus.textContent = 'Connecting...';
-                break;
+    showTypingIndicator(userName, isTyping) {
+        if (isTyping) {
+            this.typingText.textContent = `${userName} is typing`;
+            this.typingIndicator.style.display = 'flex';
+        } else {
+            this.typingIndicator.style.display = 'none';
         }
-    }
-    
-    scrollToBottom() {
-        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
     
     updateOnlineUsers(users) {
@@ -789,27 +973,55 @@ class CommunityChat {
         
         users.forEach(user => {
             const userElement = document.createElement('div');
-            userElement.className = 'user-item';
+            userElement.className = 'online-user';
             userElement.innerHTML = `
-                <div class="user-avatar" style="background-color: ${user.color}">
+                <div class="online-user-avatar" style="background-color: ${user.color}">
                     ${user.name.charAt(0).toUpperCase()}
                 </div>
-                <div class="user-info">
-                    <div class="user-name">${user.name}</div>
-                    <div class="user-status">Online</div>
+                <div class="online-user-info">
+                    <p class="online-user-name">${user.name}</p>
+                    <p class="online-user-status">Online</p>
                 </div>
+                <div class="online-user-indicator"></div>
             `;
             this.onlineUsersContainer.appendChild(userElement);
         });
     }
     
-    showTypingIndicator(userName, isTyping) {
-        if (isTyping) {
-            this.typingText.textContent = `${userName} is typing...`;
-            this.typingIndicator.style.display = 'block';
-        } else {
-            this.typingIndicator.style.display = 'none';
-        }
+    autoResize() {
+        this.messageInput.style.height = 'auto';
+        this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+    }
+    
+    scrollToBottom() {
+        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    }
+    
+    simulateResponse(message) {
+        setTimeout(() => {
+            const responses = [
+                "That's interesting!",
+                "I agree with you.",
+                "Tell me more about that.",
+                "Thanks for sharing!",
+                "I see what you mean.",
+                "That's a good point.",
+                "I hadn't thought of that.",
+                "That makes sense."
+            ];
+            
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            const messageData = {
+                id: Date.now(),
+                text: randomResponse,
+                sender: 'Bot',
+                senderId: 'bot',
+                timestamp: new Date(),
+                color: '#10b981'
+            };
+            
+            this.addMessage(messageData, false);
+        }, 1000 + Math.random() * 3000);
     }
     
     escapeHtml(text) {
@@ -819,45 +1031,67 @@ class CommunityChat {
     }
 }
 
-// Initialize chat when page loads
-// Global function to clear chat
+// Global functions
 function clearChat() {
     if (confirm('Are you sure you want to clear all messages? This action cannot be undone.')) {
-        // Notify server to clear chat for all users
         if (window.chatInstance && window.chatInstance.socket && window.chatInstance.socket.connected) {
             window.chatInstance.socket.emit('clear-chat');
         }
         
-        // Clear local messages immediately
         const messagesContainer = document.getElementById('chatMessages');
         if (messagesContainer) {
             messagesContainer.innerHTML = '';
             
-            // Add a system message
             const systemMessage = document.createElement('div');
             systemMessage.className = 'message system';
             systemMessage.style.justifyContent = 'center';
             systemMessage.innerHTML = `
-                <div class="message-content" style="background: #374151; color: #9ca3af; font-style: italic;">
+                <div class="message-content" style="background: rgba(0, 0, 0, 0.1); color: #666; font-style: italic;">
                     Chat cleared
                 </div>
             `;
             messagesContainer.appendChild(systemMessage);
             
-            // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.chatInstance = new CommunityChat();
-});
-
-// Mobile sidebar toggle
 function toggleSidebar() {
     const sidebar = document.getElementById('chatSidebar');
     sidebar.classList.toggle('open');
 }
+
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emojiPicker');
+    if (picker.classList.contains('show')) {
+        picker.classList.remove('show');
+    } else {
+        picker.classList.add('show');
+    }
+}
+
+function hideEmojiPicker() {
+    const picker = document.getElementById('emojiPicker');
+    picker.classList.remove('show');
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('messageInput');
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+    
+    input.value = text.substring(0, start) + emoji + text.substring(end);
+    input.focus();
+    input.setSelectionRange(start + emoji.length, start + emoji.length);
+    
+    hideEmojiPicker();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.chatInstance = new CommunityChat();
+});
 </script>
 
+<?php include 'includes/footer.php'; ?>

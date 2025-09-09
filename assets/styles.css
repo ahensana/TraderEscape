@@ -2311,12 +2311,6 @@ section {
   display: none !important;
 }
 
-<<<<<<< HEAD
-
-
-
-
-=======
 /* Cookie Notice */
 .cookie-notice {
   position: fixed;
@@ -2351,7 +2345,6 @@ section {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
 }
->>>>>>> aac423f7cf7d63a21cec07743ccf688e3c6c7cad
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -5851,7 +5844,7 @@ body {
 .chat-icon-btn {
   position: fixed !important;
   bottom: 30px !important;
-  left: 30px !important;
+  right: 30px !important;
   background-color: #2563eb !important;
   color: white !important;
   padding: 0 !important;
@@ -5905,7 +5898,7 @@ body {
 @media (max-width: 768px) {
   .chat-icon-btn {
     bottom: 80px !important;
-    left: 20px !important;
+    right: 20px !important;
     width: 60px !important;
     height: 60px !important;
     min-width: 60px !important;

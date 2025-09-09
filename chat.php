@@ -50,6 +50,10 @@ if (!isLoggedIn()) {
         background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
         color: white;
         text-align: center;
+        min-height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .chat-header h2 {
@@ -69,19 +73,37 @@ if (!isLoggedIn()) {
     }
     
     .chat-controls {
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.8);
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 10px 20px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(37, 99, 235, 0.2);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        min-height: 20px;
+    }
+    
+    .chat-title-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .chat-logo {
+        width: 70px;
+        height: 70px;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-top: -15px;
     }
     
     .chat-title {
         font-size: 1.5rem;
         font-weight: 600;
-        color: #333;
+        color: #ffffff;
         margin: 0;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
     .chat-actions {
@@ -220,11 +242,106 @@ if (!isLoggedIn()) {
         font-size: 1.2em;
     }
     
+    /* Message Context Menu */
+    .message-context-menu {
+        position: absolute;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 8px;
+        z-index: 1000;
+        display: none;
+        min-width: 150px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .message-context-menu.show {
+        display: block;
+        animation: contextMenuSlide 0.2s ease-out;
+    }
+    
+    @keyframes contextMenuSlide {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .context-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #333;
+        font-size: 0.9rem;
+    }
+    
+    .context-menu-item:hover {
+        background: rgba(37, 99, 235, 0.1);
+        color: #2563eb;
+    }
+    
+    .context-menu-item i {
+        font-size: 1rem;
+        width: 16px;
+        text-align: center;
+    }
+    
+    .emoji-reactions {
+        display: flex;
+        gap: 4px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .emoji-reaction {
+        background: rgba(37, 99, 235, 0.1);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        border-radius: 12px;
+        padding: 2px 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .emoji-reaction:hover {
+        background: rgba(37, 99, 235, 0.2);
+        transform: scale(1.1);
+    }
+    
+    .reply-indicator {
+        background: rgba(37, 99, 235, 0.1);
+        border-left: 3px solid #2563eb;
+        padding: 8px 12px;
+        margin: 8px 0;
+        border-radius: 0 8px 8px 0;
+        font-size: 0.85rem;
+        color: #2563eb;
+    }
+    
+    .reply-indicator .reply-to {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .reply-indicator .reply-text {
+        color: #666;
+        font-style: italic;
+    }
+    
     /* Input Area */
     .chat-input-container {
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        padding: -1px;
+        background: white;
+        
         backdrop-filter: blur(20px);
         width: 100%;
         box-sizing: border-box;
@@ -236,11 +353,12 @@ if (!isLoggedIn()) {
         align-items: flex-end;
         background: white;
         border-radius: 25px;
-        padding: 8px;
+        padding: 3px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        width: 100%;
+        border: 2px solid rgba(37, 99, 235, 0.3);
+        width: 98%;
         box-sizing: border-box;
+        margin-left: 10px;
     }
     
     .input-wrapper {
@@ -884,13 +1002,40 @@ function closeLoginPopup() {
     <!-- Main Chat Area -->
     <div class="chat-main">
         <div class="chat-controls">
-            <h3 class="chat-title">The Trader's Escape</h3>
+            <div class="chat-title-container">
+                <img src="assets/logo.png" alt="Trader's Escape Logo" class="chat-logo">
+                <h3 class="chat-title">The Trader's Escape</h3>
+            </div>
             <div class="chat-actions">
                 <!-- Navigation buttons removed -->
             </div>
         </div>
         <div class="chat-messages" id="chatMessages">
             <!-- Messages will be populated here -->
+        </div>
+        
+        <!-- Context Menu -->
+        <div class="message-context-menu" id="messageContextMenu">
+            <div class="context-menu-item" onclick="reactToMessage('👍')">
+                <i class="bi bi-hand-thumbs-up"></i>
+                <span>👍 Like</span>
+            </div>
+            <div class="context-menu-item" onclick="reactToMessage('❤️')">
+                <i class="bi bi-heart"></i>
+                <span>❤️ Love</span>
+            </div>
+            <div class="context-menu-item" onclick="reactToMessage('😂')">
+                <i class="bi bi-emoji-laughing"></i>
+                <span>😂 Laugh</span>
+            </div>
+            <div class="context-menu-item" onclick="reactToMessage('😮')">
+                <i class="bi bi-emoji-surprised"></i>
+                <span>😮 Wow</span>
+            </div>
+            <div class="context-menu-item" onclick="replyToMessage()">
+                <i class="bi bi-reply"></i>
+                <span>Reply</span>
+            </div>
         </div>
         
         <div class="typing-indicator" id="typingIndicator" style="display: none;">
@@ -965,6 +1110,7 @@ class CommunityChat {
         this.bindEvents();
         this.showWelcomeMessage();
         this.initializeEmojiPicker();
+        this.restoreReplyData();
     }
     
     generateRandomUser() {
@@ -1108,6 +1254,8 @@ class CommunityChat {
         this.socket.on('new-message', (messageData) => {
             console.log('Received new message:', messageData);
             console.log('Message ID:', messageData.id);
+            console.log('Message reply data:', messageData.replyTo);
+            console.log('Message reply ID:', messageData.replyToId);
             console.log('Sent message IDs:', Array.from(this.sentMessageIds));
             console.log('Is duplicate?', this.sentMessageIds.has(messageData.id));
             
@@ -1121,7 +1269,7 @@ class CommunityChat {
             }
             
             if (!isOwn) {
-                console.log('Adding message from other user');
+                console.log('Adding message from other user with reply data:', messageData.replyTo);
                 this.addMessage(messageData, isOwn);
             } else {
                 console.log('Ignoring own message from server');
@@ -1140,6 +1288,12 @@ class CommunityChat {
                 const isOwn = isOwnById || isOwnByName;
                 
                 console.log('History message from:', message.sender, 'senderId:', message.senderId, 'isOwn:', isOwn);
+                console.log('Message reply data:', message.replyTo);
+                
+                // Store reply data in localStorage if it exists
+                if (message.replyTo) {
+                    this.storeReplyData(message.id, message.replyTo);
+                }
                 
                 if (this.sentMessageIds.has(message.id)) {
                     console.log('Ignoring duplicate message in history:', message.id);
@@ -1311,6 +1465,17 @@ class CommunityChat {
         if (this.socket && this.socket.connected) {
             const messageId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
+            // Get reply data if replying to a message
+            let replyData = null;
+            if (replyToMessageId) {
+                replyData = this.getReplyData(replyToMessageId);
+                // If we can't get it from DOM, try localStorage
+                if (!replyData) {
+                    replyData = this.getStoredReplyData(replyToMessageId);
+                }
+                console.log('Sending reply data to server:', replyData);
+            }
+            
             const messageData = {
                 id: messageId,
                 text: message || (hasFiles && !fileDataArray.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `📎 ${fileDataArray.length} file${fileDataArray.length > 1 ? 's' : ''}` : ''),
@@ -1318,7 +1483,9 @@ class CommunityChat {
                 senderId: this.currentUser.id,
                 timestamp: new Date(),
                 color: this.currentUser.color,
-                files: fileDataArray
+                files: fileDataArray,
+                replyTo: replyData,
+                replyToId: replyToMessageId || null
             };
             
             this.sentMessageIds.add(messageId);
@@ -1326,12 +1493,14 @@ class CommunityChat {
             console.log('Adding own message immediately:', messageData);
             this.addMessage(messageData, true);
             
-            console.log('Sending message via socket');
+            console.log('Sending message via socket with reply data:', messageData.replyTo);
             // Send only in PHP format
             this.socket.emit('message', {
                 text: messageData.text,
                 messageId: messageId,
-                files: fileDataArray
+                files: fileDataArray,
+                replyTo: messageData.replyTo,
+                replyToId: messageData.replyToId
             });
         } else {
             console.log('Using offline mode - socket not connected');
@@ -1342,7 +1511,9 @@ class CommunityChat {
                 senderId: this.currentUser.id,
                 timestamp: new Date(),
                 color: this.currentUser.color,
-                files: fileDataArray
+                files: fileDataArray,
+                replyTo: replyToMessageId ? this.getReplyData(replyToMessageId) : null,
+                replyToId: replyToMessageId || null
             };
             
             console.log('Adding message in offline mode:', messageData);
@@ -1357,6 +1528,11 @@ class CommunityChat {
         // Clear file selection and preview
         if (hasFiles) {
             removeFilePreview();
+        }
+        
+        // Clear reply indicator after sending
+        if (replyToMessageId) {
+            cancelReply();
         }
     }
     
@@ -1384,6 +1560,7 @@ class CommunityChat {
         
         const messageElement = document.createElement('div');
         messageElement.className = `message ${isOwn ? 'own' : ''}`;
+        messageElement.setAttribute('data-message-id', messageData.id);
         
         let timestamp;
         if (messageData.timestamp instanceof Date) {
@@ -1396,11 +1573,37 @@ class CommunityChat {
         
         const timeString = timestamp.toLocaleTimeString([], {hour: 'numeric', minute:'2-digit', hour12: true});
         
+        // Check for stored reply data - prioritize messageData.replyTo, then localStorage
+        let replyData = messageData.replyTo;
+        console.log('addMessage - Initial reply data from messageData.replyTo:', replyData);
+        console.log('addMessage - messageData.replyToId:', messageData.replyToId);
+        
+        // If no reply data in message but we have a replyToId, try to get from localStorage
+        if (!replyData && messageData.replyToId) {
+            replyData = this.getStoredReplyData(messageData.replyToId);
+            console.log('Restored reply data from localStorage for replyToId:', messageData.replyToId, replyData);
+        }
+        
+        // If we have reply data, ensure it's stored for future use
+        if (replyData) {
+            // Store under the current message ID (the reply message)
+            this.storeReplyData(messageData.id, replyData);
+            console.log('Stored reply data for message ID:', messageData.id, 'with data:', replyData);
+        }
+        
+        console.log('addMessage - Final reply data to be rendered:', replyData);
+        
         messageElement.innerHTML = `
             ${!isOwn ? `<div class="message-avatar" style="background-color: ${messageData.color}">
                 ${messageData.sender.charAt(0).toUpperCase()}
             </div>` : ''}
             <div class="message-content">
+                ${replyData ? `
+                    <div class="reply-preview" style="background: rgba(37, 99, 235, 0.1); border-left: 3px solid #2563eb; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 0.85rem;">
+                        <div style="color: #ffffff; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
+                        <div style="color: #ffffff; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                    </div>
+                ` : ''}
                 ${messageData.text && !(messageData.files && messageData.files.length > 0 && messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/'))) ? `
                     <div class="message-info">
                         ${!isOwn ? `<span class="message-sender">${messageData.sender}</span>` : ''}
@@ -1423,6 +1626,13 @@ class CommunityChat {
                 ` : ''}
             </div>
         `;
+        
+        // Add right-click event listener for non-own messages
+        if (!isOwn) {
+            messageElement.addEventListener('contextmenu', (e) => {
+                showContextMenu(e, messageData.id, messageData);
+            });
+        }
         
         this.messagesContainer.appendChild(messageElement);
         this.scrollToBottom();
@@ -1573,9 +1783,261 @@ class CommunityChat {
         // Legacy function for single file - now uses multiple file function
         return this.renderFileAttachments([file]);
     }
+    
+    getReplyData(messageId) {
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            const senderElement = messageElement.querySelector('.message-sender');
+            const textElement = messageElement.querySelector('.message-text');
+            
+            if (senderElement && textElement) {
+                const replyData = {
+                    sender: senderElement.textContent,
+                    text: textElement.textContent
+                };
+                
+                console.log('Getting reply data for message ID:', messageId, 'Data:', replyData);
+                
+                // Store reply data in localStorage for persistence
+                this.storeReplyData(messageId, replyData);
+                
+                return replyData;
+            }
+        }
+        
+        // Try to get from localStorage if DOM element not found
+        const storedData = this.getStoredReplyData(messageId);
+        console.log('Fallback to localStorage data for ID:', messageId, storedData);
+        return storedData;
+    }
+    
+    storeReplyData(messageId, replyData) {
+        const storedReplies = JSON.parse(localStorage.getItem('chat_replies') || '{}');
+        storedReplies[messageId] = replyData;
+        localStorage.setItem('chat_replies', JSON.stringify(storedReplies));
+        console.log('Stored reply data for message ID:', messageId, replyData);
+    }
+    
+    getStoredReplyData(messageId) {
+        const storedReplies = JSON.parse(localStorage.getItem('chat_replies') || '{}');
+        console.log('Looking for reply data for message ID:', messageId);
+        console.log('Available stored replies:', Object.keys(storedReplies));
+        console.log('All stored reply data:', storedReplies);
+        console.log('Found reply data:', storedReplies[messageId]);
+        return storedReplies[messageId] || null;
+    }
+    
+    restoreReplyData() {
+        // This function will be called after messages are loaded to restore reply data
+        console.log('Restoring reply data for existing messages...');
+        
+        // Check multiple times to ensure we catch all messages
+        const checkAndRestore = () => {
+            const messages = document.querySelectorAll('[data-message-id]');
+            console.log('Found', messages.length, 'messages to check for reply data');
+            
+            messages.forEach(messageElement => {
+                const messageId = messageElement.getAttribute('data-message-id');
+                const replyPreview = messageElement.querySelector('.reply-preview');
+                
+                // If message has no reply preview but should have one, try to restore it
+                if (!replyPreview && messageId) {
+                    const storedReplyData = this.getStoredReplyData(messageId);
+                    if (storedReplyData) {
+                        console.log('Restoring reply preview for message:', messageId);
+                        this.addReplyPreview(messageElement, storedReplyData);
+                    }
+                }
+            });
+        };
+        
+        // Check immediately and then again after delays
+        checkAndRestore();
+        setTimeout(checkAndRestore, 1000);
+        setTimeout(checkAndRestore, 3000);
+        setTimeout(checkAndRestore, 5000);
+    }
+    
+    addReplyPreview(messageElement, replyData) {
+        const messageContent = messageElement.querySelector('.message-content');
+        if (messageContent) {
+            const replyPreview = document.createElement('div');
+            replyPreview.className = 'reply-preview';
+            replyPreview.style.cssText = `
+                background: rgba(37, 99, 235, 0.1); 
+                border-left: 3px solid #2563eb; 
+                padding: 8px 12px; 
+                margin-bottom: 8px; 
+                border-radius: 0 8px 8px 0; 
+                font-size: 0.85rem;
+            `;
+            replyPreview.innerHTML = `
+                <div style="color: #ffffff; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
+                <div style="color: #ffffff; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+            `;
+            
+            // Insert at the beginning of message content
+            messageContent.insertBefore(replyPreview, messageContent.firstChild);
+        }
+    }
 }
 
 // Global functions
+
+let currentContextMessage = null;
+let replyToMessageId = null;
+
+function showContextMenu(event, messageId, messageData) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const contextMenu = document.getElementById('messageContextMenu');
+    const rect = event.target.getBoundingClientRect();
+    
+    // Don't show context menu for own messages
+    if (messageData.senderId === window.chatInstance.currentUser.id) {
+        return;
+    }
+    
+    currentContextMessage = { id: messageId, data: messageData };
+    
+    // Position the context menu
+    contextMenu.style.left = event.clientX + 'px';
+    contextMenu.style.top = event.clientY + 'px';
+    contextMenu.classList.add('show');
+    
+    // Hide context menu when clicking elsewhere
+    setTimeout(() => {
+        document.addEventListener('click', hideContextMenu);
+    }, 100);
+}
+
+function hideContextMenu() {
+    const contextMenu = document.getElementById('messageContextMenu');
+    contextMenu.classList.remove('show');
+    document.removeEventListener('click', hideContextMenu);
+}
+
+function reactToMessage(emoji) {
+    if (!currentContextMessage) return;
+    
+    const messageId = currentContextMessage.id;
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    
+    if (messageElement) {
+        let reactionsContainer = messageElement.querySelector('.emoji-reactions');
+        if (!reactionsContainer) {
+            reactionsContainer = document.createElement('div');
+            reactionsContainer.className = 'emoji-reactions';
+            messageElement.querySelector('.message-content').appendChild(reactionsContainer);
+        }
+        
+        // Check if emoji already exists
+        const existingReaction = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
+        if (existingReaction) {
+            // Increment count
+            const count = parseInt(existingReaction.dataset.count) + 1;
+            existingReaction.dataset.count = count;
+            existingReaction.innerHTML = `${emoji} ${count}`;
+        } else {
+            // Add new reaction
+            const reactionElement = document.createElement('div');
+            reactionElement.className = 'emoji-reaction';
+            reactionElement.dataset.emoji = emoji;
+            reactionElement.dataset.count = '1';
+            reactionElement.innerHTML = `${emoji} 1`;
+            reactionsContainer.appendChild(reactionElement);
+        }
+    }
+    
+    hideContextMenu();
+}
+
+function replyToMessage() {
+    if (!currentContextMessage) return;
+    
+    replyToMessageId = currentContextMessage.id;
+    const messageData = currentContextMessage.data;
+    
+    // Store the reply data immediately using the chat instance method
+    const replyData = {
+        sender: messageData.sender,
+        text: messageData.text
+    };
+    
+    if (window.chatInstance) {
+        // Store under the original message ID (the one being replied to)
+        window.chatInstance.storeReplyData(replyToMessageId, replyData);
+        console.log('Stored reply data for original message ID:', replyToMessageId, 'with data:', replyData);
+    }
+    
+    // Show reply indicator in input area
+    showReplyIndicator(messageData);
+    
+    // Focus on message input
+    const messageInput = document.getElementById('messageInput');
+    messageInput.focus();
+    
+    hideContextMenu();
+}
+
+function showReplyIndicator(messageData) {
+    console.log('showReplyIndicator called with:', messageData);
+    
+    // Remove existing reply indicator
+    const existingIndicator = document.querySelector('.reply-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    // Create new reply indicator with context menu style
+    const replyIndicator = document.createElement('div');
+    replyIndicator.className = 'reply-indicator';
+    replyIndicator.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 12px;
+        margin: 8px 20px;
+        position: relative;
+        display: block;
+        z-index: 100;
+    `;
+    
+    replyIndicator.innerHTML = `
+        <div style="color: #2563eb; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>
+        <div style="color: #333; font-size: 0.85rem; margin-bottom: 8px;">${messageData.text.substring(0, 50)}${messageData.text.length > 50 ? '...' : ''}</div>
+        <div style="color: #666; font-size: 0.8rem; margin-bottom: 8px;">Replying to this message</div>
+        <button onclick="cancelReply()" style="position: absolute; right: 8px; top: 8px; background: none; border: none; color: #666; cursor: pointer; font-size: 1.2rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='none'">×</button>
+    `;
+    
+    // Insert before the chat form
+    const chatForm = document.querySelector('.chat-form');
+    console.log('Chat form found:', chatForm);
+    console.log('Chat form parent:', chatForm ? chatForm.parentNode : 'Not found');
+    
+    if (chatForm && chatForm.parentNode) {
+        chatForm.parentNode.insertBefore(replyIndicator, chatForm);
+        console.log('Reply indicator inserted');
+    } else {
+        console.error('Could not find chat form or its parent');
+        // Fallback: try to insert into chat input container
+        const chatInputContainer = document.querySelector('.chat-input-container');
+        if (chatInputContainer) {
+            chatInputContainer.insertBefore(replyIndicator, chatInputContainer.firstChild);
+            console.log('Reply indicator inserted into chat input container as fallback');
+        }
+    }
+}
+
+function cancelReply() {
+    replyToMessageId = null;
+    const replyIndicator = document.querySelector('.reply-indicator');
+    if (replyIndicator) {
+        replyIndicator.remove();
+    }
+}
 
 function toggleEmojiPicker() {
     const picker = document.getElementById('emojiPicker');
@@ -1724,8 +2186,29 @@ function addLoadingMessage(text) {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.chatInstance = new CommunityChat();
+    
+    // Add a manual trigger for reply restoration (for debugging)
+    window.restoreReplies = () => {
+        if (window.chatInstance) {
+            window.chatInstance.restoreReplyData();
+        }
+    };
+    
+    // Add a function to clear reply data (for debugging)
+    window.clearReplyData = () => {
+        localStorage.removeItem('chat_replies');
+        console.log('Cleared all reply data from localStorage');
+    };
+    
+    // Add a function to show current reply data (for debugging)
+    window.showReplyData = () => {
+        const storedReplies = JSON.parse(localStorage.getItem('chat_replies') || '{}');
+        console.log('Current reply data in localStorage:', storedReplies);
+        return storedReplies;
+    };
 });
 </script>
 
 <?php endif; ?>
+
 

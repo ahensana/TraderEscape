@@ -577,7 +577,7 @@ include 'includes/header.php';
                 chatIconBtn.style.opacity = '1';
                 chatIconBtn.style.position = 'fixed';
                 chatIconBtn.style.bottom = '30px';
-                chatIconBtn.style.left = '30px';
+                chatIconBtn.style.right = '30px';
                 chatIconBtn.style.zIndex = '99999';
                 chatIconBtn.style.backgroundColor = '#2563eb';
                 chatIconBtn.style.width = '80px';

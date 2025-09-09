@@ -198,6 +198,13 @@ io.on("connection", (socket) => {
     const user = connectedUsers.get(socket.id);
     if (!user) return;
 
+    console.log("=== RECEIVED MESSAGE DATA ===");
+    console.log("Text:", messageData.text);
+    console.log("ReplyTo:", messageData.replyTo);
+    console.log("ReplyToId:", messageData.replyToId);
+    console.log("Full messageData:", JSON.stringify(messageData, null, 2));
+    console.log("=============================");
+
     const message = {
       id: messageData.messageId || Date.now(), // Use client messageId if provided
       text: messageData.text,
@@ -206,6 +213,8 @@ io.on("connection", (socket) => {
       timestamp: new Date(),
       color: user.color,
       files: messageData.files || null, // Support multiple file attachments
+      replyTo: messageData.replyTo || null, // Include reply data
+      replyToId: messageData.replyToId || null, // Include reply ID
     };
 
     // Store message in history
@@ -219,9 +228,21 @@ io.on("connection", (socket) => {
     // Broadcast message to all clients
     io.emit("new-message", message);
 
+    console.log("=== BROADCASTING TO ALL CLIENTS ===");
+    console.log("Message ID:", message.id);
+    console.log("Text:", message.text);
+    console.log("ReplyTo:", message.replyTo);
+    console.log("ReplyToId:", message.replyToId);
+    console.log("Full message object:", JSON.stringify(message, null, 2));
+    console.log("===================================");
+
     console.log(
       `Message from ${user.name}: ${messageData.text}${
         messageData.file ? " (with file)" : ""
+      }${
+        messageData.replyTo
+          ? " (reply to: " + messageData.replyTo.sender + ")"
+          : ""
       }`
     );
   });

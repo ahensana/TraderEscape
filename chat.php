@@ -723,20 +723,34 @@ class CommunityChat {
     }
     
     initializeSocket() {
-        this.socket = io('http://localhost:3000');
+        // Try to connect to the same host as the current page, but on port 3000
+        const currentHost = window.location.hostname;
+        const socketUrl = currentHost === 'localhost' || currentHost === '127.0.0.1' 
+            ? 'http://localhost:3000' 
+            : `http://${currentHost}:3000`;
+        
+        console.log('Connecting to socket server:', socketUrl);
+        this.socket = io(socketUrl, {
+            transports: ['websocket', 'polling'],
+            withCredentials: true,
+        });
         
         this.socket.on('connect', () => {
             console.log('Connected to server');
+            console.log('hasJoined flag:', this.hasJoined);
+            console.log('Current user:', this.currentUser);
             
             if (!this.hasJoined) {
-                this.socket.emit('user-join', {
+                const joinData = {
                     name: this.currentUser.name,
                     color: this.currentUser.color,
                     userId: this.currentUser.id,
                     deviceInfo: this.currentUser.deviceInfo
-                });
+                };
+                console.log('Sending user-join event with data:', joinData);
+                this.socket.emit('user-join', joinData);
                 this.hasJoined = true;
-                console.log('Sent user-join event with device info:', this.currentUser.deviceInfo);
+                console.log('User-join event sent, hasJoined set to true');
             } else {
                 console.log('Already joined, skipping user-join event');
             }
@@ -827,6 +841,60 @@ class CommunityChat {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         });
+
+        // React Chat Event Listeners - Additional support for React frontend
+        this.socket.on('new_message', (messageData) => {
+            console.log('Received React message:', messageData);
+            const isOwn = messageData.username === this.currentUser.name;
+            
+            if (!isOwn) {
+                const message = {
+                    id: messageData.id,
+                    text: messageData.content,
+                    sender: messageData.username,
+                    senderId: messageData.username,
+                    timestamp: new Date(messageData.timestamp),
+                    color: '#3b82f6',
+                    file: messageData.file
+                };
+                this.addMessage(message, false);
+            }
+        });
+
+        this.socket.on('previous_messages', (messages) => {
+            console.log('Received React message history:', messages.length, 'messages');
+            messages.forEach(message => {
+                const isOwn = message.username === this.currentUser.name;
+                const messageData = {
+                    id: message.id,
+                    text: message.content,
+                    sender: message.username,
+                    senderId: message.username,
+                    timestamp: new Date(message.timestamp),
+                    color: '#3b82f6',
+                    file: message.file
+                };
+                this.addMessage(messageData, isOwn);
+            });
+        });
+
+        this.socket.on('users_update', (users) => {
+            console.log('Received React user list:', users);
+            const formattedUsers = users.map(user => ({
+                id: user.userId,
+                name: user.username,
+                color: '#3b82f6',
+                deviceInfo: {
+                    deviceType: 'Unknown',
+                    browser: 'Unknown'
+                }
+            }));
+            this.updateOnlineUsers(formattedUsers);
+        });
+
+        this.socket.on('user_stop_typing', (data) => {
+            this.showTypingIndicator(data.username, false);
+        });
     }
     
     bindEvents() {
@@ -888,8 +956,15 @@ class CommunityChat {
             this.addMessage(messageData, true);
             
             console.log('Sending message via socket');
+            // Send to both PHP and React chat systems
             this.socket.emit('message', {
                 text: message,
+                messageId: messageId
+            });
+            
+            // Also send in React format for compatibility
+            this.socket.emit('send_message', {
+                content: message,
                 messageId: messageId
             });
         } else {
@@ -941,6 +1016,7 @@ class CommunityChat {
                     <span class="message-time">${timeString}</span>
                 </div>
                 <div class="message-text">${this.escapeHtml(messageData.text)}</div>
+                ${messageData.file ? this.renderFileAttachment(messageData.file) : ''}
             </div>
         `;
         
@@ -1061,6 +1137,30 @@ class CommunityChat {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    renderFileAttachment(file) {
+        if (!file) return '';
+        
+        if (file.mimetype && file.mimetype.startsWith('image/')) {
+            return `<div class="file-attachment mt-2">
+                <img src="http://localhost:3000${file.url}" alt="${file.originalName}" 
+                     class="max-w-full rounded-lg cursor-pointer" 
+                     onclick="window.open('http://localhost:3000${file.url}', '_blank')"
+                     style="max-height: 200px; object-fit: cover;">
+            </div>`;
+        } else {
+            return `<div class="file-attachment mt-2">
+                <a href="http://localhost:3000${file.url}" target="_blank" 
+                   class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                    </svg>
+                    ${file.originalName}
+                </a>
+            </div>`;
+        }
     }
 }
 

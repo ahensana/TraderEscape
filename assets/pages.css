@@ -674,44 +674,8 @@ body {
     font-size: 0.875rem;
 }
 
-/* ===== COOKIE NOTICE ===== */
 
-.cookie-notice {
-    position: fixed;
-    bottom: 2rem;
-    left: 2rem;
-    right: 2rem;
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid var(--border-color);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    backdrop-filter: blur(20px);
-    z-index: 1000;
-    transform: translateY(100%);
-    transition: transform var(--transition-normal);
-}
 
-.cookie-notice.show {
-    transform: translateY(0);
-}
-
-.cookie-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.cookie-content p {
-    color: var(--text-secondary);
-    margin: 0;
-}
-
-.cookie-buttons {
-    display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
-}
 
 .btn-sm {
     padding: 0.5rem 1rem;

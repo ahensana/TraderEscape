@@ -883,6 +883,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <i class="bi bi-tools"></i>
                                         <span>Access Tools</span>
                                     </a>
+                                    <a href="./riskmanagement.php" class="action-btn">
+                                        <i class="bi bi-shield-check"></i>
+                                        <span>Risk Management</span>
+                                    </a>
                                     <a href="#profile" class="action-btn" onclick="showSection('profile')">
                                         <i class="bi bi-person-gear"></i>
                                         <span>Edit Profile</span>

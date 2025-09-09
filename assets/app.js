@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Basic functionality
     initNavigation();
     initEducationalNotice();
-    initCookieNotice();
     initLearningProgress();
     initFAQ();
     initSmoothScroll();
@@ -81,40 +80,6 @@ function dismissNotice() {
     }
 }
 
-function initCookieNotice() {
-    const cookieNotice = document.getElementById('cookie-notice');
-    if (cookieNotice) {
-        const consent = null; // localStorage DISABLED
-        if (!consent) {
-            setTimeout(() => {
-                cookieNotice.style.display = 'flex';
-                cookieNotice.style.opacity = '1';
-            }, 2000);
-        }
-    }
-}
-
-function acceptCookies() {
-                // localStorage.setItem('cookie-consent', 'accepted'); // DISABLED
-    const cookieNotice = document.getElementById('cookie-notice');
-    if (cookieNotice) {
-        cookieNotice.style.opacity = '0';
-        setTimeout(() => {
-            cookieNotice.style.display = 'none';
-        }, 300);
-    }
-}
-
-function dismissCookies() {
-                // localStorage.setItem('cookie-consent', 'declined'); // DISABLED
-    const cookieNotice = document.getElementById('cookie-notice');
-    if (cookieNotice) {
-        cookieNotice.style.opacity = '0';
-        setTimeout(() => {
-            cookieNotice.style.display = 'none';
-        }, 300);
-    }
-}
 
 function initLearningProgress() {
     const checkboxes = document.querySelectorAll('.learning-checkbox');
@@ -204,8 +169,6 @@ function initSmoothScroll() {
 
 // Export functions to global scope
 window.dismissNotice = dismissNotice;
-window.acceptCookies = acceptCookies;
-window.dismissCookies = dismissCookies;
 
 
 

@@ -285,4 +285,40 @@ function getDatabaseStatus() {
         ];
     }
 }
+
+/**
+ * Check if user has given cookie consent
+ */
+function hasUserGivenCookieConsent($sessionId = null) {
+    try {
+        $pdo = getDB();
+        $sessionId = $sessionId ?: session_id();
+        
+        $stmt = $pdo->prepare("SELECT consent_type FROM cookie_consent WHERE session_id = ? AND consent_given_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)");
+        $stmt->execute([$sessionId]);
+        $consent = $stmt->fetch();
+        
+        return $consent && $consent['consent_type'] !== 'declined';
+    } catch (Exception $e) {
+        error_log("Error checking cookie consent: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get cookie consent details
+ */
+function getCookieConsentDetails($sessionId = null) {
+    try {
+        $pdo = getDB();
+        $sessionId = $sessionId ?: session_id();
+        
+        $stmt = $pdo->prepare("SELECT * FROM cookie_consent WHERE session_id = ? ORDER BY consent_given_at DESC LIMIT 1");
+        $stmt->execute([$sessionId]);
+        return $stmt->fetch();
+    } catch (Exception $e) {
+        error_log("Error getting cookie consent details: " . $e->getMessage());
+        return false;
+    }
+}
 ?>

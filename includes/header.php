@@ -304,4 +304,7 @@ if (isDatabaseAvailable()) {
         </div>
     </div>
 
+    <!-- Cookie Consent Banner -->
+    <?php include __DIR__ . '/cookie_consent_banner.php'; ?>
+
 

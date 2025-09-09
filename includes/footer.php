@@ -52,16 +52,6 @@
     </div>
 </footer>
 
-<!-- Cookie Notice -->
-<div class="cookie-notice" id="cookie-notice" role="alert" aria-label="Cookie consent notice">
-    <div class="cookie-content">
-        <p>We use cookies to enhance your experience. By continuing to use this site, you agree to our use of cookies.</p>
-        <div class="cookie-buttons">
-            <button class="btn btn-sm btn-primary" onclick="acceptCookies()" aria-label="Accept cookies">Accept</button>
-            <button class="btn btn-sm btn-outline" onclick="dismissCookies()" aria-label="Decline cookies">Decline</button>
-        </div>
-    </div>
-</div>
 
 <!-- Floating Action Button -->
 <div class="fab-container">

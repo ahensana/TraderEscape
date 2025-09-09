@@ -1,265 +1,577 @@
 <?php
-/**
- * Login/Signup Page for TraderEscape
- * Handles user authentication and registration
- */
-
-// Start session
 session_start();
+require_once __DIR__ . '/includes/db_functions.php';
+require_once __DIR__ . '/includes/auth_functions.php';
 
-// Include database functions
-require_once 'includes/db_functions.php';
-
-// Check if user is already logged in
-if (isset($_SESSION['user_id']) && $_SESSION['user_id']) {
-    header('Location: ./index.php');
-    exit();
+// Simple authentication functions
+function authenticateUser($email, $password) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND is_active = TRUE");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user && password_verify($password, $user['password_hash'])) {
+            // Update last_login timestamp
+            $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+            $updateStmt->execute([$user['id']]);
+            
+            return $user;
+        }
+        return false;
+    } catch (Exception $e) {
+        error_log("Authentication error: " . $e->getMessage());
+        return false;
+    }
 }
 
+function registerUser($full_name, $username, $email, $password) {
+    try {
+        $pdo = getDB();
+        
+        // Check if email already exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            return ['success' => false, 'message' => 'Email already exists.'];
+        }
+        
+        // Check if username already exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->fetch()) {
+            return ['success' => false, 'message' => 'Username already exists.'];
+        }
+        
+        // Create new user
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("INSERT INTO users (full_name, username, email, password_hash, is_active, is_verified, created_at) VALUES (?, ?, ?, ?, TRUE, FALSE, NOW())");
+        $stmt->execute([$full_name, $username, $email, $hashedPassword]);
+        
+        $userId = $pdo->lastInsertId();
+        return ['success' => true, 'user_id' => $userId, 'message' => 'User created successfully.'];
+    } catch (Exception $e) {
+        error_log("Registration error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Registration failed. Please try again.'];
+    }
+}
+
+// Track page view
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+trackPageView('login', $userId, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
+
+// Log user activity if logged in
+if ($userId) {
+    logUserActivity($userId, 'page_view', 'Viewed login page', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'login']));
+}
+
+// Handle login/registration
 $error_message = '';
 $success_message = '';
 
-// Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'login':
+    $action = $_POST['action'] ?? '';
+    
+    if ($action === 'login') {
                 $email = trim($_POST['email'] ?? '');
                 $password = $_POST['password'] ?? '';
                 
                 if (empty($email) || empty($password)) {
                     $error_message = 'Please fill in all fields.';
                 } else {
-                    try {
-                        $pdo = getDB();
-                        $stmt = $pdo->prepare("SELECT id, username, email, password_hash, full_name FROM users WHERE email = ? AND is_active = TRUE");
-                        $stmt->execute([$email]);
-                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        
-                        if ($user && password_verify($password, $user['password_hash'])) {
-                            // Login successful
+            $user = authenticateUser($email, $password);
+            if ($user) {
                             $_SESSION['user_id'] = $user['id'];
                             $_SESSION['username'] = $user['username'];
                             $_SESSION['email'] = $user['email'];
                             $_SESSION['full_name'] = $user['full_name'];
                             
-                            // Update last login
-                            $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-                            $updateStmt->execute([$user['id']]);
-                            
-                            // Log activity
-                            logUserActivity($user['id'], 'login', 'User logged in successfully', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-                            
-                            // Redirect to index page
-                            header('Location: ./index.php');
-                            exit();
+                // Log successful login
+                logUserActivity($user['id'], 'login', 'User logged in successfully', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['action' => 'login']));
+                
+                header('Location: ./');
+                exit;
                         } else {
                             $error_message = 'Invalid email or password.';
                         }
-                    } catch (Exception $e) {
-                        $error_message = 'Login failed. Please try again.';
-                        error_log("Login error: " . $e->getMessage());
-                    }
-                }
-                break;
-                
-            case 'register':
+        }
+    } elseif ($action === 'register') {
+        $full_name = trim($_POST['full_name'] ?? '');
                 $username = trim($_POST['username'] ?? '');
                 $email = trim($_POST['email'] ?? '');
                 $password = $_POST['password'] ?? '';
                 $confirm_password = $_POST['confirm_password'] ?? '';
-                $full_name = trim($_POST['full_name'] ?? '');
                 
-                // Validation
-                if (empty($username) || empty($email) || empty($password) || empty($confirm_password) || empty($full_name)) {
+        if (empty($full_name) || empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
                     $error_message = 'Please fill in all fields.';
                 } elseif ($password !== $confirm_password) {
                     $error_message = 'Passwords do not match.';
                 } elseif (strlen($password) < 6) {
                     $error_message = 'Password must be at least 6 characters long.';
-                } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $error_message = 'Please enter a valid email address.';
-                } elseif (strlen($username) < 3) {
-                    $error_message = 'Username must be at least 3 characters long.';
+        } else {
+            $result = registerUser($full_name, $username, $email, $password);
+            if ($result['success']) {
+                $success_message = 'Account created successfully! You can now log in.';
+                
+                // Log successful registration
+                logUserActivity($result['user_id'], 'register', 'User registered successfully', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['action' => 'register']));
                 } else {
-                    try {
-                        $pdo = getDB();
-                        
-                        // Check if username or email already exists
-                        $checkStmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
-                        $checkStmt->execute([$username, $email]);
-                        
-                        if ($checkStmt->fetch()) {
-                            $error_message = 'Username or email already exists.';
-                        } else {
-                            // Hash password
-                            $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                            
-                            // Insert new user
-                            $insertStmt = $pdo->prepare("
-                                INSERT INTO users (username, email, password_hash, full_name, is_active, is_verified, created_at) 
-                                VALUES (?, ?, ?, ?, TRUE, FALSE, NOW())
-                            ");
-                            
-                            if ($insertStmt->execute([$username, $email, $password_hash, $full_name])) {
-                                $user_id = $pdo->lastInsertId();
-                                
-                                // Log activity
-                                logUserActivity($user_id, 'other', 'User registered successfully', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-                                
-                                $success_message = 'Registration successful! Please log in.';
-                                
-                                // Clear form data
-                                $_POST = array();
-                            } else {
-                                $error_message = 'Registration failed. Please try again.';
-                            }
-                        }
-                    } catch (Exception $e) {
-                        $error_message = 'Registration failed. Please try again.';
-                        error_log("Registration error: " . $e->getMessage());
-                    }
-                }
-                break;
+                $error_message = $result['message'];
+            }
         }
     }
 }
+
+include 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Login/Sign Up - The Trader's Escape</title>
-    <meta name="description" content="Access your trading education account. Login or sign up to access premium educational content and advanced trading tools.">
-    <meta name="keywords" content="trading login, trading signup, trading education, account access">
-    <meta name="author" content="The Trader's Escape">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#3b82f6">
-    <meta name="msapplication-TileColor" content="#3b82f6">
-    
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TraderEscape">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="The Trader's Escape">
-    <meta name="msapplication-config" content="./browserconfig.xml">
-    
-    <!-- iPhone PWA Meta Tags -->
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-touch-fullscreen" content="yes">
-    <meta name="apple-mobile-web-app-orientations" content="portrait">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TraderEscape">
-    <meta name="msapplication-TileImage" content="./assets/logo.png">
-    <meta name="msapplication-TileColor" content="#3b82f6">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://thetradersescape.com/login.php">
-    <meta property="og:title" content="Login/Sign Up - The Trader's Escape">
-    <meta property="og:description" content="Access your trading education account. Login or sign up to access premium educational content and advanced trading tools.">
-    <meta property="og:image" content="./assets/logo.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:site_name" content="The Trader's Escape">
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://thetradersescape.com/login.php">
-    <meta property="twitter:title" content="Login/Sign Up - The Trader's Escape">
-    <meta property="twitter:description" content="Access your trading education account. Login or sign up to access premium educational content and advanced trading tools.">
-    <meta property="twitter:image" content="./assets/logo.png">
+    <!-- Critical CSS inline for faster rendering -->
+    <style>
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+        
+         .hero-section {
+             min-height: 100vh;
+             display: flex;
+             align-items: flex-start;
+             padding-top: 2rem;
+             padding-bottom: 4rem;
+             position: relative;
+             overflow: hidden;
+         }
+        
+        /* Performance optimizations */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f172a;
+            color: #ffffff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="./assets/logo.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./assets/logo.png">
-    
-    <!-- iPhone Icons -->
-    <link rel="apple-touch-icon" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="./assets/logo.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="./assets/logo.png">
-    
-    <!-- Web App Manifest -->
-    <link rel="manifest" href="./manifest.json">
-    
-    <!-- Preconnect to CDNs for faster loading -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="preconnect" href="https://unpkg.com">
-    
-    <!-- DNS Prefetch for external resources -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com">
-    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
-    <link rel="dns-prefetch" href="//unpkg.com">
-    
-    <!-- Resource hints for better performance -->
-    <link rel="preload" href="./assets/styles.css" as="style">
-    <link rel="preload" href="./assets/app.js" as="script">
-    <link rel="preload" href="./assets/logo.png" as="image">
-    
-    <!-- Google Fonts with display=swap for better performance -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-     
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="./assets/styles.css" id="main-stylesheet">
-</head>
-<body>
-    <!-- Trading Background -->
-    <div class="trading-background">
-        <div class="bg-grid"></div>
-        <div class="bg-particles"></div>
-        <div class="bg-trading-elements"></div>
-        <div class="bg-glow"></div>
-    </div>
+        /* Login Form Styles */
+        .auth-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
 
-    <!-- Top Navigation Bar -->
-    <nav class="auth-top-nav">
-        <div class="auth-nav-container">
-            <div class="auth-nav-left">
-                <a href="./" class="back-home-btn">
-                    <i class="bi bi-arrow-left"></i>
-                    <span>Back to Home</span>
-                </a>
-            </div>
-            <div class="auth-nav-center">
-                <div class="auth-nav-logo">
-                    <img src="./assets/logo.png" alt="The Trader's Escape" class="nav-logo-img">
-                    <span class="nav-logo-text">TraderEscape</span>
-                </div>
-            </div>
-            <div class="auth-nav-right">
-                <a href="./" class="home-link">
-                    <i class="bi bi-house"></i>
-                    <span>Home</span>
-                </a>
-            </div>
-        </div>
-    </nav>
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ffffff, #f8fafc, #e2e8f0);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-top: 1rem;
+        }
+
+        .auth-title {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin: 0 0 0.75rem 0;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            color: #94a3b8;
+            font-size: 1.125rem;
+            margin: 0;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        /* Form Toggle - Modern Design */
+        .form-toggle {
+            position: relative;
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 6px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            height: calc(100% - 12px);
+            width: calc(50% - 6px);
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .toggle-slider.slide-right {
+            transform: translateX(100%);
+        }
+
+        .toggle-btn {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: #ffffff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 1rem;
+            z-index: 2;
+        }
+
+        .toggle-btn.active {
+            color: #1e293b;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-btn:hover:not(.active) {
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .toggle-btn:active {
+            transform: translateY(0);
+        }
+
+        .toggle-btn i {
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Remove any blue background from form-toggle::before */
+        .form-toggle::before {
+            background: none !important;
+            background-color: transparent !important;
+        }
+
+        /* Remove blue focus outlines */
+        *:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        button:focus,
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .toggle-btn:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Forms */
+        .auth-form {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            line-height: 1.5;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+         .form-input::placeholder {
+             color: #64748b;
+         }
+
+         /* Password Toggle */
+         .password-input-wrapper {
+             position: relative;
+             display: flex;
+             align-items: center;
+         }
+
+         .password-input-wrapper .form-input {
+             padding-right: 3.5rem;
+         }
+
+         .password-toggle {
+             position: absolute;
+             right: 1rem;
+             top: 50%;
+             transform: translateY(-50%);
+             background: none;
+             border: none;
+             color: #94a3b8;
+             cursor: pointer;
+             padding: 0.5rem;
+             border-radius: 6px;
+             transition: all 0.3s ease;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+         }
+
+         .password-toggle:hover {
+             color: #ffffff;
+             background: rgba(255, 255, 255, 0.1);
+         }
+
+         .password-toggle:focus {
+             outline: none;
+             color: #ffffff;
+             background: rgba(255, 255, 255, 0.15);
+         }
+
+         .password-toggle i {
+             font-size: 1.1rem;
+         }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.25rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            text-transform: none;
+            letter-spacing: 0.025em;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            color: #1e293b;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            color: #0f172a;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 1.5rem 2rem;
+            font-size: 1.125rem;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        /* Legal */
+        .auth-legal {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .legal-text {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .legal-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .legal-link:hover {
+            color: #e2e8f0;
+            text-decoration: underline;
+        }
+
+         /* Responsive */
+         @media (max-width: 768px) {
+             .hero-section {
+                 padding-top: 2rem;
+                 padding-bottom: 3rem;
+             }
+
+             .auth-container {
+                 margin: 0 1rem;
+                 padding: 2rem;
+             }
+
+             .auth-title {
+                 font-size: 2rem;
+             }
+
+             .toggle-btn {
+                 padding: 1rem 1rem;
+                 font-size: 0.9rem;
+             }
+
+             .form-input {
+                 padding: 1rem;
+             }
+
+             .btn-full {
+                 padding: 1.25rem 1.5rem;
+                 font-size: 1rem;
+             }
+         }
+
+         @media (max-width: 480px) {
+             .hero-section {
+                 padding-top: 1.5rem;
+                 padding-bottom: 2.5rem;
+             }
+
+             .auth-container {
+                 padding: 1.5rem;
+             }
+
+             .auth-title {
+                 font-size: 1.75rem;
+             }
+         }
+    </style>
 
     <!-- Main Content -->
-    <main class="auth-main" role="main">
+    <main class="hero-section" role="main">
+        <div class="container">
         <div class="auth-container">
-            <div class="auth-card">
                 <div class="auth-header">
-                    <div class="auth-logo">
-                        <img src="./assets/logo.png" alt="The Trader's Escape" class="logo-img">
-                    </div>
                     <h1 class="auth-title">Welcome Back</h1>
                     <p class="auth-subtitle">Access your trading education account</p>
                 </div>
@@ -279,8 +591,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 <?php endif; ?>
 
-                <!-- Form Toggle Buttons -->
+                <!-- Form Toggle -->
                 <div class="form-toggle">
+                    <div class="toggle-slider"></div>
                     <button class="toggle-btn active" data-form="login">
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>Sign In</span>
@@ -297,22 +610,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="form-group">
                         <label for="loginEmail" class="form-label">Email Address</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-envelope input-icon"></i>
                             <input type="email" id="loginEmail" name="email" class="form-input" 
                                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" 
                                    placeholder="Enter your email address"
                                    required autocomplete="email">
-                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="loginPassword" class="form-label">Password</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-lock input-icon"></i>
+                         <div class="password-input-wrapper">
                             <input type="password" id="loginPassword" name="password" class="form-input" 
                                    placeholder="Enter your password"
                                    required autocomplete="current-password">
+                             <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">
+                                 <i class="bi bi-eye" id="loginPasswordIcon"></i>
+                             </button>
                         </div>
                     </div>
 
@@ -328,54 +640,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="form-group">
                         <label for="signupFullName" class="form-label">Full Name</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-person input-icon"></i>
                             <input type="text" id="signupFullName" name="full_name" class="form-input" 
                                    value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>" 
                                    placeholder="Enter your full name"
                                    required autocomplete="name">
-                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="signupUsername" class="form-label">Username</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-person-badge input-icon"></i>
                             <input type="text" id="signupUsername" name="username" class="form-input" 
                                    value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" 
                                    placeholder="Choose a username"
                                    required autocomplete="username" minlength="3">
-                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="signupEmail" class="form-label">Email Address</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-envelope input-icon"></i>
                             <input type="email" id="signupEmail" name="email" class="form-input" 
                                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" 
                                    placeholder="Enter your email address"
                                    required autocomplete="email">
-                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="signupPassword" class="form-label">Password</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-lock input-icon"></i>
+                         <div class="password-input-wrapper">
                             <input type="password" id="signupPassword" name="password" class="form-input" 
                                    placeholder="Create a strong password"
                                    required autocomplete="new-password" minlength="6">
+                             <button type="button" class="password-toggle" onclick="togglePassword('signupPassword')">
+                                 <i class="bi bi-eye" id="signupPasswordIcon"></i>
+                             </button>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="signupConfirmPassword" class="form-label">Confirm Password</label>
-                        <div class="input-wrapper">
-                            <i class="bi bi-lock input-icon"></i>
+                         <div class="password-input-wrapper">
                             <input type="password" id="signupConfirmPassword" name="confirm_password" class="form-input" 
                                    placeholder="Confirm your password"
                                    required autocomplete="new-password" minlength="6">
+                             <button type="button" class="password-toggle" onclick="togglePassword('signupConfirmPassword')">
+                                 <i class="bi bi-eye" id="signupConfirmPasswordIcon"></i>
+                             </button>
                         </div>
                     </div>
 
@@ -384,24 +691,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <span>Create Account</span>
                     </button>
                 </form>
-
-                <!-- Social Login -->
-                <div class="social-login">
-                    <div class="divider">
-                        <span>or continue with</span>
-                    </div>
-                    
-                    <div class="social-buttons">
-                        <button type="button" class="btn btn-social btn-google" onclick="socialLogin('google')">
-                            <i class="bi bi-google"></i>
-                            <span>Google</span>
-                        </button>
-                        <button type="button" class="btn btn-social btn-facebook" onclick="socialLogin('facebook')">
-                            <i class="bi bi-facebook"></i>
-                            <span>Facebook</span>
-                        </button>
-                    </div>
-                </div>
 
                 <!-- Terms and Privacy -->
                 <div class="auth-legal">
@@ -419,11 +708,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include 'includes/footer.php'; ?>
 
     <!-- Scripts -->
-    <script src="./assets/trading-background.js" defer></script>
-    <script src="./assets/app.js" defer></script>
-    
-    <script>
-        // Form toggle functionality
+     <script>
+         // Password toggle functionality
+         function togglePassword(inputId) {
+             const input = document.getElementById(inputId);
+             const icon = document.getElementById(inputId + 'Icon');
+             
+             if (input.type === 'password') {
+                 input.type = 'text';
+                 icon.className = 'bi bi-eye-slash';
+             } else {
+                 input.type = 'password';
+                 icon.className = 'bi bi-eye';
+             }
+         }
+
+         // Form toggle functionality with slider animation
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const formType = this.getAttribute('data-form');
@@ -431,30 +731,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const registerForm = document.getElementById('registerForm');
                 const loginTitle = document.querySelector('.auth-title');
                 const loginSubtitle = document.querySelector('.auth-subtitle');
+                const slider = document.querySelector('.toggle-slider');
                 
                 // Update active button
                 document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 
-                // Update forms
+                // Animate slider
                 if (formType === 'login') {
-                    loginForm.classList.add('active');
+                    slider.classList.remove('slide-right');
+                } else {
+                    slider.classList.add('slide-right');
+                }
+                
+                // Update forms with animation
+                if (formType === 'login') {
                     registerForm.classList.remove('active');
+                    setTimeout(() => {
+                    loginForm.classList.add('active');
                     loginTitle.textContent = 'Welcome Back';
                     loginSubtitle.textContent = 'Access your trading education account';
+                    }, 150);
                 } else {
-                    registerForm.classList.add('active');
                     loginForm.classList.remove('active');
+                    setTimeout(() => {
+                    registerForm.classList.add('active');
                     loginTitle.textContent = 'Create Account';
                     loginSubtitle.textContent = 'Join our trading education community';
+                    }, 150);
                 }
             });
         });
-
-        // Social login functionality (placeholder for future implementation)
-        function socialLogin(provider) {
-            alert('Social login will be implemented soon. Please use email registration for now.');
-        }
 
         // Form validation
         document.getElementById('registerForm').addEventListener('submit', function(e) {
@@ -476,17 +783,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setTimeout(() => alert.remove(), 300);
             });
         }, 5000);
-
-        // Add input focus effects
-        document.querySelectorAll('.form-input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-            });
-        });
     </script>
 </body>
 </html>

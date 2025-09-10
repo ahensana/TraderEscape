@@ -125,10 +125,10 @@ if (!isLoggedIn()) {
     
     .message {
         display: flex;
-        align-items: flex-start;
-        gap: 12px;
+        align-items: flex-end;
+        gap: 8px;
         max-width: 70%;
-        margin-bottom: 20px;
+        margin-bottom: 8px;
         animation: messageSlideIn 0.3s ease-out;
     }
     
@@ -155,42 +155,41 @@ if (!isLoggedIn()) {
     }
     
     .message-avatar {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        font-size: 16px;
+        font-size: 14px;
         color: white;
         flex-shrink: 0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        border: 3px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.8);
     }
     
     .message-content {
-        background: white;
-        padding: 12px 16px;
-        border-radius: 20px;
-        color: #333;
+        background: #ffffff;
+        padding: 8px 12px;
+        border-radius: 18px 18px 18px 4px;
+        color: #303030;
         word-wrap: break-word;
         position: relative;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
         max-width: 100%;
     }
     
     .message.own .message-content {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-bottom-right-radius: 6px;
+        color: #ffffff;
+        border-radius: 18px 18px 4px 18px;
     }
     
     .message:not(.own) .message-content {
-        background: white;
-        color: #333;
-        border-bottom-left-radius: 6px;
-        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: #ffffff;
+        color: #303030;
+        border-radius: 18px 18px 18px 4px;
     }
     
     .message-info {
@@ -202,13 +201,16 @@ if (!isLoggedIn()) {
     
     .message-sender {
         font-weight: 600;
-        font-size: 0.85rem;
-        opacity: 0.8;
+        font-size: 0.8rem;
+        color: #000000;
+        margin-bottom: 2px;
     }
     
     .message-time {
-        font-size: 0.75rem;
-        opacity: 0.6;
+        font-size: 0.7rem;
+        color: #999;
+        margin-top: 4px;
+        text-align: right;
     }
     
     .text-message-container {
@@ -502,6 +504,13 @@ if (!isLoggedIn()) {
         gap: 10px;
     }
     
+    .caption-sender {
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #000000;
+        margin-bottom: 2px;
+    }
+    
     .caption-text {
         flex: 1;
         font-size: 0.9rem;
@@ -532,7 +541,118 @@ if (!isLoggedIn()) {
     }
     
     .other-message-text {
-        color: #333333;
+        color: #000000;
+    }
+    
+    /* Image Grid Layouts */
+    .image-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-bottom: 8px;
+        max-width: 300px;
+    }
+    
+    .grid-image-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .grid-image {
+        display: block;
+        transition: transform 0.2s ease;
+    }
+    
+    .grid-image:hover {
+        transform: scale(1.02);
+    }
+    
+    .image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border-radius: 8px;
+    }
+    
+    /* Single image */
+    .image-grid.single-image {
+        max-width: 300px;
+    }
+    
+    .image-grid.single-image .grid-image-item {
+        width: 100%;
+        height: 200px;
+    }
+    
+    /* Two images */
+    .image-grid.two-images {
+        max-width: 300px;
+    }
+    
+    .image-grid.two-images .grid-image-item {
+        width: calc(50% - 1px);
+        height: 150px;
+    }
+    
+    /* Three images */
+    .image-grid.three-images {
+        max-width: 300px;
+    }
+    
+    .image-grid.three-images .grid-image-item {
+        width: calc(33.333% - 2px);
+        height: 100px;
+    }
+    
+    /* Four images */
+    .image-grid.four-images {
+        max-width: 300px;
+    }
+    
+    .image-grid.four-images .grid-image-item {
+        width: calc(50% - 1px);
+        height: 75px;
+    }
+    
+    /* Five images */
+    .image-grid.five-images {
+        max-width: 300px;
+    }
+    
+    .image-grid.five-images .grid-image-item {
+        width: calc(33.333% - 2px);
+        height: 60px;
+    }
+    
+    .image-grid.five-images .grid-image-item:nth-child(4),
+    .image-grid.five-images .grid-image-item:nth-child(5) {
+        width: calc(50% - 1px);
+    }
+    
+    /* Six or more images */
+    .image-grid.six-plus-images {
+        max-width: 300px;
+    }
+    
+    .image-grid.six-plus-images .grid-image-item {
+        width: calc(33.333% - 2px);
+        height: 50px;
+    }
+    
+    .image-grid.six-plus-images .grid-image-item:nth-child(4),
+    .image-grid.six-plus-images .grid-image-item:nth-child(5) {
+        width: calc(50% - 1px);
     }
     
     .message-input {
@@ -1100,6 +1220,22 @@ class CommunityChat {
         this.hasJoined = false;
         this.emojiPickerVisible = false;
         
+        // Clear any leftover reply state from previous sessions
+        if (typeof replyToMessageId !== 'undefined') {
+            replyToMessageId = null;
+        }
+        if (typeof currentContextMessage !== 'undefined') {
+            currentContextMessage = null;
+        }
+        
+        // Also clear any reply indicators that might be left over
+        const existingReplyIndicator = document.querySelector('.reply-indicator');
+        if (existingReplyIndicator) {
+            existingReplyIndicator.remove();
+        }
+        
+        console.log('Cleared reply state on page load - replyToMessageId:', replyToMessageId);
+        
         console.log('User data from server:', window.userData);
         console.log('Generated user:', this.currentUser);
         console.log('Current user ID:', this.currentUser.id);
@@ -1465,15 +1601,42 @@ class CommunityChat {
         if (this.socket && this.socket.connected) {
             const messageId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
+            // Debug: Check if we're accidentally replying to something
+            console.log('=== SEND MESSAGE DEBUG ===');
+            console.log('replyToMessageId:', replyToMessageId);
+            console.log('Message text:', message);
+            console.log('Is this a reply?', !!replyToMessageId);
+            
+            // Prevent self-replies by clearing replyToMessageId if it's invalid
+            if (replyToMessageId && !document.querySelector(`[data-message-id="${replyToMessageId}"]`)) {
+                console.log('WARNING: replyToMessageId points to non-existent message, clearing it');
+                replyToMessageId = null;
+            }
+            
             // Get reply data if replying to a message
             let replyData = null;
             if (replyToMessageId) {
-                replyData = this.getReplyData(replyToMessageId);
-                // If we can't get it from DOM, try localStorage
+                console.log('Getting reply data for messageId:', replyToMessageId);
+                
+                // First try to get from localStorage (this should work for individual image replies)
+                replyData = this.getStoredReplyData(replyToMessageId);
+                console.log('localStorage result:', replyData);
+                
+                // If not found in localStorage, try getReplyData (for regular message replies)
                 if (!replyData) {
-                    replyData = this.getStoredReplyData(replyToMessageId);
+                    replyData = this.getReplyData(replyToMessageId);
+                    console.log('getReplyData result:', replyData);
                 }
+                
+                // If still not found, try the global variable (fallback for individual image replies)
+                if (!replyData && window.currentReplyData) {
+                    replyData = window.currentReplyData;
+                    console.log('Using global reply data:', replyData);
+                }
+                
                 console.log('Sending reply data to server:', replyData);
+            } else {
+                console.log('This is a normal message (not a reply)');
             }
             
             const messageData = {
@@ -1493,7 +1656,14 @@ class CommunityChat {
             console.log('Adding own message immediately:', messageData);
             this.addMessage(messageData, true);
             
+            // Clear the global reply data after sending
+            if (replyToMessageId) {
+                window.currentReplyData = null;
+                console.log('Cleared global reply data after sending');
+            }
+            
             console.log('Sending message via socket with reply data:', messageData.replyTo);
+            console.log('Full messageData being sent:', messageData);
             // Send only in PHP format
             this.socket.emit('message', {
                 text: messageData.text,
@@ -1561,6 +1731,15 @@ class CommunityChat {
         const messageElement = document.createElement('div');
         messageElement.className = `message ${isOwn ? 'own' : ''}`;
         messageElement.setAttribute('data-message-id', messageData.id);
+        messageElement.setAttribute('data-sender-name', messageData.sender);
+        
+        // Add reply data attributes if this message is a reply
+        if (messageData.replyTo) {
+            messageElement.setAttribute('data-reply-to', messageData.replyTo);
+        }
+        if (messageData.replyToId) {
+            messageElement.setAttribute('data-reply-to-id', messageData.replyToId);
+        }
         
         let timestamp;
         if (messageData.timestamp instanceof Date) {
@@ -1585,10 +1764,10 @@ class CommunityChat {
         }
         
         // If we have reply data, ensure it's stored for future use
-        if (replyData) {
-            // Store under the current message ID (the reply message)
-            this.storeReplyData(messageData.id, replyData);
-            console.log('Stored reply data for message ID:', messageData.id, 'with data:', replyData);
+        if (replyData && messageData.replyToId) {
+            // Store under the original message ID (the message being replied to)
+            this.storeReplyData(messageData.replyToId, replyData);
+            console.log('Stored reply data for original message ID:', messageData.replyToId, 'with data:', replyData);
         }
         
         console.log('addMessage - Final reply data to be rendered:', replyData);
@@ -1599,14 +1778,19 @@ class CommunityChat {
             </div>` : ''}
             <div class="message-content">
                 ${replyData ? `
+                    ${!isOwn ? `<div style="color: #000000; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>` : ''}
                     <div class="reply-preview" style="background: rgba(37, 99, 235, 0.1); border-left: 3px solid #2563eb; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 0.85rem;">
-                        <div style="color: #ffffff; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
-                        <div style="color: #ffffff; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                        <div style="color: #000000; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
+                        ${replyData.imageUrl ? `
+                            <img src="${replyData.imageUrl}" alt="Reply image" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                        ` : `
+                            <div style="color: #000000; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                        `}
                     </div>
                 ` : ''}
                 ${messageData.text && !(messageData.files && messageData.files.length > 0 && messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/'))) ? `
                     <div class="message-info">
-                        ${!isOwn ? `<span class="message-sender">${messageData.sender}</span>` : ''}
+                        ${!isOwn && !replyData ? `<span class="message-sender">${messageData.sender}</span>` : ''}
                     </div>
                     <div class="text-message-container">
                         <div class="message-text ${isOwn ? 'own-message-text' : 'other-message-text'}">${this.escapeHtml(messageData.text)}</div>
@@ -1614,7 +1798,7 @@ class CommunityChat {
                     </div>
                 ` : `
                     <div class="message-info">
-                        ${!isOwn ? `<span class="message-sender">${messageData.sender}</span>` : ''}
+                        ${!isOwn && !replyData ? `<span class="message-sender">${messageData.sender}</span>` : ''}
                     </div>
                 `}
                 ${messageData.files && messageData.files.length > 0 ? this.renderFileAttachments(messageData.files) : ''}
@@ -1748,20 +1932,24 @@ class CommunityChat {
         return div.innerHTML;
     }
     
-    renderFileAttachments(files) {
+    renderFileAttachments(files, messageId = null) {
         if (!files || files.length === 0) return '';
         
-        let html = '<div class="file-attachments-container mt-2">';
+        // Separate images from other files
+        const imageFiles = files.filter(file => file.mimetype && file.mimetype.startsWith('image/'));
+        const otherFiles = files.filter(file => !file.mimetype || !file.mimetype.startsWith('image/'));
         
-        files.forEach(file => {
-            if (file.mimetype && file.mimetype.startsWith('image/')) {
-                html += `<div class="file-attachment mb-2">
-                    <img src="http://localhost:3000${file.url}" alt="${file.originalName}" 
-                         class="max-w-full rounded-lg cursor-pointer" 
-                         onclick="window.open('http://localhost:3000${file.url}', '_blank')"
-                         style="max-height: 200px; object-fit: cover;">
-                </div>`;
-            } else {
+        let html = '';
+        
+        // Render images in grid layout
+        if (imageFiles.length > 0) {
+            html += this.renderImageGrid(imageFiles, messageId);
+        }
+        
+        // Render other files normally
+        if (otherFiles.length > 0) {
+            html += '<div class="file-attachments-container mt-2">';
+            otherFiles.forEach(file => {
                 html += `<div class="file-attachment mb-2">
                     <a href="http://localhost:3000${file.url}" target="_blank" 
                        class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors">
@@ -1772,7 +1960,45 @@ class CommunityChat {
                         ${file.originalName}
                     </a>
                 </div>`;
-            }
+            });
+            html += '</div>';
+        }
+        
+        return html;
+    }
+    
+    renderImageGrid(imageFiles, messageId) {
+        const count = imageFiles.length;
+        let gridClass = '';
+        
+        // Determine grid layout based on number of images
+        if (count === 1) {
+            gridClass = 'single-image';
+        } else if (count === 2) {
+            gridClass = 'two-images';
+        } else if (count === 3) {
+            gridClass = 'three-images';
+        } else if (count === 4) {
+            gridClass = 'four-images';
+        } else if (count === 5) {
+            gridClass = 'five-images';
+        } else {
+            gridClass = 'six-plus-images';
+        }
+        
+        let html = `<div class="image-grid ${gridClass}">`;
+        
+        imageFiles.forEach((file, index) => {
+            const showOverlay = count > 5 && index === 4; // Show "+X" on 5th image if more than 5
+            const imageId = `image-${messageId}-${index}`;
+            
+            html += `<div class="grid-image-item" data-image-id="${imageId}" data-image-url="http://localhost:3000${file.url}" data-image-name="${file.originalName}">
+                <img src="http://localhost:3000${file.url}" alt="${file.originalName}" 
+                     class="grid-image cursor-pointer" 
+                     onclick="window.open('http://localhost:3000${file.url}', '_blank')"
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                ${showOverlay ? `<div class="image-overlay">+${count - 5}</div>` : ''}
+            </div>`;
         });
         
         html += '</div>';
@@ -1785,18 +2011,50 @@ class CommunityChat {
     }
     
     getReplyData(messageId) {
+        console.log('getReplyData called for messageId:', messageId);
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        console.log('Found message element:', messageElement);
+        
         if (messageElement) {
+            console.log('Message element HTML:', messageElement.innerHTML);
+            
             const senderElement = messageElement.querySelector('.message-sender');
             const textElement = messageElement.querySelector('.message-text');
+            // Check for both old structure (.file-attachment img) and new structure (.grid-image)
+            const imageElement = messageElement.querySelector('.file-attachment img') || messageElement.querySelector('.grid-image');
             
-            if (senderElement && textElement) {
+            console.log('Elements found:', {
+                sender: senderElement,
+                text: textElement,
+                image: imageElement
+            });
+            
+            // Also check for any img elements in the message
+            const allImages = messageElement.querySelectorAll('img');
+            console.log('All images in message:', allImages);
+            
+            // Check if this is an image message
+            if (imageElement) {
+                const replyData = {
+                    sender: senderElement ? senderElement.textContent : 'Unknown',
+                    text: 'Image',
+                    imageUrl: imageElement.src,
+                    isImageReply: true
+                };
+                
+                console.log('Getting reply data for image message ID:', messageId, 'Data:', replyData);
+                
+                // Store reply data in localStorage for persistence
+                this.storeReplyData(messageId, replyData);
+                
+                return replyData;
+            } else if (senderElement && textElement) {
                 const replyData = {
                     sender: senderElement.textContent,
                     text: textElement.textContent
                 };
                 
-                console.log('Getting reply data for message ID:', messageId, 'Data:', replyData);
+                console.log('Getting reply data for text message ID:', messageId, 'Data:', replyData);
                 
                 // Store reply data in localStorage for persistence
                 this.storeReplyData(messageId, replyData);
@@ -1827,9 +2085,38 @@ class CommunityChat {
         return storedReplies[messageId] || null;
     }
     
+    clearAllReplyData() {
+        localStorage.removeItem('chat_replies');
+        console.log('Cleared all reply data from localStorage');
+    }
+    
+    clearIncorrectReplyData() {
+        // Clean up any reply data stored under wrong message IDs
+        const storedReplies = JSON.parse(localStorage.getItem('chat_replies') || '{}');
+        const currentMessageIds = Array.from(document.querySelectorAll('[data-message-id]')).map(el => el.getAttribute('data-message-id'));
+        
+        let cleaned = false;
+        Object.keys(storedReplies).forEach(messageId => {
+            // If this message ID doesn't exist in current messages, it might be incorrect
+            if (!currentMessageIds.includes(messageId)) {
+                console.log('Removing potentially incorrect reply data for message ID:', messageId);
+                delete storedReplies[messageId];
+                cleaned = true;
+            }
+        });
+        
+        if (cleaned) {
+            localStorage.setItem('chat_replies', JSON.stringify(storedReplies));
+            console.log('Cleaned up incorrect reply data');
+        }
+    }
+
     restoreReplyData() {
         // This function will be called after messages are loaded to restore reply data
         console.log('Restoring reply data for existing messages...');
+        
+        // First clean up any incorrect data
+        this.clearIncorrectReplyData();
         
         // Check multiple times to ensure we catch all messages
         const checkAndRestore = () => {
@@ -1840,12 +2127,42 @@ class CommunityChat {
                 const messageId = messageElement.getAttribute('data-message-id');
                 const replyPreview = messageElement.querySelector('.reply-preview');
                 
-                // If message has no reply preview but should have one, try to restore it
-                if (!replyPreview && messageId) {
+                // Only restore reply previews to messages that actually contain replies
+                // Check if this message has reply data in its data attributes or content
+                const hasReplyData = messageElement.getAttribute('data-reply-to') || 
+                                   messageElement.querySelector('[data-reply-to]') ||
+                                   messageElement.getAttribute('data-reply-to-id');
+                
+                // If message has no reply preview but should have one (has reply data), try to restore it
+                if (!replyPreview && messageId && hasReplyData) {
                     const storedReplyData = this.getStoredReplyData(messageId);
                     if (storedReplyData) {
-                        console.log('Restoring reply preview for message:', messageId);
-                        this.addReplyPreview(messageElement, storedReplyData);
+                        console.log('Restoring reply preview for message with reply data:', messageId);
+                        // Check if this message already has a username (from initial rendering)
+                        const hasExistingUsername = messageElement.querySelector('.message-sender') || 
+                            (messageElement.querySelector('.message-content').firstChild && 
+                             messageElement.querySelector('.message-content').firstChild.style && 
+                             messageElement.querySelector('.message-content').firstChild.style.fontWeight === '600');
+                        
+                        // Check if this is an image message
+                        const isImageMessage = messageElement.querySelector('.file-attachment img') || 
+                            messageElement.querySelector('[data-message-id]') && 
+                            messageElement.querySelector('.image-caption');
+                        
+                        // Check if this is the current user's message
+                        const isOwnMessage = messageElement.classList.contains('own');
+                        
+                        if (hasExistingUsername) {
+                            console.log('Message already has username, only adding reply preview');
+                            // Only add the reply preview, not the username
+                            this.addReplyPreviewOnly(messageElement, storedReplyData, isOwnMessage);
+                        } else if (isImageMessage) {
+                            console.log('Image message - username is above image, only adding reply preview');
+                            // For image messages, username is above the image, so only add reply preview
+                            this.addReplyPreviewOnly(messageElement, storedReplyData, isOwnMessage);
+                        } else {
+                            this.addReplyPreview(messageElement, storedReplyData);
+                        }
                     }
                 }
             });
@@ -1858,9 +2175,32 @@ class CommunityChat {
         setTimeout(checkAndRestore, 5000);
     }
     
-    addReplyPreview(messageElement, replyData) {
+    addReplyPreviewOnly(messageElement, replyData, isOwn = false) {
         const messageContent = messageElement.querySelector('.message-content');
         if (messageContent) {
+            console.log('addReplyPreviewOnly called for message:', messageElement.getAttribute('data-message-id'));
+            
+            // Check if there's already a reply preview
+            const existingReplyPreview = messageContent.querySelector('.reply-preview');
+            if (existingReplyPreview) {
+                console.log('Reply preview already exists, skipping');
+                return;
+            }
+            
+            // Add username above reply preview if not own message
+            if (!isOwn) {
+                const senderNameElement = document.createElement('div');
+                senderNameElement.style.cssText = `
+                    color: #000000; 
+                    font-weight: 600; 
+                    margin-bottom: 4px; 
+                    font-size: 0.9rem;
+                `;
+                senderNameElement.textContent = messageElement.getAttribute('data-sender-name') || 'Unknown';
+                messageContent.insertBefore(senderNameElement, messageContent.firstChild);
+            }
+            
+            // Create only the reply preview element (no username)
             const replyPreview = document.createElement('div');
             replyPreview.className = 'reply-preview';
             replyPreview.style.cssText = `
@@ -1872,11 +2212,88 @@ class CommunityChat {
                 font-size: 0.85rem;
             `;
             replyPreview.innerHTML = `
-                <div style="color: #ffffff; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
-                <div style="color: #ffffff; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                <div style="color: #000000; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
+                ${replyData.imageUrl ? `
+                    <img src="${replyData.imageUrl}" alt="Reply image" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                ` : `
+                    <div style="color: #000000; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                `}
             `;
             
-            // Insert at the beginning of message content
+            // Insert reply preview at the beginning of message content
+            messageContent.insertBefore(replyPreview, messageContent.firstChild);
+        }
+    }
+
+    addReplyPreview(messageElement, replyData) {
+        const messageContent = messageElement.querySelector('.message-content');
+        if (messageContent) {
+            console.log('addReplyPreview called for message:', messageElement.getAttribute('data-message-id'));
+            
+            // Check if there's already a reply preview
+            const existingReplyPreview = messageContent.querySelector('.reply-preview');
+            if (existingReplyPreview) {
+                console.log('Reply preview already exists, skipping');
+                return;
+            }
+            
+            // Check if there's already a username above where we would add the reply preview
+            const firstChild = messageContent.firstChild;
+            const hasUsernameAbove = firstChild && 
+                firstChild.style && 
+                firstChild.style.fontWeight === '600' && 
+                firstChild.style.marginBottom === '4px';
+            
+            console.log('Has username above:', hasUsernameAbove);
+            
+            // Only add username if there isn't one already
+            if (!hasUsernameAbove) {
+                // Get the sender name from the message element
+                let senderElement = messageElement.querySelector('.message-sender');
+                let senderName = 'Unknown';
+                
+                if (senderElement) {
+                    senderName = senderElement.textContent;
+                } else {
+                    // For image messages, get sender name from data attribute
+                    senderName = messageElement.getAttribute('data-sender-name') || 'Unknown';
+                }
+                
+                // Create the sender name element
+                const senderNameElement = document.createElement('div');
+                senderNameElement.style.cssText = `
+                    color: #000000; 
+                    font-weight: 600; 
+                    margin-bottom: 4px; 
+                    font-size: 0.9rem;
+                `;
+                senderNameElement.textContent = senderName;
+                
+                // Insert username at the beginning of message content
+                messageContent.insertBefore(senderNameElement, messageContent.firstChild);
+            }
+            
+            // Create the reply preview element
+            const replyPreview = document.createElement('div');
+            replyPreview.className = 'reply-preview';
+            replyPreview.style.cssText = `
+                background: rgba(37, 99, 235, 0.1); 
+                border-left: 3px solid #2563eb; 
+                padding: 8px 12px; 
+                margin-bottom: 8px; 
+                border-radius: 0 8px 8px 0; 
+                font-size: 0.85rem;
+            `;
+            replyPreview.innerHTML = `
+                <div style="color: #000000; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
+                ${replyData.imageUrl ? `
+                    <img src="${replyData.imageUrl}" alt="Reply image" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                ` : `
+                    <div style="color: #000000; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                `}
+            `;
+            
+            // Insert reply preview at the beginning of message content
             messageContent.insertBefore(replyPreview, messageContent.firstChild);
         }
     }
@@ -1887,19 +2304,54 @@ class CommunityChat {
 let currentContextMessage = null;
 let replyToMessageId = null;
 
+// Debug functions
+function clearReplyData() {
+    if (window.chatInstance) {
+        window.chatInstance.clearAllReplyData();
+    }
+}
+
+function showReplyData() {
+    const storedReplies = JSON.parse(localStorage.getItem('chat_replies') || '{}');
+    console.log('All stored reply data:', storedReplies);
+    return storedReplies;
+}
+
+function checkReplyState() {
+    console.log('=== REPLY STATE DEBUG ===');
+    console.log('replyToMessageId:', replyToMessageId);
+    console.log('currentContextMessage:', currentContextMessage);
+    console.log('Reply indicator exists:', !!document.querySelector('.reply-indicator'));
+    console.log('========================');
+}
+
+function clearReplyState() {
+    replyToMessageId = null;
+    currentContextMessage = null;
+    const replyIndicator = document.querySelector('.reply-indicator');
+    if (replyIndicator) {
+        replyIndicator.remove();
+    }
+    console.log('Cleared reply state - replyToMessageId:', replyToMessageId);
+}
+
 function showContextMenu(event, messageId, messageData) {
+    console.log('showContextMenu called with:', { messageId, messageData });
     event.preventDefault();
     event.stopPropagation();
     
     const contextMenu = document.getElementById('messageContextMenu');
+    console.log('Context menu element:', contextMenu);
     const rect = event.target.getBoundingClientRect();
     
     // Don't show context menu for own messages
     if (messageData.senderId === window.chatInstance.currentUser.id) {
+        console.log('Not showing context menu for own message');
         return;
     }
     
     currentContextMessage = { id: messageId, data: messageData };
+    console.log('Set currentContextMessage to:', currentContextMessage);
     
     // Position the context menu
     contextMenu.style.left = event.clientX + 'px';
@@ -1954,25 +2406,32 @@ function reactToMessage(emoji) {
 }
 
 function replyToMessage() {
-    if (!currentContextMessage) return;
+    console.log('replyToMessage called');
+    console.log('currentContextMessage:', currentContextMessage);
+    
+    if (!currentContextMessage) {
+        console.log('No currentContextMessage, returning');
+        return;
+    }
     
     replyToMessageId = currentContextMessage.id;
     const messageData = currentContextMessage.data;
     
-    // Store the reply data immediately using the chat instance method
-    const replyData = {
-        sender: messageData.sender,
-        text: messageData.text
-    };
+    console.log('Setting replyToMessageId to:', replyToMessageId);
+    console.log('messageData:', messageData);
     
-    if (window.chatInstance) {
+    // Get the complete reply data including image information
+    const replyData = window.chatInstance.getReplyData(replyToMessageId);
+    console.log('Got reply data:', replyData);
+    
+    if (window.chatInstance && replyData) {
         // Store under the original message ID (the one being replied to)
         window.chatInstance.storeReplyData(replyToMessageId, replyData);
         console.log('Stored reply data for original message ID:', replyToMessageId, 'with data:', replyData);
     }
     
     // Show reply indicator in input area
-    showReplyIndicator(messageData);
+    showReplyIndicator(replyData);
     
     // Focus on message input
     const messageInput = document.getElementById('messageInput');
@@ -1983,6 +2442,12 @@ function replyToMessage() {
 
 function showReplyIndicator(messageData) {
     console.log('showReplyIndicator called with:', messageData);
+    
+    // Check if messageData is null or undefined
+    if (!messageData) {
+        console.log('No messageData provided to showReplyIndicator');
+        return;
+    }
     
     // Remove existing reply indicator
     const existingIndicator = document.querySelector('.reply-indicator');
@@ -2005,10 +2470,27 @@ function showReplyIndicator(messageData) {
         z-index: 100;
     `;
     
+    // Create content based on whether it's an image reply or text reply
+    let contentHtml = '';
+    if (messageData.isImageReply && messageData.imageUrl) {
+        contentHtml = `
+            <div style="color: #2563eb; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <img src="${messageData.imageUrl}" alt="Reply image" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                <div style="color: #333; font-size: 0.85rem;">Image</div>
+            </div>
+            <div style="color: #666; font-size: 0.8rem; margin-bottom: 8px;">Replying to this image</div>
+        `;
+    } else {
+        contentHtml = `
+            <div style="color: #2563eb; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>
+            <div style="color: #333; font-size: 0.85rem; margin-bottom: 8px;">${messageData.text ? messageData.text.substring(0, 50) : 'No text'}${messageData.text && messageData.text.length > 50 ? '...' : ''}</div>
+            <div style="color: #666; font-size: 0.8rem; margin-bottom: 8px;">Replying to this message</div>
+        `;
+    }
+    
     replyIndicator.innerHTML = `
-        <div style="color: #2563eb; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>
-        <div style="color: #333; font-size: 0.85rem; margin-bottom: 8px;">${messageData.text.substring(0, 50)}${messageData.text.length > 50 ? '...' : ''}</div>
-        <div style="color: #666; font-size: 0.8rem; margin-bottom: 8px;">Replying to this message</div>
+        ${contentHtml}
         <button onclick="cancelReply()" style="position: absolute; right: 8px; top: 8px; background: none; border: none; color: #666; cursor: pointer; font-size: 1.2rem; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='none'">×</button>
     `;
     

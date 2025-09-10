@@ -222,6 +222,190 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
             flex-wrap: wrap;
         }
         
+        /* Tools Hero Container and Grid */
+        .tools-hero-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .tools-icon-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            max-width: 200px;
+            position: relative;
+            align-items: center;
+        }
+
+        .tool-icon {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .tool-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .tools-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Icon Description Styling */
+        .icon-description {
+            position: absolute;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: none;
+            letter-spacing: 0.5px;
+            white-space: normal;
+            width: 300px !important;
+            max-width: 300px !important;
+            line-height: 1.6;
+            z-index: 10;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.9;
+            text-align: left;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .icon-description.icon-right {
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 25px;
+        }
+
+        .icon-description.icon-left {
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 25px;
+            text-align: right;
+        }
+
+        .tool-icon:hover .icon-description {
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+            opacity: 1;
+            transform: translateY(-50%) scale(1.05);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Responsive adjustments for icon descriptions */
+        @media (max-width: 1200px) {
+            .tools-hero-container {
+                max-width: 1200px;
+            }
+            
+            .icon-description {
+                width: 250px !important;
+                max-width: 250px !important;
+                font-size: 0.9rem;
+                padding: 10px 14px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .tools-hero-container {
+                max-width: 1000px;
+            }
+            
+            .icon-description {
+                width: 220px !important;
+                max-width: 220px !important;
+                font-size: 0.85rem;
+                padding: 10px 12px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tools-icon-grid {
+                gap: 1.5rem;
+                max-width: 200px;
+            }
+            
+            .tool-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+            
+            .icon-description {
+                font-size: 0.8rem;
+                width: 180px !important;
+                max-width: 180px !important;
+                line-height: 1.4;
+                padding: 8px 10px;
+            }
+            
+            .icon-description.icon-right {
+                margin-left: 15px;
+            }
+            
+            .icon-description.icon-left {
+                margin-right: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .icon-description {
+                font-size: 0.75rem;
+                width: 150px !important;
+                max-width: 150px !important;
+                line-height: 1.3;
+                padding: 6px 8px;
+            }
+            
+            .icon-description.icon-right {
+                margin-left: 12px;
+            }
+            
+            .icon-description.icon-left {
+                margin-right: 12px;
+            }
+        }
+        
         .feature-item {
             display: flex;
             align-items: center;
@@ -237,17 +421,17 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         
         /* Premium Tool Styling */
         .premium-tool {
-            border: 2px solid rgba(16, 185, 129, 0.3);
-            background: linear-gradient(145deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
             position: relative;
         }
         
         .premium-tool::before {
-            content: 'Premium';
+            content: 'Special';
             position: absolute;
             top: -10px;
             right: 20px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
             padding: 4px 12px;
             border-radius: 12px;
@@ -257,16 +441,16 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         }
         
         .premium-tool .tool-header h3 {
-            color: #10b981;
+            color: #ef4444;
         }
         
         .premium-tool .btn-primary {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             border: none;
         }
         
         .premium-tool .btn-primary:hover {
-            background: linear-gradient(135deg, #059669, #047857);
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
             transform: translateY(-2px);
         }
         
@@ -718,15 +902,19 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                                 <div class="tools-icon-grid">
                                     <div class="tool-icon" aria-hidden="true">
                                         <i class="bi bi-graph-up"></i>
+                                        <span class="icon-description icon-right">Advanced Market Analysis Tools for Educational Trading Research & Technical Analysis</span>
                                     </div>
                                     <div class="tool-icon" aria-hidden="true">
                                         <i class="bi bi-calculator"></i>
+                                        <span class="icon-description icon-left">Professional Risk Management Calculators for Position Sizing & Portfolio Protection</span>
                                     </div>
                                     <div class="tool-icon" aria-hidden="true">
                                         <i class="bi bi-bar-chart"></i>
+                                        <span class="icon-description icon-right">Comprehensive Portfolio Analytics & Performance Tracking for Educational Purposes</span>
                                     </div>
                                     <div class="tool-icon" aria-hidden="true">
                                         <i class="bi bi-speedometer2"></i>
+                                        <span class="icon-description icon-left">Real-Time Trading Performance Monitoring & Educational Market Simulation Tools</span>
                                     </div>
                                 </div>
                                 <div class="tools-glow"></div>
@@ -1041,7 +1229,13 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 })
             }).catch(error => console.log('Tool usage tracking failed:', error));
             
-            alert('Tool details coming soon!');
+            // Get tool details based on ID
+            const toolDetails = getToolDetails(toolId);
+            if (toolDetails) {
+                showToolDetailsModal(toolDetails);
+            } else {
+                showError('Tool details not available', 'error');
+            }
         }
         
         // Tool implementations
@@ -1097,8 +1291,31 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 })
             }).catch(error => console.log('Risk management tool usage tracking failed:', error));
             
-            // Open risk management tool in modal
-            openToolModal('Advanced Risk Management', getRiskManagementToolContent());
+            // Show loading state
+            showLoadingState();
+            
+            // Fetch real user data
+            fetch('./test_api_simple.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoadingState();
+                if (data.success) {
+                    const content = getRiskManagementToolContent(data.data);
+                    openToolModal('Advanced Risk Management', content);
+                } else {
+                    showError(`Failed to load data: ${data.message || 'Unknown error'}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoadingState();
+                console.error('Error loading risk management data:', error);
+                showError(`Error loading data: ${error.message}. Please check if you're logged in.`, 'error');
+            });
         }
         
         // Modal System Functions
@@ -1135,9 +1352,597 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 closeToolModal();
             }
         });
+
+        // Add loading states for better UX
+        function showLoadingState(element) {
+            if (element) {
+                const originalText = element.textContent;
+                element.textContent = 'Loading...';
+                element.disabled = true;
+                return () => {
+                    element.textContent = originalText;
+                    element.disabled = false;
+                };
+            } else {
+                // Global loading state
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = 'global-loading';
+                loadingDiv.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                    color: white;
+                    font-size: 1.2rem;
+                `;
+                loadingDiv.innerHTML = '<div style="text-align: center;"><div style="border: 3px solid #3b82f6; border-top: 3px solid transparent; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>Loading...</div>';
+                document.body.appendChild(loadingDiv);
+            }
+        }
+
+        function hideLoadingState() {
+            const loadingDiv = document.getElementById('global-loading');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+
+        // Enhanced error handling with user-friendly messages
+        function showError(message, type = 'error') {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = `alert alert-${type}`;
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#dc2626' : '#059669'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Keyboard shortcuts for better accessibility
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + 1-4 for quick tool access
+            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
+                e.preventDefault();
+                const toolIndex = parseInt(e.key) - 1;
+                const toolCards = document.querySelectorAll('.tool-card');
+                if (toolCards[toolIndex]) {
+                    const button = toolCards[toolIndex].querySelector('.btn-primary');
+                    if (button) button.click();
+                }
+            }
+            
+            // Ctrl/Cmd + K for search/focus
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i]');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+        });
+
+        // Add tooltip system for better UX
+        function addTooltip(element, text) {
+            element.setAttribute('title', text);
+            element.style.cursor = 'help';
+        }
+
+        // Initialize tooltips for form inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
+            inputs.forEach(input => {
+                if (input.placeholder) {
+                    addTooltip(input, input.placeholder);
+                }
+            });
+
+            // Performance monitoring
+            if ('performance' in window) {
+                window.addEventListener('load', function() {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log('Page Load Performance:', {
+                                loadTime: Math.round(perfData.loadEventEnd - perfData.loadEventStart),
+                                domContentLoaded: Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart),
+                                totalTime: Math.round(perfData.loadEventEnd - perfData.fetchStart)
+                            });
+                        }
+                    }, 0);
+                });
+            }
+
+            // Add smooth scroll behavior
+            document.documentElement.style.scrollBehavior = 'smooth';
+        });
+
+        // Tool Details System
+        function getToolDetails(toolId) {
+            const toolDetailsMap = {
+                'risk-management': {
+                    title: 'Advanced Risk Management',
+                    category: 'Risk Analysis',
+                    description: 'Comprehensive risk management tool with position sizing, trade journal, and analytics.',
+                    features: [
+                        'Position Size Calculator',
+                        'Risk-Reward Analysis',
+                        'Trade Journal & Analytics',
+                        'Portfolio Risk Assessment',
+                        'Real-time Risk Monitoring',
+                        'Performance Tracking'
+                    ],
+                    benefits: [
+                        'Protect your capital with proper position sizing',
+                        'Maintain consistent risk across all trades',
+                        'Track and analyze your trading performance',
+                        'Identify risk patterns and improve strategies',
+                        'Optimize portfolio allocation',
+                        'Reduce emotional trading decisions'
+                    ],
+                    useCases: [
+                        'Calculate optimal position size for each trade',
+                        'Set appropriate stop-loss levels',
+                        'Track daily/weekly/monthly performance',
+                        'Analyze win rate and profit factors',
+                        'Monitor portfolio drawdown',
+                        'Plan risk budget allocation'
+                    ],
+                    difficulty: 'Intermediate',
+                    timeToLearn: '15-30 minutes',
+                    prerequisites: 'Basic understanding of trading concepts'
+                },
+                'position-calculator': {
+                    title: 'Position Size Calculator',
+                    category: 'Risk Management',
+                    description: 'Calculate the optimal position size based on your risk tolerance and account size.',
+                    features: [
+                        'Account Size Input',
+                        'Risk Percentage Calculator',
+                        'Stop Loss Integration',
+                        'Position Size Formula',
+                        'Risk Amount Display',
+                        'Multiple Asset Support'
+                    ],
+                    benefits: [
+                        'Prevents over-leveraging',
+                        'Maintains consistent risk per trade',
+                        'Protects account from large losses',
+                        'Improves long-term profitability',
+                        'Reduces emotional stress',
+                        'Enables systematic trading'
+                    ],
+                    useCases: [
+                        'Stock trading position sizing',
+                        'Forex position calculation',
+                        'Options position management',
+                        'Crypto trading risk control',
+                        'Portfolio rebalancing',
+                        'Risk budget planning'
+                    ],
+                    difficulty: 'Beginner',
+                    timeToLearn: '5-10 minutes',
+                    prerequisites: 'Understanding of risk management basics'
+                },
+                'risk-reward': {
+                    title: 'Risk-Reward Calculator',
+                    category: 'Analysis',
+                    description: 'Analyze the risk-reward ratio of your trades to ensure profitable setups.',
+                    features: [
+                        'Entry Price Analysis',
+                        'Target Price Calculation',
+                        'Stop Loss Assessment',
+                        'Risk-Reward Ratio Display',
+                        'Profit/Loss Projection',
+                        'Multiple Timeframe Support'
+                    ],
+                    benefits: [
+                        'Identifies high-probability setups',
+                        'Improves trade selection',
+                        'Increases win rate',
+                        'Maximizes profit potential',
+                        'Reduces losing trades',
+                        'Enhances trading discipline'
+                    ],
+                    useCases: [
+                        'Pre-trade analysis',
+                        'Setup validation',
+                        'Trade planning',
+                        'Strategy backtesting',
+                        'Performance optimization',
+                        'Risk assessment'
+                    ],
+                    difficulty: 'Beginner',
+                    timeToLearn: '5-10 minutes',
+                    prerequisites: 'Basic understanding of entry/exit points'
+                },
+                'portfolio-analyzer': {
+                    title: 'Portfolio Analyzer',
+                    category: 'Portfolio Management',
+                    description: 'Comprehensive portfolio analysis with performance metrics and risk assessment.',
+                    features: [
+                        'Portfolio Performance Tracking',
+                        'Risk Metrics Calculation',
+                        'Correlation Analysis',
+                        'Diversification Assessment',
+                        'Performance Attribution',
+                        'Benchmark Comparison'
+                    ],
+                    benefits: [
+                        'Optimizes portfolio allocation',
+                        'Identifies risk concentrations',
+                        'Improves diversification',
+                        'Tracks performance over time',
+                        'Enables data-driven decisions',
+                        'Reduces portfolio volatility'
+                    ],
+                    useCases: [
+                        'Portfolio rebalancing',
+                        'Risk assessment',
+                        'Performance evaluation',
+                        'Asset allocation optimization',
+                        'Diversification analysis',
+                        'Benchmark tracking'
+                    ],
+                    difficulty: 'Advanced',
+                    timeToLearn: '30-45 minutes',
+                    prerequisites: 'Understanding of portfolio theory and risk metrics'
+                },
+                'volatility-calculator': {
+                    title: 'Volatility Calculator',
+                    category: 'Market Analysis',
+                    description: 'Calculate and analyze market volatility for better trading decisions.',
+                    features: [
+                        'Historical Volatility Calculation',
+                        'Implied Volatility Analysis',
+                        'Volatility Percentiles',
+                        'Volatility Forecasting',
+                        'Options Pricing Integration',
+                        'Risk Assessment Tools'
+                    ],
+                    benefits: [
+                        'Better timing of entries/exits',
+                        'Improved options strategies',
+                        'Enhanced risk management',
+                        'Market condition awareness',
+                        'Volatility-based position sizing',
+                        'Strategy optimization'
+                    ],
+                    useCases: [
+                        'Options trading strategies',
+                        'Volatility-based entries',
+                        'Risk assessment',
+                        'Market timing',
+                        'Strategy selection',
+                        'Portfolio hedging'
+                    ],
+                    difficulty: 'Intermediate',
+                    timeToLearn: '20-30 minutes',
+                    prerequisites: 'Understanding of volatility concepts and options'
+                },
+                'correlation-analyzer': {
+                    title: 'Correlation Analyzer',
+                    category: 'Market Analysis',
+                    description: 'Analyze correlations between different assets and markets.',
+                    features: [
+                        'Asset Correlation Matrix',
+                        'Time Period Analysis',
+                        'Correlation Trends',
+                        'Diversification Insights',
+                        'Risk Assessment',
+                        'Portfolio Optimization'
+                    ],
+                    benefits: [
+                        'Improves diversification',
+                        'Reduces portfolio risk',
+                        'Identifies market relationships',
+                        'Optimizes asset allocation',
+                        'Enhances risk management',
+                        'Better strategy selection'
+                    ],
+                    useCases: [
+                        'Portfolio diversification',
+                        'Risk management',
+                        'Asset allocation',
+                        'Strategy development',
+                        'Market analysis',
+                        'Hedging strategies'
+                    ],
+                    difficulty: 'Intermediate',
+                    timeToLearn: '15-25 minutes',
+                    prerequisites: 'Understanding of correlation and diversification'
+                }
+            };
+
+            return toolDetailsMap[toolId] || null;
+        }
+
+        function showToolDetailsModal(toolDetails) {
+            const modalContent = `
+                <div class="tool-details-container">
+                    <div class="tool-details-header">
+                        <div class="tool-details-title-section">
+                            <h2 class="tool-details-title">${toolDetails.title}</h2>
+                            <div class="tool-details-meta">
+                                <span class="tool-category">${toolDetails.category}</span>
+                                <span class="tool-difficulty">${toolDetails.difficulty}</span>
+                                <span class="tool-time">${toolDetails.timeToLearn}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-details-content">
+                        <div class="tool-description">
+                            <h3>Description</h3>
+                            <p>${toolDetails.description}</p>
+                        </div>
+                        
+                        <div class="tool-prerequisites">
+                            <h3>Prerequisites</h3>
+                            <p>${toolDetails.prerequisites}</p>
+                        </div>
+                        
+                        <div class="tool-features">
+                            <h3>Key Features</h3>
+                            <ul>
+                                ${toolDetails.features.map(feature => `<li>${feature}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="tool-benefits">
+                            <h3>Benefits</h3>
+                            <ul>
+                                ${toolDetails.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="tool-use-cases">
+                            <h3>Use Cases</h3>
+                            <ul>
+                                ${toolDetails.useCases.map(useCase => `<li>${useCase}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-details-actions">
+                        <button class="btn btn-primary" onclick="closeToolDetailsModal()">
+                            <i class="bi bi-check-circle"></i> Got it
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Create modal if it doesn't exist
+            let detailsModal = document.getElementById('tool-details-modal');
+            if (!detailsModal) {
+                detailsModal = document.createElement('div');
+                detailsModal.id = 'tool-details-modal';
+                detailsModal.className = 'tool-details-modal';
+                detailsModal.innerHTML = `
+                    <div class="tool-details-modal-content">
+                        <button class="tool-details-close" onclick="closeToolDetailsModal()">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                        <div id="tool-details-content"></div>
+                    </div>
+                `;
+                document.body.appendChild(detailsModal);
+            }
+
+            // Add styles if not already added
+            if (!document.getElementById('tool-details-styles')) {
+                const styles = document.createElement('style');
+                styles.id = 'tool-details-styles';
+                styles.textContent = `
+                    .tool-details-modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.8);
+                        backdrop-filter: blur(10px);
+                        z-index: 10000;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0;
+                        visibility: hidden;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .tool-details-modal.active {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                    
+                    .tool-details-modal-content {
+                        background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+                        border: 1px solid rgba(59, 130, 246, 0.2);
+                        border-radius: 16px;
+                        max-width: 600px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        position: relative;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                    }
+                    
+                    .tool-details-close {
+                        position: absolute;
+                        top: 15px;
+                        right: 15px;
+                        background: rgba(255, 255, 255, 0.1);
+                        border: none;
+                        color: #ffffff;
+                        width: 35px;
+                        height: 35px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        z-index: 10;
+                    }
+                    
+                    .tool-details-close:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                        transform: scale(1.1);
+                    }
+                    
+                    .tool-details-container {
+                        padding: 2rem;
+                        color: #ffffff;
+                    }
+                    
+                    .tool-details-header {
+                        margin-bottom: 2rem;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        padding-bottom: 1rem;
+                    }
+                    
+                    .tool-details-title {
+                        font-size: 1.8rem;
+                        font-weight: 700;
+                        margin: 0 0 1rem 0;
+                        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                    
+                    .tool-details-meta {
+                        display: flex;
+                        gap: 1rem;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .tool-category, .tool-difficulty, .tool-time {
+                        background: rgba(59, 130, 246, 0.2);
+                        padding: 0.5rem 1rem;
+                        border-radius: 20px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                        border: 1px solid rgba(59, 130, 246, 0.3);
+                    }
+                    
+                    .tool-details-content h3 {
+                        color: #3b82f6;
+                        font-size: 1.2rem;
+                        margin: 1.5rem 0 0.5rem 0;
+                        font-weight: 600;
+                    }
+                    
+                    .tool-details-content p {
+                        color: #cbd5e1;
+                        line-height: 1.6;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .tool-details-content ul {
+                        color: #e2e8f0;
+                        padding-left: 1.5rem;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .tool-details-content li {
+                        margin-bottom: 0.5rem;
+                        line-height: 1.5;
+                    }
+                    
+                    .tool-details-actions {
+                        margin-top: 2rem;
+                        text-align: center;
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        padding-top: 1rem;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .tool-details-modal-content {
+                            width: 95%;
+                            max-height: 90vh;
+                        }
+                        
+                        .tool-details-container {
+                            padding: 1.5rem;
+                        }
+                        
+                        .tool-details-title {
+                            font-size: 1.5rem;
+                        }
+                        
+                        .tool-details-meta {
+                            gap: 0.5rem;
+                        }
+                        
+                        .tool-category, .tool-difficulty, .tool-time {
+                            font-size: 0.8rem;
+                            padding: 0.4rem 0.8rem;
+                        }
+                    }
+                `;
+                document.head.appendChild(styles);
+            }
+
+            document.getElementById('tool-details-content').innerHTML = modalContent;
+            detailsModal.classList.add('active');
+        }
+
+        function closeToolDetailsModal() {
+            const modal = document.getElementById('tool-details-modal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'tool-details-modal') {
+                closeToolDetailsModal();
+            }
+        });
         
         // Tool Content Generators
-        function getRiskManagementToolContent() {
+        function getRiskManagementToolContent(userData = null) {
             return `
                 <div class="unified-tool-container">
                     <div class="unified-tool-header">
@@ -1154,11 +1959,11 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                         <div class="unified-grid">
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Account Equity (₹)</label>
-                                <input type="number" class="unified-form-input" id="equity" value="1000000" placeholder="1000000">
+                                <input type="number" class="unified-form-input" id="equity" value="${userData?.account_size || 1000000}" placeholder="1000000">
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Risk Percentage (%)</label>
-                                <input type="number" class="unified-form-input" id="riskPct" value="1" placeholder="1" step="0.1">
+                                <input type="number" class="unified-form-input" id="riskPct" value="${userData?.risk_per_trade || 1}" placeholder="1" step="0.1">
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Fixed Risk Amount (₹)</label>
@@ -1323,7 +2128,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             </h3>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <input type="text" class="unified-form-input" id="searchBox" placeholder="Search notes…" style="min-width: 200px; max-width: 200px;">
-                                <input type="number" class="unified-form-input" id="monthlyTarget" value="100000" placeholder="Monthly Target (₹)" style="max-width: 150px;">
+                                <input type="number" class="unified-form-input" id="monthlyTarget" value="${userData?.monthly_target || 100000}" placeholder="Monthly Target (₹)" style="max-width: 150px;">
                                 <button class="unified-btn-secondary" onclick="exportCsv()">Export CSV</button>
                                 <button class="unified-btn-secondary" onclick="printReport()">Print</button>
                                 <button class="unified-btn-secondary" onclick="resetJournal()">Reset</button>
@@ -1369,6 +2174,26 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                                 <div id="progressBar" style="height: 100%; background: linear-gradient(135deg, #3b82f6, #1d4ed8); width: 0%; transition: width 0.5s ease;"></div>
                             </div>
                             <div style="color: #94a3b8; font-size: 0.8rem;" id="progressHint">0% of ₹ 0 target</div>
+                        </div>
+                        
+                        <!-- Trading Stats -->
+                        <div id="trading-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                            <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                                <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Win Rate</h4>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #10b981;">${userData?.metrics?.win_rate || 0}%</p>
+                            </div>
+                            <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                                <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Profit Factor</h4>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #10b981;">${userData?.metrics?.profit_factor || 0}</p>
+                            </div>
+                            <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                                <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Total Trades</h4>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #ffffff;">${userData?.metrics?.total_trades || 0}</p>
+                            </div>
+                            <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                                <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Total P&L</h4>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0; color: ${(userData?.metrics?.total_profit || 0) >= 0 ? '#10b981' : '#ef4444'};">₹${(userData?.metrics?.total_profit || 0).toLocaleString()}</p>
+                            </div>
                         </div>
                         
                         <!-- Journal Table -->
@@ -1904,10 +2729,31 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 notes: s.notes || ''
             };
             
+            // Save to database
+            fetch('./save_journal_entry.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(entry)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showError('Journal entry saved successfully!', 'success');
+                    // Also save to localStorage for immediate display
             const j = loadJournal();
             j.push(entry);
             saveJournal(j);
             renderJournal();
+                } else {
+                    showError(`Failed to save journal entry: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving journal entry:', error);
+                showError('Error saving journal entry. Please try again.', 'error');
+            });
         }
 
         function editJournal(i) {
@@ -2694,31 +3540,55 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         // Risk-Reward Calculator
 
         function calculateRiskReward() {
-
-            const entryPrice = parseFloat(document.getElementById('entry-price').value) || 0;
-
-            const targetPrice = parseFloat(document.getElementById('target-price').value) || 0;
-
-            const stopLossPrice = parseFloat(document.getElementById('stop-loss-price').value) || 0;
-
+            const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 0;
+            const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 0;
+            const takeProfit1 = parseFloat(document.getElementById('takeProfit1').value) || 0;
+            const takeProfit2 = parseFloat(document.getElementById('takeProfit2').value) || 0;
             
-            
-            if (entryPrice > 0 && targetPrice > 0 && stopLossPrice > 0) {
-
-                const potentialProfit = targetPrice - entryPrice;
-
-                const potentialLoss = entryPrice - stopLossPrice;
-
-                const riskRewardRatio = (potentialProfit / potentialLoss).toFixed(2);
-
+            if (entryPrice > 0 && stopLoss > 0 && takeProfit1 > 0) {
+                const potentialLoss = entryPrice - stopLoss;
+                const potentialProfit1 = takeProfit1 - entryPrice;
+                const riskRewardRatio1 = (potentialProfit1 / potentialLoss).toFixed(2);
                 
+                let resultContent = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                            <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Risk Amount</h4>
+                            <p style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ef4444;">₹${potentialLoss.toFixed(2)}</p>
+                        </div>
+                        <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                            <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Profit Target 1</h4>
+                            <p style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #10b981;">₹${potentialProfit1.toFixed(2)}</p>
+                        </div>
+                        <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                            <h4 style="color: #3b82f6; margin: 0 0 0.5rem 0;">Risk:Reward Ratio</h4>
+                            <p style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff;">1:${riskRewardRatio1}</p>
+                        </div>
+                    </div>
+                `;
                 
-                document.getElementById('risk-reward-ratio').textContent = riskRewardRatio + ':1';
-
-                document.getElementById('potential-profit').textContent = '₹' + potentialProfit.toFixed(2);
-
+                if (takeProfit2 > 0) {
+                    const potentialProfit2 = takeProfit2 - entryPrice;
+                    const riskRewardRatio2 = (potentialProfit2 / potentialLoss).toFixed(2);
+                    
+                    resultContent += `
+                        <div style="background: rgba(139, 92, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2); margin-top: 1rem;">
+                            <h4 style="color: #8b5cf6; margin: 0 0 0.5rem 0;">Profit Target 2</h4>
+                            <p style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #10b981;">₹${potentialProfit2.toFixed(2)}</p>
+                            <p style="color: #8b5cf6; margin: 0.5rem 0 0 0;">Risk:Reward Ratio: 1:${riskRewardRatio2}</p>
+                        </div>
+                    `;
+                }
+                
+                // Show result
+                document.getElementById('risk-reward-result-content').innerHTML = resultContent;
+                document.getElementById('risk-reward-result').style.display = 'block';
+                
+                // Scroll to result
+                document.getElementById('risk-reward-result').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showError('Please fill in all required fields (Entry Price, Stop Loss, and Take Profit 1)', 'error');
             }
-
         }
 
         
@@ -2797,7 +3667,13 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 })
             }).catch(error => console.log('Tool usage tracking failed:', error));
             
-            alert('Tool details coming soon!');
+            // Get tool details based on ID
+            const toolDetails = getToolDetails(toolId);
+            if (toolDetails) {
+                showToolDetailsModal(toolDetails);
+            } else {
+                showError('Tool details not available', 'error');
+            }
         }
         
         // Tool implementations

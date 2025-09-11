@@ -836,6 +836,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             overflow-x: auto;
             gap: 0.5rem;
             padding-bottom: 0.5rem;
+            /* Hide scroll indicators */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            display: none; /* WebKit browsers (Chrome, Safari, Edge) */
         }
 
         .nav-item {
@@ -2004,6 +2011,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            /* Hide scroll indicators */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
         }
 
         .modal-header {

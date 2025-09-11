@@ -121,6 +121,13 @@ if (!isLoggedIn()) {
         flex-direction: column;
         min-height: 0;
         background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        /* Hide scroll indicators */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+    
+    .chat-messages::-webkit-scrollbar {
+        display: none; /* WebKit browsers (Chrome, Safari, Edge) */
     }
     
     .message {
@@ -597,6 +604,13 @@ if (!isLoggedIn()) {
         padding: 20px;
         flex: 1;
         overflow-y: auto;
+        /* Hide scroll indicators */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+    
+    .online-users::-webkit-scrollbar {
+        display: none; /* WebKit browsers (Chrome, Safari, Edge) */
     }
     
     .online-user {
@@ -723,6 +737,13 @@ if (!isLoggedIn()) {
         max-height: 300px;
         overflow-y: auto;
         overflow-x: hidden;
+        /* Hide scroll indicators */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+    
+    .emoji-grid::-webkit-scrollbar {
+        display: none; /* WebKit browsers (Chrome, Safari, Edge) */
     }
     
     .emoji-item {

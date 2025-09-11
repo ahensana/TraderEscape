@@ -15,7 +15,28 @@ $currentUser = getCurrentUser();
 $currentPage = 'tools';
 
 // Get trading tools from database
-$tradingTools = getTradingTools();
+$allTradingTools = getTradingTools();
+
+// Filter out duplicate and non-functional tools
+$tradingTools = array_filter($allTradingTools, function($tool) {
+    // Remove duplicate "Advanced Risk Management" (keep only the hardcoded one with Special title)
+    if ($tool['slug'] === 'advanced-risk-management') {
+        return false;
+    }
+    
+    // Remove non-functional tools that don't have proper implementations
+    $nonFunctionalTools = [
+        'volatility-calculator',
+        'correlation-analyzer', 
+        'drawdown-calculator',
+        'kelly-criterion-calculator',
+        'var-calculator',
+        'stress-test-simulator',
+        'risk-budget-manager'
+    ];
+    
+    return !in_array($tool['slug'], $nonFunctionalTools);
+});
 
 // Track page view
 trackPageView('tools', $currentUser['id'], $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, $_SERVER['HTTP_REFERER'] ?? null, session_id());
@@ -534,6 +555,13 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
             max-height: calc(90vh - 100px);
             overflow-y: auto;
             color: #ffffff;
+            /* Hide scroll indicators */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        
+        .tool-modal-content::-webkit-scrollbar {
+            display: none; /* WebKit browsers (Chrome, Safari, Edge) */
         }
         
         /* Unified Tool Design */
@@ -544,6 +572,13 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
             padding: 2rem;
             margin-bottom: 2rem;
             backdrop-filter: blur(20px);
+            /* Hide scroll indicators */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        
+        .unified-tool-container::-webkit-scrollbar {
+            display: none; /* WebKit browsers (Chrome, Safari, Edge) */
         }
         
         .unified-tool-header {
@@ -577,6 +612,14 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
             font-weight: 500;
         }
         
+        .form-help {
+            display: block;
+            margin-top: 0.25rem;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+        
         .unified-form-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -593,6 +636,470 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
             background: rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Beautiful Dropdown Styling */
+        .unified-form-input select,
+        select.unified-form-input {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 12px 40px 12px 16px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Completely remove default dropdown arrows */
+        .unified-form-input select::-ms-expand,
+        select.unified-form-input::-ms-expand {
+            display: none !important;
+        }
+        
+        .unified-form-input select::-webkit-outer-spin-button,
+        .unified-form-input select::-webkit-inner-spin-button,
+        select.unified-form-input::-webkit-outer-spin-button,
+        select.unified-form-input::-webkit-inner-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+        
+        /* Remove any default styling that might show arrows */
+        .unified-form-input select option,
+        select.unified-form-input option {
+            background: #1a1a2e !important;
+            color: #ffffff !important;
+            padding: 12px 16px !important;
+            border: none !important;
+            font-weight: 500 !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+        
+        .unified-form-input select:hover,
+        select.unified-form-input:hover {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            border-color: #3b82f6;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .unified-form-input select:focus,
+        select.unified-form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 6px 20px rgba(59, 130, 246, 0.3);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+        }
+        
+        /* Option Hover and Checked States */
+        .unified-form-input select option:hover,
+        select.unified-form-input option:hover {
+            background: #3b82f6 !important;
+            color: #ffffff !important;
+        }
+        
+        .unified-form-input select option:checked,
+        select.unified-form-input option:checked {
+            background: #3b82f6 !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Custom Dropdown Arrow Animation */
+        .unified-form-input select:focus,
+        select.unified-form-input:focus {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='18,15 12,9 6,15'%3e%3c/polyline%3e%3c/svg%3e") !important;
+        }
+        
+        /* Ensure no other arrows appear */
+        .unified-form-input select *,
+        select.unified-form-input * {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+        
+        /* Force override any inherited styles */
+        .unified-form-input select,
+        select.unified-form-input {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 16px !important;
+        }
+        
+        /* Nuclear option - completely reset all select styling */
+        select.unified-form-input,
+        .unified-form-input select {
+            /* Remove all default styling */
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            outline: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            
+            /* Force custom arrow with transparent background */
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)), 
+                        url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 16px !important;
+            
+            /* Make arrow area completely transparent */
+            background-color: transparent !important;
+            
+            /* Ensure no other elements interfere */
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        /* Hide any pseudo-elements that might show arrows */
+        select.unified-form-input::before,
+        select.unified-form-input::after,
+        .unified-form-input select::before,
+        .unified-form-input select::after {
+            display: none !important;
+            content: none !important;
+        }
+        
+        /* Make dropdown arrow area completely transparent */
+        select.unified-form-input::-ms-expand,
+        .unified-form-input select::-ms-expand {
+            background: transparent !important;
+            border: none !important;
+            color: transparent !important;
+        }
+        
+        /* Remove any default arrow backgrounds */
+        select.unified-form-input,
+        .unified-form-input select {
+            /* Override any browser default backgrounds in arrow area */
+            background-color: transparent !important;
+            background-clip: padding-box !important;
+        }
+        
+        /* Ensure arrow area has no background */
+        select.unified-form-input:focus,
+        .unified-form-input select:focus {
+            background-color: transparent !important;
+        }
+        
+        select.unified-form-input:hover,
+        .unified-form-input select:hover {
+            background-color: transparent !important;
+        }
+        
+        /* ===== FRESH CUSTOM DROPDOWN SYSTEM ===== */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+        
+        .custom-select-trigger {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 12px 40px 12px 16px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            text-align: left;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 48px;
+            box-sizing: border-box;
+        }
+        
+        
+        .custom-select-trigger.active {
+            border-color: #3b82f6;
+            background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .custom-select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+            pointer-events: none;
+            color: #ffffff;
+        }
+        
+        .custom-select-trigger.active .custom-select-arrow {
+            transform: translateY(-50%) rotate(180deg);
+            color: #60a5fa;
+        }
+        
+        .custom-select-options {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-height: 180px;
+            overflow-y: auto;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.3s ease;
+            /* Hide scroll indicators */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        
+        .custom-select-options::-webkit-scrollbar {
+            display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+        }
+        
+        /* Hide scrollbars for journal table and other containers */
+        .journal-table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+            /* Hide scroll indicators */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        
+        .journal-table-container::-webkit-scrollbar {
+            display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+        }
+        
+        /* Hide scrollbars globally for all containers */
+        * {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        
+        *::-webkit-scrollbar {
+            display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+        }
+        
+        .custom-select-options.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .custom-select-option {
+            padding: 10px 16px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+        
+        .custom-select-option:last-child {
+            border-bottom: none;
+        }
+        
+        
+        .custom-select-option.selected {
+            background: linear-gradient(145deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.2));
+            color: #bfdbfe;
+            font-weight: 600;
+        }
+        
+        .custom-select-option.selected::after {
+            content: '✓';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        /* Custom scrollbar */
+        .custom-select-options::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .custom-select-options::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        
+        .custom-select-options::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4);
+            border-radius: 2px;
+        }
+        
+        
+        /* Hide original select */
+        .custom-select select {
+            display: none !important;
+        }
+        
+        /* Multiple Select Styling */
+        .unified-form-input select[multiple],
+        select.unified-form-input[multiple] {
+            background-image: none;
+            padding: 12px 16px;
+            min-height: 120px;
+        }
+        
+        .unified-form-input select[multiple] option,
+        select.unified-form-input[multiple] option {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .unified-form-input select[multiple] option:checked,
+        select.unified-form-input[multiple] option:checked {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-color: #3b82f6;
+            color: #ffffff;
+        }
+        
+        /* Dropdown Loading State */
+        .unified-form-input select:disabled,
+        select.unified-form-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Dropdown Error State */
+        .unified-form-input select.error,
+        select.unified-form-input.error {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        
+        /* Dropdown Success State */
+        .unified-form-input select.success,
+        select.unified-form-input.success {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        /* Responsive Dropdown */
+        @media (max-width: 768px) {
+            .unified-form-input select,
+            select.unified-form-input {
+                padding: 14px 40px 14px 16px;
+                font-size: 1.1rem;
+            }
+            
+            .unified-form-input select[multiple],
+            select.unified-form-input[multiple] {
+                min-height: 140px;
+            }
+        }
+        
+        /* Dark Theme Dropdown Enhancements */
+        .unified-form-input select::placeholder,
+        select.unified-form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Dropdown Focus Ring Animation */
+        @keyframes dropdownFocus {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+            100% {
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 6px 20px rgba(59, 130, 246, 0.3);
+            }
+        }
+        
+        .unified-form-input select:focus,
+        select.unified-form-input:focus {
+            animation: dropdownFocus 0.3s ease-out;
+        }
+        
+        /* JavaScript Enhanced Dropdown States */
+        .dropdown-focused .unified-form-input select,
+        .dropdown-focused select.unified-form-input {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .dropdown-changed {
+            animation: dropdownChange 0.3s ease-out;
+        }
+        
+        .dropdown-hover {
+            transform: translateY(-1px) !important;
+        }
+        
+        @keyframes dropdownChange {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* Dropdown Group Focus Effect */
+        .unified-form-group.dropdown-focused {
+            transform: translateY(-1px);
+        }
+        
+        .unified-form-group.dropdown-focused .unified-form-label {
+            color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        
+        /* Remove number input spinners */
+        .unified-form-input[type="number"]::-webkit-outer-spin-button,
+        .unified-form-input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .unified-form-input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        
+        /* Also apply to unified-input-group inputs */
+        .unified-input-group input[type="number"]::-webkit-outer-spin-button,
+        .unified-input-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .unified-input-group input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
         }
         
         .unified-btn {
@@ -1205,6 +1712,34 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 'chart-analysis-tool': {
                     title: 'Chart Analysis Tool',
                     content: getChartAnalysisToolContent()
+                },
+                'volatility-calculator': {
+                    title: 'Volatility Calculator',
+                    content: getVolatilityCalculatorContent()
+                },
+                'correlation-analyzer': {
+                    title: 'Correlation Analyzer',
+                    content: getCorrelationAnalyzerContent()
+                },
+                'drawdown-calculator': {
+                    title: 'Drawdown Calculator',
+                    content: getDrawdownCalculatorContent()
+                },
+                'kelly-criterion-calculator': {
+                    title: 'Kelly Criterion Calculator',
+                    content: getKellyCriterionCalculatorContent()
+                },
+                'var-calculator': {
+                    title: 'VaR Calculator',
+                    content: getVaRCalculatorContent()
+                },
+                'stress-test-simulator': {
+                    title: 'Stress Test Simulator',
+                    content: getStressTestSimulatorContent()
+                },
+                'risk-budget-manager': {
+                    title: 'Risk Budget Manager',
+                    content: getRiskBudgetManagerContent()
                 }
             };
             
@@ -1240,11 +1775,13 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         
         // Tool implementations
         function showPositionCalculator() {
-            alert('Position Size Calculator - Coming Soon!');
+            const content = getPositionSizeCalculatorContent();
+            openToolModal('Position Size Calculator', content);
         }
         
         function showRiskRewardCalculator() {
-            alert('Risk-Reward Calculator - Coming Soon!');
+            const content = getRiskRewardCalculatorContent();
+            openToolModal('Risk Reward Calculator', content);
         }
         
         // Enhanced Profit-Loss Calculator
@@ -2197,7 +2734,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                         </div>
                         
                         <!-- Journal Table -->
-                        <div style="overflow-x: auto; margin-top: 1rem;">
+                        <div class="journal-table-container">
                             <table id="journalTable" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
                                 <thead>
                                     <tr style="background: rgba(59, 130, 246, 0.1);">
@@ -2240,18 +2777,22 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Account Size (₹)</label>
                                 <input type="number" class="unified-form-input" id="accountSize" placeholder="100000" required>
+                                <small class="form-help">Total available trading capital</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Risk Percentage (%)</label>
-                                <input type="number" class="unified-form-input" id="riskPercentage" placeholder="2" step="0.1" required>
+                                <input type="number" class="unified-form-input" id="riskPercentage" placeholder="2" step="0.1" min="0.1" max="10" required>
+                                <small class="form-help">Maximum risk per trade (1-5% recommended)</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Entry Price (₹)</label>
                                 <input type="number" class="unified-form-input" id="entryPrice" placeholder="100" step="0.01" required>
+                                <small class="form-help">Current market price or planned entry</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Stop Loss (₹)</label>
                                 <input type="number" class="unified-form-input" id="stopLoss" placeholder="95" step="0.01" required>
+                                <small class="form-help">Price at which you'll exit the trade</small>
                             </div>
                         </div>
                     
@@ -2295,18 +2836,22 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Entry Price (₹)</label>
                                 <input type="number" class="unified-form-input" id="entryPrice" placeholder="100" step="0.01" required>
+                                <small class="form-help">Price at which you enter the trade</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Stop Loss (₹)</label>
                                 <input type="number" class="unified-form-input" id="stopLoss" placeholder="95" step="0.01" required>
+                                <small class="form-help">Price at which you exit to limit losses</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Take Profit 1 (₹)</label>
                                 <input type="number" class="unified-form-input" id="takeProfit1" placeholder="110" step="0.01" required>
+                                <small class="form-help">First profit target (partial exit)</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Take Profit 2 (₹)</label>
                                 <input type="number" class="unified-form-input" id="takeProfit2" placeholder="120" step="0.01">
+                                <small class="form-help">Second profit target (optional)</small>
                             </div>
                         </div>
                     
@@ -3057,18 +3602,22 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Entry Price (₹)</label>
                                 <input type="number" class="unified-form-input" id="entryPrice" placeholder="100" step="0.01" required>
+                                <small class="form-help">Price at which you bought the shares</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Quantity (Shares)</label>
                                 <input type="number" class="unified-form-input" id="quantity" placeholder="100" required>
+                                <small class="form-help">Number of shares traded</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Exit Price (₹)</label>
                                 <input type="number" class="unified-form-input" id="exitPrice" placeholder="110" step="0.01" required>
+                                <small class="form-help">Price at which you sold the shares</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Commission (₹)</label>
                                 <input type="number" class="unified-form-input" id="commission" placeholder="20" step="0.01" value="20">
+                                <small class="form-help">Total brokerage charges (entry + exit)</small>
                             </div>
                         </div>
                     
@@ -3100,14 +3649,17 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Account Value (₹)</label>
                                 <input type="number" class="unified-form-input" id="accountValue" placeholder="250000" required>
+                                <small class="form-help">Total available trading capital</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Stock Price (₹)</label>
                                 <input type="number" class="unified-form-input" id="stockPrice" placeholder="100" step="0.01" required>
+                                <small class="form-help">Current market price of the stock</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Number of Shares</label>
                                 <input type="number" class="unified-form-input" id="shares" placeholder="100" required>
+                                <small class="form-help">Number of shares you want to trade</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Margin Requirement (%)</label>
@@ -3116,6 +3668,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                                     <option value="25">25% (Pattern Day Trader)</option>
                                     <option value="100">100% (Cash Account)</option>
                                 </select>
+                                <small class="form-help">Margin requirement based on account type</small>
                             </div>
                         </div>
                     
@@ -3147,14 +3700,17 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Total Portfolio Value (₹)</label>
                                 <input type="number" class="unified-form-input" id="totalPortfolioValue" placeholder="1000000" required>
+                                <small class="form-help">Current total value of your portfolio</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Initial Investment (₹)</label>
                                 <input type="number" class="unified-form-input" id="initialInvestment" placeholder="800000" required>
+                                <small class="form-help">Total amount initially invested</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Time Period (Months)</label>
                                 <input type="number" class="unified-form-input" id="timePeriod" placeholder="12" required>
+                                <small class="form-help">Investment duration in months</small>
                             </div>
                             <div class="unified-form-group">
                                 <label class="unified-form-label">Risk Tolerance</label>
@@ -3163,6 +3719,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                                     <option value="moderate">Moderate</option>
                                     <option value="aggressive">Aggressive</option>
                                 </select>
+                                <small class="form-help">Your risk appetite for investments</small>
                             </div>
                         </div>
                     
@@ -3270,6 +3827,358 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                             <i class="bi bi-bar-chart"></i> Technical Analysis
                         </div>
                         <div id="chart-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getVolatilityCalculatorContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">Volatility Calculator</h1>
+                        <p class="unified-tool-subtitle">Calculate historical and implied volatility for better risk assessment</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Stock Symbol</label>
+                            <input type="text" class="unified-form-input" id="volSymbol" placeholder="RELIANCE" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Time Period (Days)</label>
+                            <select class="unified-form-input" id="volPeriod" required>
+                                <option value="30">30 Days</option>
+                                <option value="60">60 Days</option>
+                                <option value="90" selected>90 Days</option>
+                                <option value="180">180 Days</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Current Price (₹)</label>
+                            <input type="number" class="unified-form-input" id="volCurrentPrice" placeholder="2500" step="0.01" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Risk-Free Rate (%)</label>
+                            <input type="number" class="unified-form-input" id="volRiskFreeRate" placeholder="6.5" step="0.1" value="6.5">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="calculateVolatility()">
+                                <i class="bi bi-calculator"></i> Calculate Volatility
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="volatility-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-graph-up"></i> Volatility Analysis
+                        </div>
+                        <div id="volatility-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getCorrelationAnalyzerContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">Correlation Analyzer</h1>
+                        <p class="unified-tool-subtitle">Analyze correlation between assets to manage portfolio diversification risk</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Asset 1 Symbol</label>
+                            <input type="text" class="unified-form-input" id="corrAsset1" placeholder="RELIANCE" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Asset 2 Symbol</label>
+                            <input type="text" class="unified-form-input" id="corrAsset2" placeholder="TCS" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Analysis Period</label>
+                            <select class="unified-form-input" id="corrPeriod" required>
+                                <option value="30">30 Days</option>
+                                <option value="60">60 Days</option>
+                                <option value="90" selected>90 Days</option>
+                                <option value="180">180 Days</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Asset 1 Weight (%)</label>
+                            <input type="number" class="unified-form-input" id="corrWeight1" placeholder="60" step="1" value="60">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Asset 2 Weight (%)</label>
+                            <input type="number" class="unified-form-input" id="corrWeight2" placeholder="40" step="1" value="40">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="analyzeCorrelation()">
+                                <i class="bi bi-graph-up"></i> Analyze Correlation
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="correlation-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-bar-chart"></i> Correlation Analysis
+                        </div>
+                        <div id="correlation-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getDrawdownCalculatorContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">Drawdown Calculator</h1>
+                        <p class="unified-tool-subtitle">Calculate maximum drawdown and recovery time for risk assessment</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Initial Account Size (₹)</label>
+                            <input type="number" class="unified-form-input" id="ddAccountSize" placeholder="100000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Peak Account Value (₹)</label>
+                            <input type="number" class="unified-form-input" id="ddPeakValue" placeholder="120000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Current Account Value (₹)</label>
+                            <input type="number" class="unified-form-input" id="ddCurrentValue" placeholder="110000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Trough Value (₹)</label>
+                            <input type="number" class="unified-form-input" id="ddTroughValue" placeholder="95000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Recovery Period (Days)</label>
+                            <input type="number" class="unified-form-input" id="ddRecoveryDays" placeholder="30" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="calculateDrawdown()">
+                                <i class="bi bi-calculator"></i> Calculate Drawdown
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="drawdown-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-graph-down"></i> Drawdown Analysis
+                        </div>
+                        <div id="drawdown-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getKellyCriterionCalculatorContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">Kelly Criterion Calculator</h1>
+                        <p class="unified-tool-subtitle">Calculate optimal position size using Kelly Criterion for maximum growth</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Win Rate (%)</label>
+                            <input type="number" class="unified-form-input" id="kellyWinRate" placeholder="60" step="0.1" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Average Win (₹)</label>
+                            <input type="number" class="unified-form-input" id="kellyAvgWin" placeholder="2000" step="0.01" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Average Loss (₹)</label>
+                            <input type="number" class="unified-form-input" id="kellyAvgLoss" placeholder="1000" step="0.01" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Account Size (₹)</label>
+                            <input type="number" class="unified-form-input" id="kellyAccountSize" placeholder="100000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Risk Tolerance (%)</label>
+                            <input type="number" class="unified-form-input" id="kellyRiskTolerance" placeholder="25" step="0.1" value="25">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="calculateKellyCriterion()">
+                                <i class="bi bi-calculator"></i> Calculate Kelly
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="kelly-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-percent"></i> Kelly Criterion Analysis
+                        </div>
+                        <div id="kelly-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getVaRCalculatorContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">VaR Calculator</h1>
+                        <p class="unified-tool-subtitle">Calculate Value at Risk (VaR) for portfolio risk assessment</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Portfolio Value (₹)</label>
+                            <input type="number" class="unified-form-input" id="varPortfolioValue" placeholder="1000000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Confidence Level (%)</label>
+                            <select class="unified-form-input" id="varConfidenceLevel" required>
+                                <option value="95">95%</option>
+                                <option value="99" selected>99%</option>
+                                <option value="99.9">99.9%</option>
+                            </select>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Time Horizon (Days)</label>
+                            <select class="unified-form-input" id="varTimeHorizon" required>
+                                <option value="1">1 Day</option>
+                                <option value="5">5 Days</option>
+                                <option value="10" selected>10 Days</option>
+                                <option value="30">30 Days</option>
+                            </select>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Portfolio Volatility (%)</label>
+                            <input type="number" class="unified-form-input" id="varVolatility" placeholder="20" step="0.1" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Expected Return (%)</label>
+                            <input type="number" class="unified-form-input" id="varExpectedReturn" placeholder="12" step="0.1" value="12">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="calculateVaR()">
+                                <i class="bi bi-calculator"></i> Calculate VaR
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="var-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-shield-exclamation"></i> VaR Analysis
+                        </div>
+                        <div id="var-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getStressTestSimulatorContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">Stress Test Simulator</h1>
+                        <p class="unified-tool-subtitle">Simulate portfolio performance under various market stress scenarios</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Portfolio Value (₹)</label>
+                            <input type="number" class="unified-form-input" id="stressPortfolioValue" placeholder="1000000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Stress Scenario</label>
+                            <select class="unified-form-input" id="stressScenario" required>
+                                <option value="market_crash">Market Crash (-30%)</option>
+                                <option value="recession">Recession (-20%)</option>
+                                <option value="volatility_spike">Volatility Spike (-15%)</option>
+                                <option value="sector_rotation">Sector Rotation (-10%)</option>
+                                <option value="custom">Custom Scenario</option>
+                            </select>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Custom Loss (%)</label>
+                            <input type="number" class="unified-form-input" id="stressCustomLoss" placeholder="25" step="0.1" disabled>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Recovery Period (Days)</label>
+                            <input type="number" class="unified-form-input" id="stressRecoveryDays" placeholder="90" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Risk Tolerance (%)</label>
+                            <input type="number" class="unified-form-input" id="stressRiskTolerance" placeholder="15" step="0.1" value="15">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="runStressTest()">
+                                <i class="bi bi-lightning"></i> Run Stress Test
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="stress-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-graph-down"></i> Stress Test Results
+                        </div>
+                        <div id="stress-result-content"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getRiskBudgetManagerContent() {
+            return `
+                <div class="unified-tool-container">
+                    <div class="unified-tool-header">
+                        <h1 class="unified-tool-title">Risk Budget Manager</h1>
+                        <p class="unified-tool-subtitle">Allocate and manage risk budget across different trading strategies</p>
+                    </div>
+                    
+                    <div class="unified-grid">
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Total Risk Budget (₹)</label>
+                            <input type="number" class="unified-form-input" id="rbTotalRisk" placeholder="20000" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Strategy 1 Risk (%)</label>
+                            <input type="number" class="unified-form-input" id="rbStrategy1" placeholder="40" step="0.1" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Strategy 2 Risk (%)</label>
+                            <input type="number" class="unified-form-input" id="rbStrategy2" placeholder="30" step="0.1" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Strategy 3 Risk (%)</label>
+                            <input type="number" class="unified-form-input" id="rbStrategy3" placeholder="20" step="0.1" required>
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">Reserve Risk (%)</label>
+                            <input type="number" class="unified-form-input" id="rbReserve" placeholder="10" step="0.1" value="10">
+                        </div>
+                        <div class="unified-form-group">
+                            <label class="unified-form-label">&nbsp;</label>
+                            <button class="unified-btn" onclick="calculateRiskBudget()">
+                                <i class="bi bi-calculator"></i> Calculate Budget
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="risk-budget-result" class="unified-result-card" style="display: none;">
+                        <div class="unified-result-title">
+                            <i class="bi bi-pie-chart"></i> Risk Budget Allocation
+                        </div>
+                        <div id="risk-budget-result-content"></div>
                     </div>
                 </div>
             `;
@@ -3456,6 +4365,698 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 document.getElementById('chart-result').style.display = 'block';
             }
         }
+        
+        // Volatility Calculator Function
+        function calculateVolatility() {
+            const symbol = document.getElementById('volSymbol').value.toUpperCase();
+            const period = parseInt(document.getElementById('volPeriod').value);
+            const currentPrice = parseFloat(document.getElementById('volCurrentPrice').value) || 0;
+            const riskFreeRate = parseFloat(document.getElementById('volRiskFreeRate').value) || 6.5;
+            
+            if (symbol && currentPrice > 0) {
+                // Simulate volatility calculation (in real implementation, this would fetch historical data)
+                const historicalVol = 25 + Math.random() * 15; // 25-40% range
+                const impliedVol = 20 + Math.random() * 20; // 20-40% range
+                const volatility = (historicalVol + impliedVol) / 2;
+                
+                // Calculate expected move
+                const expectedMove = currentPrice * (volatility / 100) * Math.sqrt(period / 365);
+                const upperBound = currentPrice + expectedMove;
+                const lowerBound = currentPrice - expectedMove;
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${historicalVol.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Historical Volatility</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${impliedVol.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Implied Volatility</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${volatility.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Average Volatility</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${expectedMove.toFixed(2)}</div>
+                            <div class="unified-stat-label">Expected Move (${period} days)</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>Price Range Analysis</h4>
+                        <p><strong>Upper Bound:</strong> ₹${upperBound.toFixed(2)} (+${((upperBound - currentPrice) / currentPrice * 100).toFixed(2)}%)</p>
+                        <p><strong>Current Price:</strong> ₹${currentPrice.toFixed(2)}</p>
+                        <p><strong>Lower Bound:</strong> ₹${lowerBound.toFixed(2)} (${((lowerBound - currentPrice) / currentPrice * 100).toFixed(2)}%)</p>
+                    </div>
+                `;
+                
+                document.getElementById('volatility-result-content').innerHTML = resultContent;
+                document.getElementById('volatility-result').style.display = 'block';
+            } else {
+                alert('Please enter valid symbol and current price');
+            }
+        }
+        
+        // Correlation Analyzer Function
+        function analyzeCorrelation() {
+            const asset1 = document.getElementById('corrAsset1').value.toUpperCase();
+            const asset2 = document.getElementById('corrAsset2').value.toUpperCase();
+            const period = parseInt(document.getElementById('corrPeriod').value);
+            const weight1 = parseFloat(document.getElementById('corrWeight1').value) || 60;
+            const weight2 = parseFloat(document.getElementById('corrWeight2').value) || 40;
+            
+            if (asset1 && asset2) {
+                // Simulate correlation calculation
+                const correlation = -0.5 + Math.random() * 1.5; // -0.5 to 1.0 range
+                const strength = Math.abs(correlation);
+                
+                // Calculate portfolio risk reduction
+                const portfolioRisk = Math.sqrt((weight1/100)**2 + (weight2/100)**2 + 2 * (weight1/100) * (weight2/100) * correlation);
+                const riskReduction = (1 - portfolioRisk) * 100;
+                
+                let correlationStrength = '';
+                let recommendation = '';
+                
+                if (strength < 0.3) {
+                    correlationStrength = 'Weak';
+                    recommendation = 'Good diversification - assets move independently';
+                } else if (strength < 0.7) {
+                    correlationStrength = 'Moderate';
+                    recommendation = 'Some diversification benefit';
+                } else {
+                    correlationStrength = 'Strong';
+                    recommendation = 'Limited diversification - consider different assets';
+                }
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${correlation.toFixed(3)}</div>
+                            <div class="unified-stat-label">Correlation Coefficient</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${correlationStrength}</div>
+                            <div class="unified-stat-label">Correlation Strength</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${portfolioRisk.toFixed(3)}</div>
+                            <div class="unified-stat-label">Portfolio Risk</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${riskReduction.toFixed(1)}%</div>
+                            <div class="unified-stat-label">Risk Reduction</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>Analysis Results</h4>
+                        <p><strong>Assets:</strong> ${asset1} (${weight1}%) vs ${asset2} (${weight2}%)</p>
+                        <p><strong>Analysis Period:</strong> ${period} days</p>
+                        <p><strong>Recommendation:</strong> ${recommendation}</p>
+                        <p><strong>Correlation Interpretation:</strong> ${correlation > 0 ? 'Positive correlation - assets tend to move together' : 'Negative correlation - assets tend to move in opposite directions'}</p>
+                    </div>
+                `;
+                
+                document.getElementById('correlation-result-content').innerHTML = resultContent;
+                document.getElementById('correlation-result').style.display = 'block';
+            } else {
+                alert('Please enter both asset symbols');
+            }
+        }
+        
+        // Drawdown Calculator Function
+        function calculateDrawdown() {
+            const accountSize = parseFloat(document.getElementById('ddAccountSize').value) || 0;
+            const peakValue = parseFloat(document.getElementById('ddPeakValue').value) || 0;
+            const currentValue = parseFloat(document.getElementById('ddCurrentValue').value) || 0;
+            const troughValue = parseFloat(document.getElementById('ddTroughValue').value) || 0;
+            const recoveryDays = parseInt(document.getElementById('ddRecoveryDays').value) || 0;
+            
+            if (accountSize > 0 && peakValue > 0 && currentValue > 0 && troughValue > 0) {
+                // Calculate maximum drawdown
+                const maxDrawdown = ((peakValue - troughValue) / peakValue) * 100;
+                const currentDrawdown = ((peakValue - currentValue) / peakValue) * 100;
+                const totalReturn = ((currentValue - accountSize) / accountSize) * 100;
+                
+                // Calculate recovery metrics
+                const recoveryRate = recoveryDays > 0 ? (peakValue - troughValue) / recoveryDays : 0;
+                const timeToRecover = recoveryRate > 0 ? (peakValue - currentValue) / recoveryRate : 0;
+                
+                let riskLevel = '';
+                if (maxDrawdown < 5) {
+                    riskLevel = 'Low Risk';
+                } else if (maxDrawdown < 15) {
+                    riskLevel = 'Moderate Risk';
+                } else if (maxDrawdown < 25) {
+                    riskLevel = 'High Risk';
+                } else {
+                    riskLevel = 'Very High Risk';
+                }
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${maxDrawdown.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Maximum Drawdown</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${currentDrawdown.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Current Drawdown</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${totalReturn.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Total Return</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${timeToRecover.toFixed(0)} days</div>
+                            <div class="unified-stat-label">Time to Recover</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>Risk Assessment</h4>
+                        <p><strong>Risk Level:</strong> ${riskLevel}</p>
+                        <p><strong>Peak Value:</strong> ₹${peakValue.toFixed(2)}</p>
+                        <p><strong>Trough Value:</strong> ₹${troughValue.toFixed(2)}</p>
+                        <p><strong>Current Value:</strong> ₹${currentValue.toFixed(2)}</p>
+                        <p><strong>Recovery Rate:</strong> ₹${recoveryRate.toFixed(2)}/day</p>
+                    </div>
+                `;
+                
+                document.getElementById('drawdown-result-content').innerHTML = resultContent;
+                document.getElementById('drawdown-result').style.display = 'block';
+            } else {
+                alert('Please enter all required values');
+            }
+        }
+        
+        // Kelly Criterion Calculator Function
+        function calculateKellyCriterion() {
+            const winRate = parseFloat(document.getElementById('kellyWinRate').value) || 0;
+            const avgWin = parseFloat(document.getElementById('kellyAvgWin').value) || 0;
+            const avgLoss = parseFloat(document.getElementById('kellyAvgLoss').value) || 0;
+            const accountSize = parseFloat(document.getElementById('kellyAccountSize').value) || 0;
+            const riskTolerance = parseFloat(document.getElementById('kellyRiskTolerance').value) || 25;
+            
+            if (winRate > 0 && avgWin > 0 && avgLoss > 0 && accountSize > 0) {
+                // Kelly Criterion formula: f = (bp - q) / b
+                // where b = odds (avgWin/avgLoss), p = win probability, q = loss probability
+                const winProbability = winRate / 100;
+                const lossProbability = 1 - winProbability;
+                const odds = avgWin / avgLoss;
+                
+                const kellyPercentage = ((odds * winProbability) - lossProbability) / odds;
+                const kellyAmount = kellyPercentage * accountSize;
+                
+                // Apply risk tolerance
+                const adjustedKelly = Math.min(kellyPercentage, riskTolerance / 100);
+                const adjustedAmount = adjustedKelly * accountSize;
+                
+                let recommendation = '';
+                if (kellyPercentage < 0) {
+                    recommendation = 'Negative Kelly - Strategy is not profitable';
+                } else if (kellyPercentage < 0.05) {
+                    recommendation = 'Conservative - Use small position sizes';
+                } else if (kellyPercentage < 0.15) {
+                    recommendation = 'Moderate - Good risk-adjusted returns';
+                } else {
+                    recommendation = 'Aggressive - High potential but high risk';
+                }
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${(kellyPercentage * 100).toFixed(2)}%</div>
+                            <div class="unified-stat-label">Kelly Percentage</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${kellyAmount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Kelly Amount</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${(adjustedKelly * 100).toFixed(2)}%</div>
+                            <div class="unified-stat-label">Adjusted Kelly</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${adjustedAmount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Adjusted Amount</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>Kelly Analysis</h4>
+                        <p><strong>Win Rate:</strong> ${winRate}%</p>
+                        <p><strong>Average Win:</strong> ₹${avgWin.toFixed(2)}</p>
+                        <p><strong>Average Loss:</strong> ₹${avgLoss.toFixed(2)}</p>
+                        <p><strong>Odds Ratio:</strong> ${odds.toFixed(2)}</p>
+                        <p><strong>Recommendation:</strong> ${recommendation}</p>
+                    </div>
+                `;
+                
+                document.getElementById('kelly-result-content').innerHTML = resultContent;
+                document.getElementById('kelly-result').style.display = 'block';
+            } else {
+                alert('Please enter all required values');
+            }
+        }
+        
+        // VaR Calculator Function
+        function calculateVaR() {
+            const portfolioValue = parseFloat(document.getElementById('varPortfolioValue').value) || 0;
+            const confidenceLevel = parseFloat(document.getElementById('varConfidenceLevel').value) || 99;
+            const timeHorizon = parseInt(document.getElementById('varTimeHorizon').value) || 10;
+            const volatility = parseFloat(document.getElementById('varVolatility').value) || 0;
+            const expectedReturn = parseFloat(document.getElementById('varExpectedReturn').value) || 12;
+            
+            if (portfolioValue > 0 && volatility > 0) {
+                // Z-scores for different confidence levels
+                const zScores = {
+                    95: 1.645,
+                    99: 2.326,
+                    99.9: 3.090
+                };
+                
+                const zScore = zScores[confidenceLevel] || 2.326;
+                
+                // Calculate VaR
+                const dailyVolatility = volatility / Math.sqrt(252); // Annual to daily
+                const timeAdjustedVolatility = dailyVolatility * Math.sqrt(timeHorizon);
+                const timeAdjustedReturn = (expectedReturn / 100) * (timeHorizon / 252);
+                
+                const varAmount = portfolioValue * (timeAdjustedReturn - (zScore * timeAdjustedVolatility));
+                const varPercentage = (varAmount / portfolioValue) * 100;
+                
+                // Calculate Expected Shortfall (Conditional VaR)
+                const expectedShortfall = portfolioValue * (timeAdjustedReturn - (zScore * timeAdjustedVolatility * 1.1));
+                
+                let riskLevel = '';
+                if (Math.abs(varPercentage) < 5) {
+                    riskLevel = 'Low Risk';
+                } else if (Math.abs(varPercentage) < 10) {
+                    riskLevel = 'Moderate Risk';
+                } else if (Math.abs(varPercentage) < 20) {
+                    riskLevel = 'High Risk';
+                } else {
+                    riskLevel = 'Very High Risk';
+                }
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${Math.abs(varAmount).toFixed(2)}</div>
+                            <div class="unified-stat-label">VaR Amount</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${Math.abs(varPercentage).toFixed(2)}%</div>
+                            <div class="unified-stat-label">VaR Percentage</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${Math.abs(expectedShortfall).toFixed(2)}</div>
+                            <div class="unified-stat-label">Expected Shortfall</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${riskLevel}</div>
+                            <div class="unified-stat-label">Risk Level</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>VaR Analysis</h4>
+                        <p><strong>Confidence Level:</strong> ${confidenceLevel}%</p>
+                        <p><strong>Time Horizon:</strong> ${timeHorizon} days</p>
+                        <p><strong>Portfolio Volatility:</strong> ${volatility}%</p>
+                        <p><strong>Expected Return:</strong> ${expectedReturn}%</p>
+                        <p><strong>Interpretation:</strong> There is a ${100 - confidenceLevel}% chance of losing more than ₹${Math.abs(varAmount).toFixed(2)} over ${timeHorizon} days</p>
+                    </div>
+                `;
+                
+                document.getElementById('var-result-content').innerHTML = resultContent;
+                document.getElementById('var-result').style.display = 'block';
+            } else {
+                alert('Please enter portfolio value and volatility');
+            }
+        }
+        
+        // Stress Test Simulator Function
+        function runStressTest() {
+            const portfolioValue = parseFloat(document.getElementById('stressPortfolioValue').value) || 0;
+            const scenario = document.getElementById('stressScenario').value;
+            const customLoss = parseFloat(document.getElementById('stressCustomLoss').value) || 0;
+            const recoveryDays = parseInt(document.getElementById('stressRecoveryDays').value) || 0;
+            const riskTolerance = parseFloat(document.getElementById('stressRiskTolerance').value) || 15;
+            
+            if (portfolioValue > 0) {
+                // Define scenario losses
+                const scenarioLosses = {
+                    'market_crash': 30,
+                    'recession': 20,
+                    'volatility_spike': 15,
+                    'sector_rotation': 10,
+                    'custom': customLoss
+                };
+                
+                const lossPercentage = scenarioLosses[scenario] || 0;
+                const lossAmount = portfolioValue * (lossPercentage / 100);
+                const remainingValue = portfolioValue - lossAmount;
+                
+                // Calculate recovery metrics
+                const recoveryRate = recoveryDays > 0 ? lossAmount / recoveryDays : 0;
+                const dailyReturnNeeded = (lossPercentage / recoveryDays) * 100;
+                
+                // Risk assessment
+                const riskExposure = (lossPercentage / riskTolerance) * 100;
+                let riskAssessment = '';
+                if (riskExposure < 50) {
+                    riskAssessment = 'Low Risk - Portfolio can handle this scenario';
+                } else if (riskExposure < 100) {
+                    riskAssessment = 'Moderate Risk - Monitor closely';
+                } else if (riskExposure < 150) {
+                    riskAssessment = 'High Risk - Consider reducing exposure';
+                } else {
+                    riskAssessment = 'Very High Risk - Immediate action required';
+                }
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${lossPercentage.toFixed(1)}%</div>
+                            <div class="unified-stat-label">Loss Percentage</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${lossAmount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Loss Amount</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${remainingValue.toFixed(2)}</div>
+                            <div class="unified-stat-label">Remaining Value</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">${dailyReturnNeeded.toFixed(2)}%</div>
+                            <div class="unified-stat-label">Daily Return Needed</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>Stress Test Results</h4>
+                        <p><strong>Scenario:</strong> ${scenario.replace('_', ' ').toUpperCase()}</p>
+                        <p><strong>Recovery Period:</strong> ${recoveryDays} days</p>
+                        <p><strong>Recovery Rate:</strong> ₹${recoveryRate.toFixed(2)}/day</p>
+                        <p><strong>Risk Assessment:</strong> ${riskAssessment}</p>
+                        <p><strong>Risk Exposure:</strong> ${riskExposure.toFixed(1)}% of tolerance</p>
+                    </div>
+                `;
+                
+                document.getElementById('stress-result-content').innerHTML = resultContent;
+                document.getElementById('stress-result').style.display = 'block';
+            } else {
+                alert('Please enter portfolio value');
+            }
+        }
+        
+        // Risk Budget Manager Function
+        function calculateRiskBudget() {
+            const totalRisk = parseFloat(document.getElementById('rbTotalRisk').value) || 0;
+            const strategy1 = parseFloat(document.getElementById('rbStrategy1').value) || 0;
+            const strategy2 = parseFloat(document.getElementById('rbStrategy2').value) || 0;
+            const strategy3 = parseFloat(document.getElementById('rbStrategy3').value) || 0;
+            const reserve = parseFloat(document.getElementById('rbReserve').value) || 10;
+            
+            if (totalRisk > 0) {
+                const totalAllocation = strategy1 + strategy2 + strategy3 + reserve;
+                
+                if (totalAllocation > 100) {
+                    alert('Total allocation cannot exceed 100%');
+                    return;
+                }
+                
+                // Calculate risk amounts
+                const strategy1Amount = totalRisk * (strategy1 / 100);
+                const strategy2Amount = totalRisk * (strategy2 / 100);
+                const strategy3Amount = totalRisk * (strategy3 / 100);
+                const reserveAmount = totalRisk * (reserve / 100);
+                const unallocatedAmount = totalRisk * ((100 - totalAllocation) / 100);
+                
+                // Risk concentration analysis
+                const maxConcentration = Math.max(strategy1, strategy2, strategy3);
+                let concentrationRisk = '';
+                if (maxConcentration < 30) {
+                    concentrationRisk = 'Low - Well diversified';
+                } else if (maxConcentration < 50) {
+                    concentrationRisk = 'Moderate - Some concentration';
+                } else {
+                    concentrationRisk = 'High - Over-concentrated';
+                }
+                
+                const resultContent = `
+                    <div class="unified-grid">
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${strategy1Amount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Strategy 1 (${strategy1}%)</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${strategy2Amount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Strategy 2 (${strategy2}%)</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${strategy3Amount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Strategy 3 (${strategy3}%)</div>
+                        </div>
+                        <div class="unified-stat">
+                            <div class="unified-stat-value">₹${reserveAmount.toFixed(2)}</div>
+                            <div class="unified-stat-label">Reserve (${reserve}%)</div>
+                        </div>
+                    </div>
+                    <div class="unified-info-card">
+                        <h4>Risk Budget Analysis</h4>
+                        <p><strong>Total Risk Budget:</strong> ₹${totalRisk.toFixed(2)}</p>
+                        <p><strong>Total Allocated:</strong> ${totalAllocation.toFixed(1)}%</p>
+                        <p><strong>Unallocated:</strong> ₹${unallocatedAmount.toFixed(2)} (${(100 - totalAllocation).toFixed(1)}%)</p>
+                        <p><strong>Concentration Risk:</strong> ${concentrationRisk}</p>
+                        <p><strong>Max Strategy Weight:</strong> ${maxConcentration.toFixed(1)}%</p>
+                    </div>
+                `;
+                
+                document.getElementById('risk-budget-result-content').innerHTML = resultContent;
+                document.getElementById('risk-budget-result').style.display = 'block';
+            } else {
+                alert('Please enter total risk budget');
+            }
+        }
+        
+        // Enhanced Dropdown Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enable/disable custom loss input based on scenario selection
+            const scenarioSelect = document.getElementById('stressScenario');
+            const customLossInput = document.getElementById('stressCustomLoss');
+            
+            if (scenarioSelect && customLossInput) {
+                scenarioSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        customLossInput.disabled = false;
+                        customLossInput.required = true;
+                    } else {
+                        customLossInput.disabled = true;
+                        customLossInput.required = false;
+                    }
+                });
+            }
+            
+            // ===== FRESH CUSTOM DROPDOWN SYSTEM =====
+            function initCustomDropdowns() {
+                console.log('🚀 Initializing fresh custom dropdown system...');
+                
+                // Find all select elements (including those in modals)
+                const allSelects = document.querySelectorAll('select');
+                console.log(`Found ${allSelects.length} select elements to convert`);
+                
+                allSelects.forEach((select, index) => {
+                    console.log(`Converting select ${index + 1}:`, select);
+                    
+                    // Skip if already converted
+                    if (select.closest('.custom-select')) {
+                        console.log('Select already converted, skipping');
+                        return;
+                    }
+                    
+                    // Skip if select is hidden or not visible
+                    if (select.style.display === 'none' || select.offsetParent === null) {
+                        console.log('Select is hidden, skipping');
+                        return;
+                    }
+                    
+                    // Create wrapper
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'custom-select';
+                    
+                    // Create trigger
+                    const trigger = document.createElement('div');
+                    trigger.className = 'custom-select-trigger';
+                    trigger.setAttribute('tabindex', '0');
+                    
+                    // Create arrow
+                    const arrow = document.createElement('div');
+                    arrow.className = 'custom-select-arrow';
+                    arrow.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    `;
+                    
+                    // Create options container
+                    const optionsContainer = document.createElement('div');
+                    optionsContainer.className = 'custom-select-options';
+                    
+                    // Get current value
+                    const currentValue = select.value;
+                    const currentText = select.options[select.selectedIndex]?.text || 'Select an option';
+                    
+                    // Set trigger text
+                    trigger.innerHTML = `<span>${currentText}</span>`;
+                    trigger.appendChild(arrow);
+                    
+                    // Create options
+                    Array.from(select.options).forEach((option) => {
+                        const optionElement = document.createElement('div');
+                        optionElement.className = 'custom-select-option';
+                        optionElement.textContent = option.text;
+                        optionElement.dataset.value = option.value;
+                        
+                        if (option.value === currentValue) {
+                            optionElement.classList.add('selected');
+                        }
+                        
+                        optionElement.addEventListener('click', () => {
+                            // Update select value
+                            select.value = option.value;
+                            
+                            // Update trigger text
+                            trigger.querySelector('span').textContent = option.text;
+                            
+                            // Update selected option
+                            optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
+                                opt.classList.remove('selected');
+                            });
+                            optionElement.classList.add('selected');
+                            
+                            // Close dropdown
+                            trigger.classList.remove('active');
+                            optionsContainer.classList.remove('show');
+                            
+                            // Trigger change event
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                            
+                            console.log(`Selected: ${option.text} (${option.value})`);
+                        });
+                        
+                        optionsContainer.appendChild(optionElement);
+                    });
+                    
+                    // Assemble dropdown
+                    wrapper.appendChild(trigger);
+                    wrapper.appendChild(optionsContainer);
+                    
+                    // Insert before original select and hide it
+                    select.parentNode.insertBefore(wrapper, select);
+                    select.style.display = 'none';
+                    
+                    // Add click handler to trigger
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isActive = trigger.classList.contains('active');
+                        
+                        // Close all other dropdowns
+                        document.querySelectorAll('.custom-select-trigger').forEach(t => {
+                            t.classList.remove('active');
+                        });
+                        document.querySelectorAll('.custom-select-options').forEach(o => {
+                            o.classList.remove('show');
+                        });
+                        
+                        // Toggle current dropdown
+                        if (!isActive) {
+                            trigger.classList.add('active');
+                            optionsContainer.classList.add('show');
+                        }
+                    });
+                    
+                    // Add keyboard support
+                    trigger.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            trigger.click();
+                        } else if (e.key === 'Escape') {
+                            trigger.classList.remove('active');
+                            optionsContainer.classList.remove('show');
+                        }
+                    });
+                    
+                    // Close dropdown when clicking outside
+                    document.addEventListener('click', (e) => {
+                        if (!wrapper.contains(e.target)) {
+                            trigger.classList.remove('active');
+                            optionsContainer.classList.remove('show');
+                        }
+                    });
+                    
+                    console.log(`✅ Successfully converted select ${index + 1}`);
+                });
+                
+                // Test the dropdowns
+                setTimeout(() => {
+                    const customDropdowns = document.querySelectorAll('.custom-select');
+                    console.log(`🎉 Custom dropdowns created: ${customDropdowns.length}`);
+                    
+                    if (customDropdowns.length > 0) {
+                        console.log('✅ Custom dropdowns are working perfectly!');
+                        customDropdowns.forEach((dropdown, index) => {
+                            console.log(`Dropdown ${index + 1}:`, dropdown);
+                        });
+                    } else {
+                        console.log('❌ No custom dropdowns found');
+                    }
+                }, 500);
+            }
+            
+            // Initialize the fresh custom dropdown system
+            initCustomDropdowns();
+            
+            // Also initialize dropdowns when modals are opened
+            const originalShowToolModal = window.showToolModal;
+            if (originalShowToolModal) {
+                window.showToolModal = function(title, content) {
+                    originalShowToolModal(title, content);
+                    // Re-initialize dropdowns after modal content is added
+                    setTimeout(() => {
+                        console.log('🔄 Re-initializing dropdowns after modal opened');
+                        initCustomDropdowns();
+                    }, 100);
+                };
+            }
+            
+            // Watch for new select elements being added to the DOM
+            const observer = new MutationObserver((mutations) => {
+                let shouldReinit = false;
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.tagName === 'SELECT' || node.querySelector('select')) {
+                                shouldReinit = true;
+                            }
+                        }
+                    });
+                });
+                
+                if (shouldReinit) {
+                    console.log('🔄 New select elements detected, re-initializing dropdowns');
+                    setTimeout(() => {
+                        initCustomDropdowns();
+                    }, 50);
+                }
+            });
+            
+            // Start observing
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+        });
     </script>
     
     <!-- Cache Busting Script -->
@@ -3643,6 +5244,34 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
                 'chart-analysis-tool': {
                     title: 'Chart Analysis Tool',
                     content: getChartAnalysisToolContent()
+                },
+                'volatility-calculator': {
+                    title: 'Volatility Calculator',
+                    content: getVolatilityCalculatorContent()
+                },
+                'correlation-analyzer': {
+                    title: 'Correlation Analyzer',
+                    content: getCorrelationAnalyzerContent()
+                },
+                'drawdown-calculator': {
+                    title: 'Drawdown Calculator',
+                    content: getDrawdownCalculatorContent()
+                },
+                'kelly-criterion-calculator': {
+                    title: 'Kelly Criterion Calculator',
+                    content: getKellyCriterionCalculatorContent()
+                },
+                'var-calculator': {
+                    title: 'VaR Calculator',
+                    content: getVaRCalculatorContent()
+                },
+                'stress-test-simulator': {
+                    title: 'Stress Test Simulator',
+                    content: getStressTestSimulatorContent()
+                },
+                'risk-budget-manager': {
+                    title: 'Risk Budget Manager',
+                    content: getRiskBudgetManagerContent()
                 }
             };
             
@@ -3678,11 +5307,13 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         
         // Tool implementations
         function showPositionCalculator() {
-            alert('Position Size Calculator - Coming Soon!');
+            const content = getPositionSizeCalculatorContent();
+            openToolModal('Position Size Calculator', content);
         }
         
         function showRiskRewardCalculator() {
-            alert('Risk-Reward Calculator - Coming Soon!');
+            const content = getRiskRewardCalculatorContent();
+            openToolModal('Risk Reward Calculator', content);
         }
         
         // Enhanced Profit-Loss Calculator
@@ -3715,1261 +5346,20 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
             showToolModal('Chart Analysis Tool', content);
         }
 
-        // Enhanced Tool Content Generators
-        function getMarginCalculatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Margin Calculator</h1>
-                        <p class="unified-tool-subtitle">Calculate margin requirements and leverage for your trades</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="margin-symbol">Symbol</label>
-                            <input type="text" id="margin-symbol" placeholder="e.g., RELIANCE" value="RELIANCE">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="margin-price">Current Price</label>
-                            <input type="number" id="margin-price" placeholder="2500" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="margin-quantity">Quantity</label>
-                            <input type="number" id="margin-quantity" placeholder="100" step="1">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="margin-type">Margin Type</label>
-                            <select id="margin-type">
-                                <option value="equity">Equity (20%)</option>
-                                <option value="futures">Futures (15%)</option>
-                                <option value="options">Options (Premium)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateMargin()">Calculate Margin</button>
-                        <button class="btn btn-secondary" onclick="clearMarginForm()">Clear</button>
-                    </div>
-                    
-                    <div id="margin-result" class="unified-result" style="display: none;">
-                        <h3>Margin Analysis</h3>
-                        <div id="margin-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getPortfolioAnalyzerContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Portfolio Analyzer</h1>
-                        <p class="unified-tool-subtitle">Analyze your portfolio performance and risk metrics</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="portfolio-total-value">Total Portfolio Value</label>
-                            <input type="number" id="portfolio-total-value" placeholder="100000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="portfolio-invested">Total Invested</label>
-                            <input type="number" id="portfolio-invested" placeholder="80000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="portfolio-time-period">Time Period (Months)</label>
-                            <input type="number" id="portfolio-time-period" placeholder="12" step="1">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="portfolio-risk-free-rate">Risk-Free Rate (%)</label>
-                            <input type="number" id="portfolio-risk-free-rate" placeholder="6" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="analyzePortfolio()">Analyze Portfolio</button>
-                        <button class="btn btn-secondary" onclick="clearPortfolioForm()">Clear</button>
-                    </div>
-                    
-                    <div id="portfolio-result" class="unified-result" style="display: none;">
-                        <h3>Portfolio Analysis</h3>
-                        <div id="portfolio-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getMarketSimulatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Market Simulator</h1>
-                        <p class="unified-tool-subtitle">Practice trading with virtual money in a risk-free environment</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="sim-account-size">Virtual Account Size</label>
-                            <input type="number" id="sim-account-size" placeholder="100000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="sim-strategy">Trading Strategy</label>
-                            <select id="sim-strategy">
-                                <option value="conservative">Conservative</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="aggressive">Aggressive</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="sim-timeframe">Simulation Period</label>
-                            <select id="sim-timeframe">
-                                <option value="1">1 Month</option>
-                                <option value="3">3 Months</option>
-                                <option value="6" selected>6 Months</option>
-                                <option value="12">1 Year</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="sim-market-condition">Market Condition</label>
-                            <select id="sim-market-condition">
-                                <option value="bull">Bull Market</option>
-                                <option value="bear">Bear Market</option>
-                                <option value="sideways">Sideways Market</option>
-                                <option value="volatile">Volatile Market</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="startSimulation()">Start Simulation</button>
-                        <button class="btn btn-secondary" onclick="clearSimulationForm()">Clear</button>
-                    </div>
-                    
-                    <div id="simulation-result" class="unified-result" style="display: none;">
-                        <h3>Simulation Results</h3>
-                        <div id="simulation-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getChartAnalysisToolContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Chart Analysis Tool</h1>
-                        <p class="unified-tool-subtitle">Advanced charting and technical analysis tools</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="chart-symbol">Symbol</label>
-                            <input type="text" id="chart-symbol" placeholder="e.g., RELIANCE" value="RELIANCE">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="chart-timeframe">Timeframe</label>
-                            <select id="chart-timeframe">
-                                <option value="1m">1 Minute</option>
-                                <option value="5m">5 Minutes</option>
-                                <option value="15m">15 Minutes</option>
-                                <option value="1h">1 Hour</option>
-                                <option value="1d" selected>1 Day</option>
-                                <option value="1w">1 Week</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="chart-indicators">Technical Indicators</label>
-                            <select id="chart-indicators" multiple>
-                                <option value="sma">Simple Moving Average</option>
-                                <option value="ema">Exponential Moving Average</option>
-                                <option value="rsi">RSI</option>
-                                <option value="macd">MACD</option>
-                                <option value="bollinger">Bollinger Bands</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="chart-period">Analysis Period</label>
-                            <select id="chart-period">
-                                <option value="30">30 Days</option>
-                                <option value="90" selected>90 Days</option>
-                                <option value="180">180 Days</option>
-                                <option value="365">1 Year</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="generateChart()">Generate Chart</button>
-                        <button class="btn btn-secondary" onclick="clearChartForm()">Clear</button>
-                    </div>
-                    
-                    <div id="chart-result" class="unified-result" style="display: none;">
-                        <h3>Chart Analysis</h3>
-                        <div id="chart-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getVolatilityCalculatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Volatility Calculator</h1>
-                        <p class="unified-tool-subtitle">Calculate historical and implied volatility for better risk assessment</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="vol-symbol">Symbol</label>
-                            <input type="text" id="vol-symbol" placeholder="e.g., RELIANCE" value="RELIANCE">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="vol-period">Period (Days)</label>
-                            <select id="vol-period">
-                                <option value="30">30 Days</option>
-                                <option value="60">60 Days</option>
-                                <option value="90" selected>90 Days</option>
-                                <option value="180">180 Days</option>
-                                <option value="365">1 Year</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="vol-current-price">Current Price</label>
-                            <input type="number" id="vol-current-price" placeholder="2500" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="vol-strike-price">Strike Price (for IV)</label>
-                            <input type="number" id="vol-strike-price" placeholder="2500" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateVolatility()">Calculate Volatility</button>
-                        <button class="btn btn-secondary" onclick="clearVolatilityForm()">Clear</button>
-                    </div>
-                    
-                    <div id="volatility-result" class="unified-result" style="display: none;">
-                        <h3>Volatility Analysis</h3>
-                        <div id="volatility-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getCorrelationAnalyzerContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Correlation Analyzer</h1>
-                        <p class="unified-tool-subtitle">Analyze correlation between assets for portfolio diversification</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="corr-symbol1">Symbol 1</label>
-                            <input type="text" id="corr-symbol1" placeholder="e.g., RELIANCE" value="RELIANCE">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="corr-symbol2">Symbol 2</label>
-                            <input type="text" id="corr-symbol2" placeholder="e.g., TCS" value="TCS">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="corr-period">Analysis Period</label>
-                            <select id="corr-period">
-                                <option value="30">30 Days</option>
-                                <option value="60">60 Days</option>
-                                <option value="90" selected>90 Days</option>
-                                <option value="180">180 Days</option>
-                                <option value="365">1 Year</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateCorrelation()">Analyze Correlation</button>
-                        <button class="btn btn-secondary" onclick="clearCorrelationForm()">Clear</button>
-                    </div>
-                    
-                    <div id="correlation-result" class="unified-result" style="display: none;">
-                        <h3>Correlation Analysis</h3>
-                        <div id="correlation-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getDrawdownCalculatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Drawdown Calculator</h1>
-                        <p class="unified-tool-subtitle">Calculate maximum drawdown and recovery time</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="dd-account-size">Account Size</label>
-                            <input type="number" id="dd-account-size" placeholder="100000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="dd-current-value">Current Portfolio Value</label>
-                            <input type="number" id="dd-current-value" placeholder="95000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="dd-peak-value">Peak Portfolio Value</label>
-                            <input type="number" id="dd-peak-value" placeholder="110000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="dd-monthly-return">Expected Monthly Return (%)</label>
-                            <input type="number" id="dd-monthly-return" placeholder="5" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateDrawdown()">Calculate Drawdown</button>
-                        <button class="btn btn-secondary" onclick="clearDrawdownForm()">Clear</button>
-                    </div>
-                    
-                    <div id="drawdown-result" class="unified-result" style="display: none;">
-                        <h3>Drawdown Analysis</h3>
-                        <div id="drawdown-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getKellyCriterionCalculatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Kelly Criterion Calculator</h1>
-                        <p class="unified-tool-subtitle">Calculate optimal position size using Kelly Criterion</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="kelly-win-rate">Win Rate (%)</label>
-                            <input type="number" id="kelly-win-rate" placeholder="60" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="kelly-avg-win">Average Win Amount</label>
-                            <input type="number" id="kelly-avg-win" placeholder="1000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="kelly-avg-loss">Average Loss Amount</label>
-                            <input type="number" id="kelly-avg-loss" placeholder="500" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="kelly-account-size">Account Size</label>
-                            <input type="number" id="kelly-account-size" placeholder="100000" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateKellyCriterion()">Calculate Kelly %</button>
-                        <button class="btn btn-secondary" onclick="clearKellyForm()">Clear</button>
-                    </div>
-                    
-                    <div id="kelly-result" class="unified-result" style="display: none;">
-                        <h3>Kelly Criterion Analysis</h3>
-                        <div id="kelly-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getVaRCalculatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Value at Risk (VaR) Calculator</h1>
-                        <p class="unified-tool-subtitle">Calculate portfolio Value at Risk for risk assessment</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="var-portfolio-value">Portfolio Value</label>
-                            <input type="number" id="var-portfolio-value" placeholder="100000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="var-confidence-level">Confidence Level (%)</label>
-                            <select id="var-confidence-level">
-                                <option value="90">90%</option>
-                                <option value="95" selected>95%</option>
-                                <option value="99">99%</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="var-time-horizon">Time Horizon (Days)</label>
-                            <select id="var-time-horizon">
-                                <option value="1" selected>1 Day</option>
-                                <option value="5">5 Days</option>
-                                <option value="10">10 Days</option>
-                                <option value="30">30 Days</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="var-volatility">Portfolio Volatility (%)</label>
-                            <input type="number" id="var-volatility" placeholder="20" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateVaR()">Calculate VaR</button>
-                        <button class="btn btn-secondary" onclick="clearVaRForm()">Clear</button>
-                    </div>
-                    
-                    <div id="var-result" class="unified-result" style="display: none;">
-                        <h3>Value at Risk Analysis</h3>
-                        <div id="var-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getStressTestSimulatorContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Stress Test Simulator</h1>
-                        <p class="unified-tool-subtitle">Simulate portfolio performance under stress scenarios</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="stress-portfolio-value">Portfolio Value</label>
-                            <input type="number" id="stress-portfolio-value" placeholder="100000" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="stress-scenario">Stress Scenario</label>
-                            <select id="stress-scenario">
-                                <option value="market_crash">Market Crash (-20%)</option>
-                                <option value="recession">Recession (-15%)</option>
-                                <option value="volatility_spike">Volatility Spike (-10%)</option>
-                                <option value="sector_rotation">Sector Rotation (-8%)</option>
-                                <option value="custom">Custom Scenario</option>
-                            </select>
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="stress-custom-loss">Custom Loss (%)</label>
-                            <input type="number" id="stress-custom-loss" placeholder="10" step="0.01" style="display: none;">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="stress-recovery-time">Recovery Time (Months)</label>
-                            <input type="number" id="stress-recovery-time" placeholder="6" step="1">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="runStressTest()">Run Stress Test</button>
-                        <button class="btn btn-secondary" onclick="clearStressTestForm()">Clear</button>
-                    </div>
-                    
-                    <div id="stress-test-result" class="unified-result" style="display: none;">
-                        <h3>Stress Test Results</h3>
-                        <div id="stress-test-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function getRiskBudgetManagerContent() {
-            return `
-                <div class="unified-tool-container">
-                    <div class="unified-tool-header">
-                        <h1 class="unified-tool-title">Risk Budget Manager</h1>
-                        <p class="unified-tool-subtitle">Allocate and manage risk budget across strategies</p>
-                    </div>
-                    
-                    <div class="unified-grid">
-                        <div class="unified-input-group">
-                            <label for="rb-total-risk">Total Risk Budget (%)</label>
-                            <input type="number" id="rb-total-risk" placeholder="10" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="rb-strategy1">Strategy 1 Risk (%)</label>
-                            <input type="number" id="rb-strategy1" placeholder="4" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="rb-strategy2">Strategy 2 Risk (%)</label>
-                            <input type="number" id="rb-strategy2" placeholder="3" step="0.01">
-                        </div>
-                        <div class="unified-input-group">
-                            <label for="rb-strategy3">Strategy 3 Risk (%)</label>
-                            <input type="number" id="rb-strategy3" placeholder="3" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div class="unified-button-group">
-                        <button class="btn btn-primary" onclick="calculateRiskBudget()">Calculate Risk Budget</button>
-                        <button class="btn btn-secondary" onclick="clearRiskBudgetForm()">Clear</button>
-                    </div>
-                    
-                    <div id="risk-budget-result" class="unified-result" style="display: none;">
-                        <h3>Risk Budget Analysis</h3>
-                        <div id="risk-budget-result-content"></div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Enhanced calculation functions
-        function calculateVolatility() {
-            const symbol = document.getElementById('vol-symbol').value;
-            const period = parseInt(document.getElementById('vol-period').value);
-            const currentPrice = parseFloat(document.getElementById('vol-current-price').value) || 0;
-            const strikePrice = parseFloat(document.getElementById('vol-strike-price').value) || 0;
-            
-            if (!symbol || currentPrice <= 0) {
-                alert('Please enter valid symbol and current price');
-                return;
-            }
-            
-            // Simulate volatility calculation (in real implementation, this would fetch historical data)
-            const historicalVol = 25 + Math.random() * 15; // 25-40% range
-            const impliedVol = 20 + Math.random() * 20; // 20-40% range
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${historicalVol.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Historical Volatility (${period}D)</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${impliedVol.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Implied Volatility</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${(currentPrice * historicalVol / 100).toFixed(2)}</div>
-                        <div class="unified-stat-label">Daily Volatility (₹)</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${(historicalVol > impliedVol ? 'High' : 'Low')}</div>
-                        <div class="unified-stat-label">Volatility Status</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Analysis:</strong> ${symbol} shows ${historicalVol > 30 ? 'high' : historicalVol > 20 ? 'moderate' : 'low'} volatility over the past ${period} days.</p>
-                    <p><strong>Recommendation:</strong> ${historicalVol > 30 ? 'Consider reducing position size due to high volatility.' : 'Volatility levels are manageable for normal position sizing.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('volatility-result-content').innerHTML = resultContent;
-            document.getElementById('volatility-result').style.display = 'block';
-        }
-        
-        function calculateCorrelation() {
-            const symbol1 = document.getElementById('corr-symbol1').value;
-            const symbol2 = document.getElementById('corr-symbol2').value;
-            const period = parseInt(document.getElementById('corr-period').value);
-            
-            if (!symbol1 || !symbol2) {
-                alert('Please enter both symbols');
-                return;
-            }
-            
-            // Simulate correlation calculation
-            const correlation = -0.5 + Math.random() * 1.5; // -0.5 to 1.0 range
-            const strength = Math.abs(correlation);
-            
-            let strengthText = '';
-            let recommendation = '';
-            
-            if (strength > 0.7) {
-                strengthText = 'Strong';
-                recommendation = 'High correlation - consider reducing exposure to both assets for better diversification.';
-            } else if (strength > 0.3) {
-                strengthText = 'Moderate';
-                recommendation = 'Moderate correlation - monitor both positions closely.';
-            } else {
-                strengthText = 'Weak';
-                recommendation = 'Low correlation - good for portfolio diversification.';
-            }
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${correlation.toFixed(3)}</div>
-                        <div class="unified-stat-label">Correlation Coefficient</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${strengthText}</div>
-                        <div class="unified-stat-label">Correlation Strength</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${(strength * 100).toFixed(1)}%</div>
-                        <div class="unified-stat-label">Correlation %</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${correlation > 0 ? 'Positive' : 'Negative'}</div>
-                        <div class="unified-stat-label">Direction</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Analysis:</strong> ${symbol1} and ${symbol2} show ${strengthText.toLowerCase()} ${correlation > 0 ? 'positive' : 'negative'} correlation over the past ${period} days.</p>
-                    <p><strong>Recommendation:</strong> ${recommendation}</p>
-                </div>
-            `;
-            
-            document.getElementById('correlation-result-content').innerHTML = resultContent;
-            document.getElementById('correlation-result').style.display = 'block';
-        }
-        
-        function calculateDrawdown() {
-            const accountSize = parseFloat(document.getElementById('dd-account-size').value) || 0;
-            const currentValue = parseFloat(document.getElementById('dd-current-value').value) || 0;
-            const peakValue = parseFloat(document.getElementById('dd-peak-value').value) || 0;
-            const monthlyReturn = parseFloat(document.getElementById('dd-monthly-return').value) || 0;
-            
-            if (accountSize <= 0 || currentValue <= 0 || peakValue <= 0) {
-                alert('Please enter valid values');
-                return;
-            }
-            
-            const currentDrawdown = ((peakValue - currentValue) / peakValue) * 100;
-            const maxDrawdown = ((accountSize - currentValue) / accountSize) * 100;
-            const recoveryAmount = peakValue - currentValue;
-            const recoveryTime = monthlyReturn > 0 ? (recoveryAmount / (currentValue * monthlyReturn / 100)) : 0;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${currentDrawdown.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Current Drawdown</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${maxDrawdown.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Max Drawdown</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${recoveryAmount.toFixed(2)}</div>
-                        <div class="unified-stat-label">Recovery Amount</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${recoveryTime.toFixed(1)} months</div>
-                        <div class="unified-stat-label">Recovery Time</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Analysis:</strong> Your portfolio is currently ${currentDrawdown.toFixed(2)}% below its peak value.</p>
-                    <p><strong>Risk Assessment:</strong> ${maxDrawdown > 20 ? 'High risk - consider reducing position sizes.' : maxDrawdown > 10 ? 'Moderate risk - monitor closely.' : 'Low risk - within acceptable limits.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('drawdown-result-content').innerHTML = resultContent;
-            document.getElementById('drawdown-result').style.display = 'block';
-        }
-        
-        function calculateKellyCriterion() {
-            const winRate = parseFloat(document.getElementById('kelly-win-rate').value) || 0;
-            const avgWin = parseFloat(document.getElementById('kelly-avg-win').value) || 0;
-            const avgLoss = parseFloat(document.getElementById('kelly-avg-loss').value) || 0;
-            const accountSize = parseFloat(document.getElementById('kelly-account-size').value) || 0;
-            
-            if (winRate <= 0 || avgWin <= 0 || avgLoss <= 0 || accountSize <= 0) {
-                alert('Please enter valid values');
-                return;
-            }
-            
-            const winRateDecimal = winRate / 100;
-            const kellyPercent = ((winRateDecimal * avgWin) - ((1 - winRateDecimal) * avgLoss)) / avgWin;
-            const kellyPercentSafe = kellyPercent * 0.25; // Conservative Kelly (25% of full Kelly)
-            const positionSize = (kellyPercentSafe * accountSize) / avgWin;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${(kellyPercent * 100).toFixed(2)}%</div>
-                        <div class="unified-stat-label">Full Kelly %</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${(kellyPercentSafe * 100).toFixed(2)}%</div>
-                        <div class="unified-stat-label">Conservative Kelly %</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${positionSize.toFixed(0)}</div>
-                        <div class="unified-stat-label">Recommended Position Size</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${(positionSize * avgWin).toFixed(2)}</div>
-                        <div class="unified-stat-label">Position Value</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Analysis:</strong> Based on your win rate of ${winRate}% and risk-reward ratio, the Kelly Criterion suggests optimal position sizing.</p>
-                    <p><strong>Recommendation:</strong> ${kellyPercent > 0.1 ? 'High Kelly % - consider reducing position size for safety.' : 'Kelly % is within reasonable limits.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('kelly-result-content').innerHTML = resultContent;
-            document.getElementById('kelly-result').style.display = 'block';
-        }
-        
-        function calculateVaR() {
-            const portfolioValue = parseFloat(document.getElementById('var-portfolio-value').value) || 0;
-            const confidenceLevel = parseInt(document.getElementById('var-confidence-level').value);
-            const timeHorizon = parseInt(document.getElementById('var-time-horizon').value);
-            const volatility = parseFloat(document.getElementById('var-volatility').value) || 0;
-            
-            if (portfolioValue <= 0 || volatility <= 0) {
-                alert('Please enter valid portfolio value and volatility');
-                return;
-            }
-            
-            // VaR calculation using normal distribution approximation
-            const zScore = confidenceLevel === 90 ? 1.28 : confidenceLevel === 95 ? 1.65 : 2.33;
-            const dailyVolatility = volatility / Math.sqrt(252); // Annual to daily
-            const timeAdjustedVol = dailyVolatility * Math.sqrt(timeHorizon);
-            const varAmount = portfolioValue * zScore * timeAdjustedVol;
-            const varPercentage = (varAmount / portfolioValue) * 100;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${varAmount.toFixed(2)}</div>
-                        <div class="unified-stat-label">VaR Amount</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${varPercentage.toFixed(2)}%</div>
-                        <div class="unified-stat-label">VaR Percentage</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${confidenceLevel}%</div>
-                        <div class="unified-stat-label">Confidence Level</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${timeHorizon} day${timeHorizon > 1 ? 's' : ''}</div>
-                        <div class="unified-stat-label">Time Horizon</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Analysis:</strong> There is a ${100 - confidenceLevel}% chance that your portfolio will lose more than ₹${varAmount.toFixed(2)} over the next ${timeHorizon} day${timeHorizon > 1 ? 's' : ''}.</p>
-                    <p><strong>Risk Assessment:</strong> ${varPercentage > 10 ? 'High risk - consider reducing portfolio volatility.' : varPercentage > 5 ? 'Moderate risk - monitor closely.' : 'Low risk - within acceptable limits.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('var-result-content').innerHTML = resultContent;
-            document.getElementById('var-result').style.display = 'block';
-        }
-        
-        function runStressTest() {
-            const portfolioValue = parseFloat(document.getElementById('stress-portfolio-value').value) || 0;
-            const scenario = document.getElementById('stress-scenario').value;
-            const customLoss = parseFloat(document.getElementById('stress-custom-loss').value) || 0;
-            const recoveryTime = parseFloat(document.getElementById('stress-recovery-time').value) || 0;
-            
-            if (portfolioValue <= 0) {
-                alert('Please enter valid portfolio value');
-                return;
-            }
-            
-            let lossPercentage = 0;
-            let scenarioName = '';
-            
-            switch (scenario) {
-                case 'market_crash':
-                    lossPercentage = 20;
-                    scenarioName = 'Market Crash';
-                    break;
-                case 'recession':
-                    lossPercentage = 15;
-                    scenarioName = 'Recession';
-                    break;
-                case 'volatility_spike':
-                    lossPercentage = 10;
-                    scenarioName = 'Volatility Spike';
-                    break;
-                case 'sector_rotation':
-                    lossPercentage = 8;
-                    scenarioName = 'Sector Rotation';
-                    break;
-                case 'custom':
-                    lossPercentage = customLoss;
-                    scenarioName = 'Custom Scenario';
-                    break;
-            }
-            
-            const lossAmount = portfolioValue * (lossPercentage / 100);
-            const remainingValue = portfolioValue - lossAmount;
-            const monthlyRecovery = recoveryTime > 0 ? lossAmount / recoveryTime : 0;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${lossAmount.toFixed(2)}</div>
-                        <div class="unified-stat-label">Potential Loss</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${lossPercentage.toFixed(1)}%</div>
-                        <div class="unified-stat-label">Loss Percentage</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${remainingValue.toFixed(2)}</div>
-                        <div class="unified-stat-label">Remaining Value</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${monthlyRecovery.toFixed(2)}</div>
-                        <div class="unified-stat-label">Monthly Recovery Needed</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Scenario:</strong> ${scenarioName} stress test</p>
-                    <p><strong>Impact:</strong> Your portfolio could lose ₹${lossAmount.toFixed(2)} (${lossPercentage.toFixed(1)}%) in this scenario.</p>
-                    <p><strong>Recovery:</strong> ${recoveryTime > 0 ? `To recover in ${recoveryTime} months, you would need ${((monthlyRecovery/remainingValue)*100).toFixed(1)}% monthly returns.` : 'Recovery time not specified.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('stress-test-result-content').innerHTML = resultContent;
-            document.getElementById('stress-test-result').style.display = 'block';
-        }
-        
-        function calculateRiskBudget() {
-            const totalRisk = parseFloat(document.getElementById('rb-total-risk').value) || 0;
-            const strategy1Risk = parseFloat(document.getElementById('rb-strategy1').value) || 0;
-            const strategy2Risk = parseFloat(document.getElementById('rb-strategy2').value) || 0;
-            const strategy3Risk = parseFloat(document.getElementById('rb-strategy3').value) || 0;
-            
-            if (totalRisk <= 0) {
-                alert('Please enter total risk budget');
-                return;
-            }
-            
-            const allocatedRisk = strategy1Risk + strategy2Risk + strategy3Risk;
-            const remainingRisk = totalRisk - allocatedRisk;
-            const allocationPercentage = (allocatedRisk / totalRisk) * 100;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${totalRisk.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Total Risk Budget</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${allocatedRisk.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Allocated Risk</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${remainingRisk.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Remaining Risk</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${allocationPercentage.toFixed(1)}%</div>
-                        <div class="unified-stat-label">Allocation %</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <h4>Risk Allocation Breakdown:</h4>
-                    <ul>
-                        <li>Strategy 1: ${strategy1Risk.toFixed(2)}% (${((strategy1Risk/totalRisk)*100).toFixed(1)}% of total)</li>
-                        <li>Strategy 2: ${strategy2Risk.toFixed(2)}% (${((strategy2Risk/totalRisk)*100).toFixed(1)}% of total)</li>
-                        <li>Strategy 3: ${strategy3Risk.toFixed(2)}% (${((strategy3Risk/totalRisk)*100).toFixed(1)}% of total)</li>
-                    </ul>
-                    <p><strong>Analysis:</strong> ${remainingRisk > 0 ? `You have ${remainingRisk.toFixed(2)}% risk budget remaining.` : remainingRisk < 0 ? `You are over-allocated by ${Math.abs(remainingRisk).toFixed(2)}%.` : 'Your risk budget is fully allocated.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('risk-budget-result-content').innerHTML = resultContent;
-            document.getElementById('risk-budget-result').style.display = 'block';
-        }
-        
-        // Calculation functions for existing tools
-        function calculateMargin() {
-            const symbol = document.getElementById('margin-symbol').value;
-            const price = parseFloat(document.getElementById('margin-price').value) || 0;
-            const quantity = parseInt(document.getElementById('margin-quantity').value) || 0;
-            const marginType = document.getElementById('margin-type').value;
-            
-            if (!symbol || price <= 0 || quantity <= 0) {
-                alert('Please enter valid values');
-                return;
-            }
-            
-            const totalValue = price * quantity;
-            let marginPercentage = 0;
-            let marginAmount = 0;
-            
-            switch (marginType) {
-                case 'equity':
-                    marginPercentage = 20;
-                    break;
-                case 'futures':
-                    marginPercentage = 15;
-                    break;
-                case 'options':
-                    marginPercentage = 100; // Premium paid upfront
-                    break;
-            }
-            
-            marginAmount = totalValue * (marginPercentage / 100);
-            const leverage = marginPercentage < 100 ? (100 / marginPercentage) : 1;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${totalValue.toFixed(2)}</div>
-                        <div class="unified-stat-label">Total Value</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${marginAmount.toFixed(2)}</div>
-                        <div class="unified-stat-label">Margin Required</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${marginPercentage}%</div>
-                        <div class="unified-stat-label">Margin %</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${leverage.toFixed(1)}x</div>
-                        <div class="unified-stat-label">Leverage</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Analysis:</strong> For ${quantity} shares of ${symbol} at ₹${price}, you need ₹${marginAmount.toFixed(2)} margin.</p>
-                    <p><strong>Risk:</strong> ${leverage > 3 ? 'High leverage - monitor position closely.' : 'Leverage is within reasonable limits.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('margin-result-content').innerHTML = resultContent;
-            document.getElementById('margin-result').style.display = 'block';
-        }
-        
-        function analyzePortfolio() {
-            const totalValue = parseFloat(document.getElementById('portfolio-total-value').value) || 0;
-            const invested = parseFloat(document.getElementById('portfolio-invested').value) || 0;
-            const timePeriod = parseFloat(document.getElementById('portfolio-time-period').value) || 0;
-            const riskFreeRate = parseFloat(document.getElementById('portfolio-risk-free-rate').value) || 0;
-            
-            if (totalValue <= 0 || invested <= 0 || timePeriod <= 0) {
-                alert('Please enter valid values');
-                return;
-            }
-            
-            const totalReturn = totalValue - invested;
-            const totalReturnPercentage = (totalReturn / invested) * 100;
-            const annualizedReturn = Math.pow((totalValue / invested), (12 / timePeriod)) - 1;
-            const annualizedReturnPercentage = annualizedReturn * 100;
-            const excessReturn = annualizedReturnPercentage - riskFreeRate;
-            
-            // Simulate volatility calculation
-            const volatility = 15 + Math.random() * 10; // 15-25% range
-            const sharpeRatio = excessReturn / volatility;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${totalReturn.toFixed(2)}</div>
-                        <div class="unified-stat-label">Total Return</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${totalReturnPercentage.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Total Return %</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${annualizedReturnPercentage.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Annualized Return</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${sharpeRatio.toFixed(2)}</div>
-                        <div class="unified-stat-label">Sharpe Ratio</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Performance:</strong> Your portfolio has generated ${totalReturnPercentage.toFixed(2)}% returns over ${timePeriod} months.</p>
-                    <p><strong>Risk-Adjusted Return:</strong> ${sharpeRatio > 1 ? 'Excellent risk-adjusted performance.' : sharpeRatio > 0.5 ? 'Good risk-adjusted performance.' : 'Consider improving risk management.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('portfolio-result-content').innerHTML = resultContent;
-            document.getElementById('portfolio-result').style.display = 'block';
-        }
-        
-        function startSimulation() {
-            const accountSize = parseFloat(document.getElementById('sim-account-size').value) || 0;
-            const strategy = document.getElementById('sim-strategy').value;
-            const timeframe = parseInt(document.getElementById('sim-timeframe').value);
-            const marketCondition = document.getElementById('sim-market-condition').value;
-            
-            if (accountSize <= 0) {
-                alert('Please enter valid account size');
-                return;
-            }
-            
-            // Simulate trading results based on strategy and market conditions
-            let baseReturn = 0;
-            let volatility = 0;
-            
-            switch (strategy) {
-                case 'conservative':
-                    baseReturn = 8;
-                    volatility = 12;
-                    break;
-                case 'moderate':
-                    baseReturn = 15;
-                    volatility = 20;
-                    break;
-                case 'aggressive':
-                    baseReturn = 25;
-                    volatility = 35;
-                    break;
-            }
-            
-            // Adjust for market conditions
-            switch (marketCondition) {
-                case 'bull':
-                    baseReturn *= 1.5;
-                    break;
-                case 'bear':
-                    baseReturn *= -0.8;
-                    break;
-                case 'sideways':
-                    baseReturn *= 0.3;
-                    break;
-                case 'volatile':
-                    volatility *= 1.5;
-                    break;
-            }
-            
-            const finalValue = accountSize * (1 + (baseReturn / 100));
-            const totalReturn = finalValue - accountSize;
-            const totalReturnPercentage = (totalReturn / accountSize) * 100;
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${finalValue.toFixed(2)}</div>
-                        <div class="unified-stat-label">Final Value</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${totalReturn.toFixed(2)}</div>
-                        <div class="unified-stat-label">Total Return</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${totalReturnPercentage.toFixed(2)}%</div>
-                        <div class="unified-stat-label">Return %</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${volatility.toFixed(1)}%</div>
-                        <div class="unified-stat-label">Volatility</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Simulation Results:</strong> ${strategy} strategy in ${marketCondition} market over ${timeframe} months.</p>
-                    <p><strong>Performance:</strong> ${totalReturnPercentage > 0 ? 'Profitable simulation.' : 'Loss in simulation - review strategy.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('simulation-result-content').innerHTML = resultContent;
-            document.getElementById('simulation-result').style.display = 'block';
-        }
-        
-        function generateChart() {
-            const symbol = document.getElementById('chart-symbol').value;
-            const timeframe = document.getElementById('chart-timeframe').value;
-            const indicators = Array.from(document.getElementById('chart-indicators').selectedOptions).map(option => option.value);
-            const period = parseInt(document.getElementById('chart-period').value);
-            
-            if (!symbol) {
-                alert('Please enter a symbol');
-                return;
-            }
-            
-            // Simulate chart analysis
-            const trend = Math.random() > 0.5 ? 'Bullish' : 'Bearish';
-            const strength = Math.random() * 100;
-            const support = 100 + Math.random() * 200;
-            const resistance = 300 + Math.random() * 200;
-            
-            let indicatorAnalysis = '';
-            indicators.forEach(indicator => {
-                switch (indicator) {
-                    case 'sma':
-                        indicatorAnalysis += '<li>SMA: Trend confirmation</li>';
-                        break;
-                    case 'ema':
-                        indicatorAnalysis += '<li>EMA: Momentum indicator</li>';
-                        break;
-                    case 'rsi':
-                        indicatorAnalysis += '<li>RSI: ' + (Math.random() > 0.5 ? 'Overbought' : 'Oversold') + '</li>';
-                        break;
-                    case 'macd':
-                        indicatorAnalysis += '<li>MACD: ' + (Math.random() > 0.5 ? 'Bullish crossover' : 'Bearish crossover') + '</li>';
-                        break;
-                    case 'bollinger':
-                        indicatorAnalysis += '<li>Bollinger Bands: ' + (Math.random() > 0.5 ? 'Price near upper band' : 'Price near lower band') + '</li>';
-                        break;
-                }
-            });
-            
-            const resultContent = `
-                <div class="unified-grid">
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${trend}</div>
-                        <div class="unified-stat-label">Trend</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">${strength.toFixed(1)}%</div>
-                        <div class="unified-stat-label">Trend Strength</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${support.toFixed(2)}</div>
-                        <div class="unified-stat-label">Support Level</div>
-                    </div>
-                    <div class="unified-stat">
-                        <div class="unified-stat-value">₹${resistance.toFixed(2)}</div>
-                        <div class="unified-stat-label">Resistance Level</div>
-                    </div>
-                </div>
-                <div class="tool-content">
-                    <p><strong>Chart Analysis for ${symbol}:</strong></p>
-                    <p><strong>Timeframe:</strong> ${timeframe} | <strong>Period:</strong> ${period} days</p>
-                    <p><strong>Technical Indicators:</strong></p>
-                    <ul>${indicatorAnalysis}</ul>
-                    <p><strong>Recommendation:</strong> ${trend === 'Bullish' ? 'Consider long positions with stop-loss at support.' : 'Consider short positions with stop-loss at resistance.'}</p>
-                </div>
-            `;
-            
-            document.getElementById('chart-result-content').innerHTML = resultContent;
-            document.getElementById('chart-result').style.display = 'block';
-        }
-        
-        // Clear functions for existing tools
-        function clearMarginForm() {
-            document.getElementById('margin-symbol').value = '';
-            document.getElementById('margin-price').value = '';
-            document.getElementById('margin-quantity').value = '';
-            document.getElementById('margin-result').style.display = 'none';
-        }
-        
-        function clearPortfolioForm() {
-            document.getElementById('portfolio-total-value').value = '';
-            document.getElementById('portfolio-invested').value = '';
-            document.getElementById('portfolio-time-period').value = '';
-            document.getElementById('portfolio-risk-free-rate').value = '';
-            document.getElementById('portfolio-result').style.display = 'none';
-        }
-        
-        function clearSimulationForm() {
-            document.getElementById('sim-account-size').value = '';
-            document.getElementById('simulation-result').style.display = 'none';
-        }
-        
-        function clearChartForm() {
-            document.getElementById('chart-symbol').value = '';
-            document.getElementById('chart-result').style.display = 'none';
-        }
-        
-        // Clear functions for new tools
-        function clearVolatilityForm() {
-            document.getElementById('vol-symbol').value = '';
-            document.getElementById('vol-current-price').value = '';
-            document.getElementById('vol-strike-price').value = '';
-            document.getElementById('volatility-result').style.display = 'none';
-        }
-        
-        function clearCorrelationForm() {
-            document.getElementById('corr-symbol1').value = '';
-            document.getElementById('corr-symbol2').value = '';
-            document.getElementById('correlation-result').style.display = 'none';
-        }
-        
-        function clearDrawdownForm() {
-            document.getElementById('dd-account-size').value = '';
-            document.getElementById('dd-current-value').value = '';
-            document.getElementById('dd-peak-value').value = '';
-            document.getElementById('dd-monthly-return').value = '';
-            document.getElementById('drawdown-result').style.display = 'none';
-        }
-        
-        function clearKellyForm() {
-            document.getElementById('kelly-win-rate').value = '';
-            document.getElementById('kelly-avg-win').value = '';
-            document.getElementById('kelly-avg-loss').value = '';
-            document.getElementById('kelly-account-size').value = '';
-            document.getElementById('kelly-result').style.display = 'none';
-        }
-        
-        function clearVaRForm() {
-            document.getElementById('var-portfolio-value').value = '';
-            document.getElementById('var-volatility').value = '';
-            document.getElementById('var-result').style.display = 'none';
-        }
-        
-        function clearStressTestForm() {
-            document.getElementById('stress-portfolio-value').value = '';
-            document.getElementById('stress-custom-loss').value = '';
-            document.getElementById('stress-recovery-time').value = '';
-            document.getElementById('stress-test-result').style.display = 'none';
-        }
-        
-        function clearRiskBudgetForm() {
-            document.getElementById('rb-total-risk').value = '';
-            document.getElementById('rb-strategy1').value = '';
-            document.getElementById('rb-strategy2').value = '';
-            document.getElementById('rb-strategy3').value = '';
-            document.getElementById('risk-budget-result').style.display = 'none';
-        }
-        
-        // Show/hide custom loss input based on scenario selection
-        document.addEventListener('DOMContentLoaded', function() {
-            const scenarioSelect = document.getElementById('stress-scenario');
-            const customLossInput = document.getElementById('stress-custom-loss');
-            
-            if (scenarioSelect && customLossInput) {
-                scenarioSelect.addEventListener('change', function() {
-                    if (this.value === 'custom') {
-                        customLossInput.style.display = 'block';
-                    } else {
-                        customLossInput.style.display = 'none';
-                    }
-                });
-            }
-        });
-
     </script>
-
-    
     
     <!-- Cache Busting Script -->
-
     <script>
-
         // Force reload if page is cached
-
         window.addEventListener('pageshow', function(event) {
-
             if (event.persisted) {
-
                 window.location.reload();
-
             }
-
         });
-
-        
-        
-        // Add cache-busting parameter to all internal links
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const links = document.querySelectorAll('a[href^="/"], a[href^="./"], a[href^="../"]');
-
-            links.forEach(link => {
-
-                if (!link.href.includes('?v=')) {
-
-                    link.href += (link.href.includes('?') ? '&' : '?') + 'v=' + Date.now();
-
-                }
-
-            });
-
-        });
-
     </script>
-
     
     <!-- Include app.js for profile menu functionality -->
     <script src="./assets/app.js"></script>
 </body>
 </html>
+        

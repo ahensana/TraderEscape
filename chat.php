@@ -32,18 +32,358 @@ if (!isLoggedIn()) {
         border-radius: 0;
         overflow: hidden;
         box-shadow: none;
+        position: relative;
     }
     
-    /* Sidebar */
-    .chat-sidebar {
-        width: 320px;
+    .chat-container.sidebar-closed {
+        justify-content: center;
+        padding: 0;
+    }
+    
+    /* New Independent Sidebar */
+    .new-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 300px;
+        height: 100vh;
         background: rgba(15, 23, 42, 0.95);
         backdrop-filter: blur(20px);
         border-right: 1px solid rgba(37, 99, 235, 0.2);
         display: flex;
         flex-direction: column;
         box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        z-index: 1000;
+        transform: translateX(-100%);
+        will-change: transform;
     }
+    
+    .new-sidebar.open {
+        transform: translateX(0);
+    }
+    
+    /* Chat container adjustment when sidebar is open */
+    .chat-container.sidebar-open {
+        margin-left: 300px;
+        transition: margin-left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    @media (max-width: 768px) {
+        .chat-container.sidebar-open {
+            margin-left: 280px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .chat-container.sidebar-open {
+            margin-left: 0;
+        }
+    }
+    
+    /* Sidebar Header */
+    .new-sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+        display: flex;
+        align-items: center;
+        background: transparent;
+    }
+    
+    .new-sidebar-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .new-sidebar-icon {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+    }
+    
+    .new-sidebar-title h2 {
+        color: white;
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+    
+    .new-sidebar-close-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .new-sidebar-close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    /* Search Bar */
+    .new-sidebar-search {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+    }
+    
+    .new-search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    
+    .new-search-icon {
+        position: absolute;
+        left: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        z-index: 1;
+    }
+    
+    .new-search-input {
+        width: 100%;
+        padding: 10px 12px 10px 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: white;
+        font-size: 0.9rem;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    
+    .new-search-input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .new-search-input:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(37, 99, 235, 0.5);
+    }
+    
+    /* Quick Actions */
+    .new-sidebar-actions {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .new-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+    
+    .new-action-btn:hover {
+        background: rgba(37, 99, 235, 0.2);
+        color: white;
+    }
+    
+    .new-action-btn.active {
+        background: rgba(37, 99, 235, 0.3);
+        color: white;
+    }
+    
+    /* Sidebar Sections */
+    .new-sidebar-section {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .new-section-header {
+        padding: 16px 20px 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+    }
+    
+    .new-section-header h3 {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .new-online-count {
+        background: rgba(37, 99, 235, 0.3);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    /* Online Users */
+    .new-online-users {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+    
+    .new-user-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+    
+    .new-user-item:hover {
+        background: rgba(37, 99, 235, 0.1);
+        border-left-color: rgba(37, 99, 235, 0.5);
+    }
+    
+    .new-user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        position: relative;
+    }
+    
+    .new-user-status {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid rgba(15, 23, 42, 0.95);
+    }
+    
+    .new-user-status.online {
+        background: #10b981;
+    }
+    
+    .new-user-status.away {
+        background: #f59e0b;
+    }
+    
+    .new-user-status.offline {
+        background: #6b7280;
+    }
+    
+    .new-user-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .new-user-name {
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .new-user-last-seen {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.8rem;
+        margin: 0;
+    }
+    
+    /* Sidebar Footer */
+    .new-sidebar-footer {
+        padding: 16px 20px;
+        border-top: 1px solid rgba(37, 99, 235, 0.2);
+        background: transparent;
+    }
+    
+    .new-settings-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 10px 12px;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+    
+    .new-settings-btn:hover {
+        background: rgba(37, 99, 235, 0.2);
+        color: white;
+    }
+    
+    /* Sidebar Toggle Button */
+    .new-sidebar-toggle-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        will-change: transform, background-color;
+    }
+    
+    .new-sidebar-toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .new-sidebar-toggle-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .new-sidebar-toggle-btn svg {
+        width: 20px;
+        height: 20px;
+        transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .new-sidebar {
+            width: 280px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .new-sidebar {
+            width: 100vw;
+        }
+    }
+    
     
     .chat-header {
         padding: 20px;
@@ -70,6 +410,8 @@ if (!isLoggedIn()) {
         flex-direction: column;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px);
+        width: 100%;
+        border-radius: 20px;
     }
     
     .chat-controls {
@@ -88,6 +430,7 @@ if (!isLoggedIn()) {
         align-items: center;
         gap: 12px;
     }
+    
     
     .chat-logo {
         width: 70px;
@@ -181,8 +524,8 @@ if (!isLoggedIn()) {
     }
     
     .message.own .message-content {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #ffffff;
+        background: linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 100%);
+        color: #000000;
         border-radius: 18px 18px 4px 18px;
     }
     
@@ -227,6 +570,12 @@ if (!isLoggedIn()) {
         word-break: break-word;
         flex: 1;
         margin: 0;
+        outline: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        pointer-events: none;
     }
     
     .text-time {
@@ -237,7 +586,7 @@ if (!isLoggedIn()) {
     }
     
     .message.own .text-time {
-        color: #ffffff;
+        color: #000000;
     }
     
     .message-text .emoji {
@@ -312,6 +661,11 @@ if (!isLoggedIn()) {
         font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s ease;
+        outline: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
     }
     
     .emoji-reaction:hover {
@@ -518,7 +872,7 @@ if (!isLoggedIn()) {
     }
     
     .own-caption-text {
-        color: #ffffff;
+        color: #000000;
     }
     
     .other-caption-text {
@@ -533,11 +887,11 @@ if (!isLoggedIn()) {
     }
     
     .message.own .caption-time {
-        color: #ffffff;
+        color: #000000;
     }
     
     .own-message-text {
-        color: #ffffff;
+        color: #000000;
     }
     
     .other-message-text {
@@ -567,6 +921,132 @@ if (!isLoggedIn()) {
     
     .grid-image:hover {
         transform: scale(1.02);
+    }
+    
+    /* Document Attachment Styles */
+    .document-attachment {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        margin-bottom: 8px;
+        max-width: 300px;
+    }
+    
+    .document-icon {
+        flex-shrink: 0;
+    }
+    
+    .pdf-icon, .word-icon, .excel-icon, .generic-icon {
+        width: 40px;
+        height: 48px;
+        position: relative;
+    }
+    
+    .pdf-icon-body, .word-icon-body, .excel-icon-body, .generic-icon-body {
+        width: 100%;
+        height: 100%;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pdf-icon-corner, .word-icon-corner, .excel-icon-corner, .generic-icon-corner {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-top: 8px solid #ddd;
+    }
+    
+    .pdf-text, .word-text, .excel-text, .generic-text {
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 8px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .pdf-icon-body {
+        background: #ff4444;
+    }
+    
+    .pdf-text {
+        color: white;
+    }
+    
+    .word-icon-body {
+        background: #2b579a;
+    }
+    
+    .word-text {
+        color: white;
+    }
+    
+    .excel-icon-body {
+        background: #217346;
+    }
+    
+    .excel-text {
+        color: white;
+    }
+    
+    .document-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .document-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 4px;
+        word-break: break-word;
+    }
+    
+    .document-details {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+    
+    .document-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .open-btn {
+        background: #007bff;
+        color: white;
+    }
+    
+    .open-btn:hover {
+        background: #0056b3;
+    }
+    
+    
+    .document-caption {
+        margin-top: 8px;
+        text-align: right;
     }
     
     .image-overlay {
@@ -1090,7 +1570,7 @@ if (!isLoggedIn()) {
 <div class="login-popup-overlay" id="loginPopup">
     <div class="login-popup">
         <button class="close-btn" onclick="closeLoginPopup()">&times;</button>
-        <span class="chat-icon">💬</span>
+        <img src="assets/bubble-chat.png" alt="Chat Icon" class="chat-icon" style="width: 80px; height: 80px; object-fit: contain; filter: brightness(0) invert(1); display: block; margin: 0 auto 20px auto;">
         <h2>Join the Community Chat</h2>
         <p>To access our community chat, you need to sign in to your account. Connect with other traders, share insights, and be part of our trading community!</p>
         <div class="login-buttons">
@@ -1108,23 +1588,84 @@ function closeLoginPopup() {
 </script>
 <?php else: ?>
 
-<div class="chat-container">
-    <!-- Sidebar -->
-    <div class="chat-sidebar" id="chatSidebar">
-        <div class="chat-header">
-            <h2>💬 Community Chat</h2>
+<!-- New Independent Sidebar -->
+<div class="new-sidebar" id="newSidebar">
+    <!-- Sidebar Header -->
+    <div class="new-sidebar-header">
+        <div class="new-sidebar-title">
+            <img src="assets/bubble-chat.png" alt="Chat Icon" class="new-sidebar-icon">
+            <h2>Community Chat</h2>
         </div>
-        <div class="online-users" id="onlineUsers">
+    </div>
+
+    <!-- Search Bar -->
+    <div class="new-sidebar-search">
+        <div class="new-search-container">
+            <svg class="new-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input type="text" placeholder="Search messages..." class="new-search-input" id="newSearchInput">
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="new-sidebar-actions">
+        <button class="new-action-btn" onclick="showAllMessages()" title="All Messages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>All Messages</span>
+        </button>
+            <button class="new-action-btn" onclick="showMediaMessages()" title="Media">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21,15 16,10 5,21"></polyline>
+            </svg>
+            <span>Media</span>
+        </button>
+    </div>
+
+    <!-- Online Users Section -->
+    <div class="new-sidebar-section">
+        <div class="new-section-header">
+            <h3>Online Users</h3>
+            <span class="new-online-count" id="newOnlineCount">0</span>
+        </div>
+        <div class="new-online-users" id="newOnlineUsers">
             <!-- Online users will be populated here -->
         </div>
     </div>
+
+    <!-- Chat Settings -->
+    <div class="new-sidebar-footer">
+        <button class="new-settings-btn" onclick="showChatSettings()" title="Settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Settings</span>
+        </button>
+    </div>
+</div>
+
+
+<div class="chat-container">
     
     <!-- Main Chat Area -->
     <div class="chat-main">
         <div class="chat-controls">
             <div class="chat-title-container">
+                <button class="new-sidebar-toggle-btn" id="newSidebarToggleBtn" onclick="toggleNewSidebar()" title="Toggle Sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
                 <img src="assets/logo.png" alt="Trader's Escape Logo" class="chat-logo">
-                <h3 class="chat-title">The Trader's Escape</h3>
+            <h3 class="chat-title">The Trader's Escape</h3>
             </div>
             <div class="chat-actions">
                 <!-- Navigation buttons removed -->
@@ -1151,6 +1692,10 @@ function closeLoginPopup() {
             <div class="context-menu-item" onclick="reactToMessage('😮')">
                 <i class="bi bi-emoji-surprised"></i>
                 <span>😮 Wow</span>
+            </div>
+            <div class="context-menu-item" onclick="reactToMessage('🤑')">
+                <i class="bi bi-emoji-smile"></i>
+                <span>🤑 Money</span>
             </div>
             <div class="context-menu-item" onclick="replyToMessage()">
                 <i class="bi bi-reply"></i>
@@ -1181,6 +1726,11 @@ function closeLoginPopup() {
                         id="messageInput" 
                         placeholder="Type your message here..."
                         rows="1"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        data-form-type="other"
                     ></textarea>
                 </div>
                 <button type="submit" class="send-button" id="sendButton" title="Send Message">
@@ -1233,6 +1783,9 @@ class CommunityChat {
         if (existingReplyIndicator) {
             existingReplyIndicator.remove();
         }
+        
+        // Initialize new sidebar
+        this.initializeNewSidebar();
         
         console.log('Cleared reply state on page load - replyToMessageId:', replyToMessageId);
         
@@ -1343,6 +1896,17 @@ class CommunityChat {
         });
     }
     
+    initializeNewSidebar() {
+        // Initialize search functionality
+        initializeNewSearch();
+        
+        // Set default active button
+        const allMessagesBtn = document.querySelector('.new-action-btn[onclick="showAllMessages()"]');
+        if (allMessagesBtn) {
+            allMessagesBtn.classList.add('active');
+        }
+    }
+    
     initializeSocket() {
         // Try to connect to the same host as the current page, but on port 3000
         const currentHost = window.location.hostname;
@@ -1443,6 +2007,7 @@ class CommunityChat {
         this.socket.on('user-list', (users) => {
             console.log('Received user list:', users);
             this.updateOnlineUsers(users);
+            console.log('Updated online users with', users.length, 'users');
         });
         
         this.socket.on('user-joined', (data) => {
@@ -1559,7 +2124,18 @@ class CommunityChat {
                 hideEmojiPicker();
             }
         });
+        
+        // Prevent context menu in chat input area
+        this.messageInput.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // Prevent context menu in chat form area
+        this.chatForm.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
     }
+    
     
     initializeEmojiPicker() {
         const emojis = [
@@ -1641,7 +2217,7 @@ class CommunityChat {
             
             const messageData = {
                 id: messageId,
-                text: message || (hasFiles && !fileDataArray.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `📎 ${fileDataArray.length} file${fileDataArray.length > 1 ? 's' : ''}` : ''),
+                text: message || '',
                 sender: this.currentUser.name,
                 senderId: this.currentUser.id,
                 timestamp: new Date(),
@@ -1676,7 +2252,7 @@ class CommunityChat {
             console.log('Using offline mode - socket not connected');
             const messageData = {
                 id: Date.now(),
-                text: message || (hasFiles && !fileDataArray.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `📎 ${fileDataArray.length} file${fileDataArray.length > 1 ? 's' : ''}` : ''),
+                text: message || '',
                 sender: this.currentUser.name,
                 senderId: this.currentUser.id,
                 timestamp: new Date(),
@@ -1808,6 +2384,12 @@ class CommunityChat {
                         <div class="caption-time">${timeString}</div>
                     </div>
                 ` : ''}
+                ${messageData.files && messageData.files.length > 0 && messageData.files.some(file => !file.mimetype || !file.mimetype.startsWith('image/')) && !messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `
+                    <div class="document-caption">
+                        ${messageData.text ? `<div class="caption-text ${isOwn ? 'own-caption-text' : 'other-caption-text'}">${this.escapeHtml(messageData.text)}</div>` : ''}
+                        <div class="caption-time">${timeString}</div>
+                    </div>
+                ` : ''}
             </div>
         `;
         
@@ -1819,6 +2401,12 @@ class CommunityChat {
         }
         
         this.messagesContainer.appendChild(messageElement);
+        
+        // Restore reactions for this message
+        setTimeout(() => {
+            restoreReactions(messageData.id);
+        }, 100);
+        
         this.scrollToBottom();
         console.log('Message added to DOM with class:', messageElement.className);
     }
@@ -1871,6 +2459,11 @@ class CommunityChat {
     }
     
     updateOnlineUsers(users) {
+        // Update the new sidebar online users
+        updateNewUserList(users);
+        
+        // Also update the old sidebar if it exists
+        if (this.onlineUsersContainer) {
         this.onlineUsersContainer.innerHTML = '';
         
         users.forEach(user => {
@@ -1887,6 +2480,7 @@ class CommunityChat {
             `;
             this.onlineUsersContainer.appendChild(userElement);
         });
+        }
     }
     
     autoResize() {
@@ -1946,19 +2540,24 @@ class CommunityChat {
             html += this.renderImageGrid(imageFiles, messageId);
         }
         
-        // Render other files normally
+        // Render other files in document format
         if (otherFiles.length > 0) {
-            html += '<div class="file-attachments-container mt-2">';
+            html += '<div class="file-attachments-container">';
             otherFiles.forEach(file => {
-                html += `<div class="file-attachment mb-2">
-                    <a href="http://localhost:3000${file.url}" target="_blank" 
-                       class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                        </svg>
-                        ${file.originalName}
-                    </a>
+                const fileType = this.getFileType(file.originalName, file.mimetype);
+                const fileSize = this.formatFileSize(file.size);
+                
+                html += `<div class="document-attachment">
+                    <div class="document-icon">
+                        ${this.getFileIcon(fileType)}
+                    </div>
+                    <div class="document-info">
+                        <div class="document-name">${file.originalName}</div>
+                        <div class="document-details">${fileSize}, ${fileType}</div>
+                        <div class="document-actions">
+                            <button class="action-btn open-btn" onclick="openFileInBrowser('http://localhost:3000${file.url}')">Open</button>
+                        </div>
+                    </div>
                 </div>`;
             });
             html += '</div>';
@@ -1982,7 +2581,7 @@ class CommunityChat {
             gridClass = 'four-images';
         } else if (count === 5) {
             gridClass = 'five-images';
-        } else {
+            } else {
             gridClass = 'six-plus-images';
         }
         
@@ -2008,6 +2607,74 @@ class CommunityChat {
     renderFileAttachment(file) {
         // Legacy function for single file - now uses multiple file function
         return this.renderFileAttachments([file]);
+    }
+    
+    getFileType(filename, mimetype) {
+        const extension = filename.split('.').pop().toLowerCase();
+        
+        if (mimetype) {
+            if (mimetype.includes('pdf')) return 'PDF Document';
+            if (mimetype.includes('word') || mimetype.includes('document')) return 'Microsoft Word Document';
+            if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'Microsoft Excel Document';
+            if (mimetype.includes('powerpoint') || mimetype.includes('presentation')) return 'Microsoft PowerPoint Document';
+            if (mimetype.includes('text')) return 'Text Document';
+            if (mimetype.includes('zip') || mimetype.includes('rar')) return 'Archive File';
+        }
+        
+        switch (extension) {
+            case 'pdf': return 'PDF Document';
+            case 'doc':
+            case 'docx': return 'Microsoft Word Document';
+            case 'xls':
+            case 'xlsx': return 'Microsoft Excel Document';
+            case 'ppt':
+            case 'pptx': return 'Microsoft PowerPoint Document';
+            case 'txt': return 'Text Document';
+            case 'zip':
+            case 'rar':
+            case '7z': return 'Archive File';
+            default: return 'Document';
+        }
+    }
+    
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    getFileIcon(fileType) {
+        if (fileType.includes('PDF')) {
+            return `<div class="pdf-icon">
+                <div class="pdf-icon-body">
+                    <div class="pdf-icon-corner"></div>
+                    <div class="pdf-text">PDF</div>
+                </div>
+            </div>`;
+        } else if (fileType.includes('Word')) {
+            return `<div class="word-icon">
+                <div class="word-icon-body">
+                    <div class="word-icon-corner"></div>
+                    <div class="word-text">DOC</div>
+                </div>
+            </div>`;
+        } else if (fileType.includes('Excel')) {
+            return `<div class="excel-icon">
+                <div class="excel-icon-body">
+                    <div class="excel-icon-corner"></div>
+                    <div class="excel-text">XLS</div>
+                </div>
+            </div>`;
+        } else {
+            return `<div class="generic-icon">
+                <div class="generic-icon-body">
+                    <div class="generic-icon-corner"></div>
+                    <div class="generic-text">DOC</div>
+                </div>
+            </div>`;
+        }
     }
     
     getReplyData(messageId) {
@@ -2173,6 +2840,17 @@ class CommunityChat {
         setTimeout(checkAndRestore, 1000);
         setTimeout(checkAndRestore, 3000);
         setTimeout(checkAndRestore, 5000);
+        
+        // Also restore reactions for all existing messages
+        setTimeout(() => {
+            const messages = document.querySelectorAll('[data-message-id]');
+            messages.forEach(messageElement => {
+                const messageId = messageElement.getAttribute('data-message-id');
+                if (messageId) {
+                    restoreReactions(messageId);
+                }
+            });
+        }, 2000);
     }
     
     addReplyPreviewOnly(messageElement, replyData, isOwn = false) {
@@ -2304,6 +2982,134 @@ class CommunityChat {
 let currentContextMessage = null;
 let replyToMessageId = null;
 
+// New Sidebar Functions
+function toggleNewSidebar() {
+    const sidebar = document.getElementById('newSidebar');
+    const toggleBtn = document.getElementById('newSidebarToggleBtn');
+    const chatContainer = document.querySelector('.chat-container');
+    
+    if (sidebar && toggleBtn && chatContainer) {
+        sidebar.classList.toggle('open');
+        chatContainer.classList.toggle('sidebar-open');
+        
+        // Update toggle button icon with smooth transition
+        const icon = toggleBtn.querySelector('svg');
+        if (icon) {
+            // Add rotation effect during transition
+            icon.style.transform = 'rotate(90deg)';
+            
+            setTimeout(() => {
+                if (sidebar.classList.contains('open')) {
+                    // Show close icon when sidebar is open
+                    icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+                } else {
+                    // Show menu icon when sidebar is closed
+                    icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line>';
+                }
+                icon.style.transform = 'rotate(0deg)';
+            }, 150); // Half of the transition duration
+        }
+    }
+}
+
+function showAllMessages() {
+    // Show all messages
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => msg.style.display = 'flex');
+    
+    // Update active button
+    document.querySelectorAll('.new-action-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.new-action-btn').classList.add('active');
+}
+
+
+function showMediaMessages() {
+    // Show only messages with media
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+        const hasMedia = msg.querySelector('.grid-image, .file-attachment, .document-attachment');
+        msg.style.display = hasMedia ? 'flex' : 'none';
+    });
+    
+    // Update active button
+    document.querySelectorAll('.new-action-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.new-action-btn').classList.add('active');
+}
+
+function showChatSettings() {
+    // Placeholder for chat settings
+    alert('Chat settings will be implemented here!');
+}
+
+// Search functionality for new sidebar
+function initializeNewSearch() {
+    const searchInput = document.getElementById('newSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const messages = document.querySelectorAll('.message');
+            
+            if (searchTerm === '') {
+                // Show all messages
+                messages.forEach(msg => msg.style.display = 'flex');
+            } else {
+                // Filter messages
+                messages.forEach(msg => {
+                    const messageText = msg.textContent.toLowerCase();
+                    msg.style.display = messageText.includes(searchTerm) ? 'flex' : 'none';
+                });
+            }
+        });
+    }
+}
+
+// Enhanced user list with status for new sidebar
+function updateNewUserList(users) {
+    console.log('updateNewUserList called with:', users);
+    const onlineUsersContainer = document.getElementById('newOnlineUsers');
+    const onlineCount = document.getElementById('newOnlineCount');
+    
+    console.log('onlineUsersContainer:', onlineUsersContainer);
+    console.log('onlineCount:', onlineCount);
+    
+    if (!onlineUsersContainer) {
+        console.log('onlineUsersContainer not found!');
+        return;
+    }
+    
+    // Update count
+    if (onlineCount) {
+        onlineCount.textContent = users.length;
+    }
+    
+    // Clear existing users
+    onlineUsersContainer.innerHTML = '';
+    
+    if (users.length === 0) {
+        onlineUsersContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">No users online</div>';
+        return;
+    }
+    
+    // Add users
+    users.forEach(user => {
+        const userItem = document.createElement('div');
+        userItem.className = 'new-user-item';
+        userItem.innerHTML = `
+            <div class="new-user-avatar" style="background-color: ${user.color}">
+                ${user.name.charAt(0).toUpperCase()}
+                <div class="new-user-status online"></div>
+            </div>
+            <div class="new-user-info">
+                <div class="new-user-name">${user.name}</div>
+                <div class="new-user-last-seen">Online now</div>
+            </div>
+        `;
+        onlineUsersContainer.appendChild(userItem);
+    });
+    
+    console.log('Added', users.length, 'users to sidebar');
+}
+
 // Debug functions
 function clearReplyData() {
     if (window.chatInstance) {
@@ -2342,7 +3148,6 @@ function showContextMenu(event, messageId, messageData) {
     
     const contextMenu = document.getElementById('messageContextMenu');
     console.log('Context menu element:', contextMenu);
-    const rect = event.target.getBoundingClientRect();
     
     // Don't show context menu for own messages
     if (messageData.senderId === window.chatInstance.currentUser.id) {
@@ -2353,9 +3158,45 @@ function showContextMenu(event, messageId, messageData) {
     currentContextMessage = { id: messageId, data: messageData };
     console.log('Set currentContextMessage to:', currentContextMessage);
     
-    // Position the context menu
-    contextMenu.style.left = event.clientX + 'px';
-    contextMenu.style.top = event.clientY + 'px';
+    // Position the context menu near the clicked element
+    const rect = event.target.getBoundingClientRect();
+    const contextMenuWidth = 150; // Approximate width of context menu
+    const contextMenuHeight = 200; // Approximate height of context menu
+    
+    // Calculate position relative to the clicked element
+    let left = rect.right + 20; // Position 10px to the right of the message
+    let top = rect.top + (rect.height / 2) - (contextMenuHeight / 2); // Center vertically on the element
+    
+    // Adjust if menu would go off right edge
+    if (left + contextMenuWidth > window.innerWidth - 10) {
+        left = rect.left - contextMenuWidth - 10; // Position to the left of the element instead
+    }
+    
+    // Adjust if menu would go off top edge
+    if (top < 10) {
+        top = 10; // Stick to top edge
+    }
+    
+    // Adjust if menu would go off bottom edge or overlap with chat input
+    const chatInputArea = document.querySelector('.chat-input-container');
+    const chatInputTop = chatInputArea ? chatInputArea.getBoundingClientRect().top : window.innerHeight - 100;
+    
+    if (top + contextMenuHeight > chatInputTop - 10) {
+        // Position above the chat input area
+        top = chatInputTop - contextMenuHeight - 20;
+    }
+    
+    // Final check for window bottom edge
+    if (top + contextMenuHeight > window.innerHeight - 10) {
+        top = window.innerHeight - contextMenuHeight - 10;
+    }
+    
+    // Ensure menu doesn't go off left or top edges
+    left = Math.max(10, left);
+    top = Math.max(10, top);
+    
+    contextMenu.style.left = left + 'px';
+    contextMenu.style.top = top + 'px';
     contextMenu.classList.add('show');
     
     // Hide context menu when clicking elsewhere
@@ -2375,6 +3216,7 @@ function reactToMessage(emoji) {
     
     const messageId = currentContextMessage.id;
     const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    const currentUserId = window.chatInstance.currentUser.id;
     
     if (messageElement) {
         let reactionsContainer = messageElement.querySelector('.emoji-reactions');
@@ -2384,25 +3226,144 @@ function reactToMessage(emoji) {
             messageElement.querySelector('.message-content').appendChild(reactionsContainer);
         }
         
-        // Check if emoji already exists
+        // Remove user's previous reaction if any
+        const userPreviousReaction = reactionsContainer.querySelector(`[data-user-id="${currentUserId}"]`);
+        if (userPreviousReaction) {
+            const previousEmoji = userPreviousReaction.dataset.emoji;
+            const previousCount = parseInt(userPreviousReaction.dataset.count);
+            
+            if (previousCount > 1) {
+                // Decrease count of previous emoji
+                userPreviousReaction.dataset.count = (previousCount - 1).toString();
+                userPreviousReaction.innerHTML = `${previousEmoji} ${previousCount - 1}`;
+            } else {
+                // Remove previous emoji completely
+                userPreviousReaction.remove();
+            }
+        }
+        
+        // Check if the new emoji already exists
         const existingReaction = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
         if (existingReaction) {
-            // Increment count
+            // Increment count and add user ID
             const count = parseInt(existingReaction.dataset.count) + 1;
             existingReaction.dataset.count = count;
             existingReaction.innerHTML = `${emoji} ${count}`;
+            existingReaction.dataset.userId = currentUserId;
+            existingReaction.style.cursor = 'pointer';
+            // Remove existing click listener if any
+            existingReaction.replaceWith(existingReaction.cloneNode(true));
+            // Add new click listener
+            const newReaction = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
+            newReaction.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                newReaction.blur();
+                const messageData = {
+                    id: messageId,
+                    sender: messageElement.dataset.senderName || 'Unknown'
+                };
+                showContextMenu(e, messageId, messageData);
+            });
         } else {
             // Add new reaction
             const reactionElement = document.createElement('div');
             reactionElement.className = 'emoji-reaction';
             reactionElement.dataset.emoji = emoji;
             reactionElement.dataset.count = '1';
+            reactionElement.dataset.userId = currentUserId;
             reactionElement.innerHTML = `${emoji} 1`;
+            reactionElement.style.cursor = 'pointer';
+            reactionElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                reactionElement.blur();
+                const messageData = {
+                    id: messageId,
+                    sender: messageElement.dataset.senderName || 'Unknown'
+                };
+                showContextMenu(e, messageId, messageData);
+            });
             reactionsContainer.appendChild(reactionElement);
+        }
+        
+        // Store reactions in localStorage for persistence
+        storeReactions(messageId, reactionsContainer);
+        
+        // Send reaction to server
+        if (window.chatInstance && window.chatInstance.socket) {
+            window.chatInstance.socket.emit('message-reaction', {
+                messageId: messageId,
+                emoji: emoji,
+                userId: currentUserId
+            });
         }
     }
     
     hideContextMenu();
+}
+
+function storeReactions(messageId, reactionsContainer) {
+    const reactions = {};
+    const reactionElements = reactionsContainer.querySelectorAll('.emoji-reaction');
+    
+    reactionElements.forEach(element => {
+        const emoji = element.dataset.emoji;
+        const count = parseInt(element.dataset.count);
+        const userId = element.dataset.userId;
+        reactions[emoji] = { count: count, userId: userId };
+    });
+    
+    // Store in localStorage
+    const storedReactions = JSON.parse(localStorage.getItem('chat_reactions') || '{}');
+    storedReactions[messageId] = reactions;
+    localStorage.setItem('chat_reactions', JSON.stringify(storedReactions));
+    
+    console.log('Stored reactions for message:', messageId, reactions);
+}
+
+function restoreReactions(messageId) {
+    const storedReactions = JSON.parse(localStorage.getItem('chat_reactions') || '{}');
+    const messageReactions = storedReactions[messageId];
+    
+    if (messageReactions) {
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            let reactionsContainer = messageElement.querySelector('.emoji-reactions');
+            if (!reactionsContainer) {
+                reactionsContainer = document.createElement('div');
+                reactionsContainer.className = 'emoji-reactions';
+                messageElement.querySelector('.message-content').appendChild(reactionsContainer);
+            }
+            
+            // Clear existing reactions
+            reactionsContainer.innerHTML = '';
+            
+            // Restore reactions
+            Object.entries(messageReactions).forEach(([emoji, reactionData]) => {
+                const reactionElement = document.createElement('div');
+                reactionElement.className = 'emoji-reaction';
+                reactionElement.dataset.emoji = emoji;
+                reactionElement.dataset.count = reactionData.count.toString();
+                reactionElement.dataset.userId = reactionData.userId;
+                reactionElement.innerHTML = `${emoji} ${reactionData.count}`;
+                reactionElement.style.cursor = 'pointer';
+                reactionElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    reactionElement.blur();
+                    const messageData = {
+                        id: messageId,
+                        sender: messageElement.dataset.senderName || 'Unknown'
+                    };
+                    showContextMenu(e, messageId, messageData);
+                });
+                reactionsContainer.appendChild(reactionElement);
+            });
+            
+            console.log('Restored reactions for message:', messageId, messageReactions);
+        }
+    }
 }
 
 function replyToMessage() {
@@ -2642,6 +3603,40 @@ function removeFilePreview(index = null) {
         existingPreviews.forEach(preview => preview.remove());
         window.selectedFiles = null;
         window.selectedFile = null;
+    }
+}
+
+function downloadFile(url, filename) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
+
+function openFileInBrowser(url) {
+    // Create a link without the download attribute to open in browser
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    // For PDFs and documents, try to open in browser
+    if (url.toLowerCase().includes('.pdf') || 
+        url.toLowerCase().includes('.doc') || 
+        url.toLowerCase().includes('.docx') ||
+        url.toLowerCase().includes('.txt')) {
+        // Open directly in new tab
+        window.open(url, '_blank');
+    } else {
+        // For other files, use the link method
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }
 

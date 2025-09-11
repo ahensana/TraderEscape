@@ -113,7 +113,51 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
   res.json(fileData);
 });
 
-// Serve uploaded files
+// Serve uploaded files with proper headers for browser viewing
+app.get("/uploads/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, "uploads", filename);
+
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
+  }
+
+  // Get file extension
+  const ext = path.extname(filename).toLowerCase();
+
+  // Set appropriate headers based on file type
+  if (ext === ".pdf") {
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="' + filename + '"');
+  } else if (ext === ".doc" || ext === ".docx") {
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader("Content-Disposition", 'inline; filename="' + filename + '"');
+  } else if (ext === ".xls" || ext === ".xlsx") {
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", 'inline; filename="' + filename + '"');
+  } else if (ext === ".txt") {
+    res.setHeader("Content-Type", "text/plain");
+    res.setHeader("Content-Disposition", 'inline; filename="' + filename + '"');
+  } else {
+    // For other files, use default behavior
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="' + filename + '"'
+    );
+  }
+
+  // Send the file
+  res.sendFile(filePath);
+});
+
+// Fallback for other uploads (images, etc.)
 app.use("/uploads", express.static("uploads"));
 
 // Socket.IO connection handling

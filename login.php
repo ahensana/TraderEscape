@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/includes/db_functions.php';
 require_once __DIR__ . '/includes/auth_functions.php';
-require_once __DIR__ . '/includes/otp_service.php';
+require_once __DIR__ . '/includes/working_otp_service.php';
 
 // Simple authentication functions
 function authenticateUser($email, $password) {
@@ -36,7 +36,7 @@ function authenticateUserWithOTP($email, $password, $otp) {
         
         if ($user && password_verify($password, $user['password_hash'])) {
             // Check OTP verification
-            $otpService = new OTPService();
+            $otpService = new WorkingOTPService();
             if ($otpService->verifyOTP($email, $otp, 'login')) {
                 // Update last_login timestamp
                 $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
@@ -64,7 +64,7 @@ function sendLoginOTP($email) {
             return ['success' => false, 'message' => 'Email not found.'];
         }
         
-        $otpService = new OTPService();
+        $otpService = new WorkingOTPService();
         $otp = $otpService->generateOTP();
         
         if ($otpService->storeOTP($email, $otp, 'login') && $otpService->sendOTPEmail($email, $otp, 'login')) {
@@ -90,7 +90,7 @@ function sendForgotPasswordOTP($email) {
             return ['success' => false, 'message' => 'Email not found.'];
         }
         
-        $otpService = new OTPService();
+        $otpService = new WorkingOTPService();
         $otp = $otpService->generateOTP();
         
         if ($otpService->storeOTP($email, $otp, 'forgot_password') && $otpService->sendOTPEmail($email, $otp, 'forgot_password')) {
@@ -108,7 +108,7 @@ function sendForgotPasswordOTP($email) {
 function resetPasswordWithOTP($email, $otp, $newPassword) {
     try {
         $pdo = getDB();
-        $otpService = new OTPService();
+        $otpService = new WorkingOTPService();
         
         if ($otpService->verifyOTP($email, $otp, 'forgot_password')) {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
@@ -154,7 +154,7 @@ function registerUser($full_name, $username, $email, $password) {
         ];
         
         // Send OTP for email verification
-        $otpService = new OTPService();
+        $otpService = new WorkingOTPService();
         $otp = $otpService->generateOTP();
         $otpService->storeOTP($email, $otp, 'register');
         $otpService->sendOTPEmail($email, $otp, 'register');
@@ -187,7 +187,7 @@ function verifyRegistrationOTP($email, $otp) {
             return ['success' => false, 'message' => 'Registration session expired. Please register again.'];
         }
         
-        $otpService = new OTPService();
+        $otpService = new WorkingOTPService();
         if ($otpService->verifyOTP($email, $otp, 'register')) {
             // OTP verified, now create the user account
             $pdo = getDB();
@@ -273,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user = authenticateUser($email, $password);
                 if ($user) {
                     // Check if user needs OTP verification
-                    $otpService = new OTPService();
+                    $otpService = new WorkingOTPService();
                     if (!$otpService->isOTPVerified($email)) {
                         // Send OTP and show OTP form
                         $otpResult = sendLoginOTP($email);

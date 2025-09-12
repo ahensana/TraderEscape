@@ -5,7 +5,7 @@
  */
 
 session_start();
-require_once __DIR__ . '/includes/email_service.php';
+require_once __DIR__ . '/working_email_service.php';
 
 $message = '';
 $error = '';
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($email) || empty($app_password)) {
             $error = 'Please fill in all fields.';
         } else {
-            $mailer = new SimplePHPMailer();
+            $mailer = new WorkingEmailService();
             $mailer->configureGmail($email, $app_password);
             $message = 'Gmail configuration saved successfully!';
         }
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($test_email)) {
             $error = 'Please enter a test email address.';
         } else {
-            $result = sendOTPEmail($test_email, '123456', 'login');
+            $result = sendOTPEmailWorking($test_email, '123456', 'login');
             if ($result) {
                 $message = 'Test email sent successfully! Check the log files for details.';
             } else {
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Check if Gmail is configured
-$mailer = new SimplePHPMailer();
+$mailer = new WorkingEmailService();
 $isConfigured = $mailer->loadGmailConfig();
 
 // Check log files

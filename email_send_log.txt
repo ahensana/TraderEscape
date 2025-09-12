@@ -1,0 +1,12 @@
+2025-09-11 14:46:18 - Email send attempt
+From: noreply@thetradersescape.com
+To: offmalsawma@gmail.com
+Subject: Your Login Verification Code - TraderEscape
+Result: FAILED
+--------------------------------------------------
+2025-09-11 14:46:20 - Email send attempt
+From: noreply@thetradersescape.com
+To: offmalsawma@gmail.com
+Subject: Your Login Verification Code - TraderEscape
+Result: FAILED
+--------------------------------------------------

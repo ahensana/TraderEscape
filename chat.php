@@ -84,7 +84,7 @@ if (!isLoggedIn()) {
     
     /* Sidebar Header */
     .new-sidebar-header {
-        padding: 20px;
+        padding: 23px 20px;
         border-bottom: 1px solid rgba(37, 99, 235, 0.2);
         display: flex;
         align-items: center;
@@ -415,7 +415,7 @@ if (!isLoggedIn()) {
     }
     
     .chat-controls {
-        padding: 20px;
+        padding: 10px 20px;
         background: rgba(15, 23, 42, 0.95);
         backdrop-filter: blur(20px);
         border-bottom: 1px solid rgba(37, 99, 235, 0.2);

@@ -415,7 +415,7 @@ if (!isLoggedIn()) {
     }
     
     .chat-controls {
-        padding: 10px 20px;
+        padding: 20px;
         background: rgba(15, 23, 42, 0.95);
         backdrop-filter: blur(20px);
         border-bottom: 1px solid rgba(37, 99, 235, 0.2);

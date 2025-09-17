@@ -222,6 +222,7 @@ io.on("connection", (socket) => {
       socket.broadcast.emit("user-joined", {
         message: `${user.name} joined the chat`,
         user: user,
+        userId: user.baseId, // Send the original user ID for matching
       });
       console.log(
         `${user.name} (${user.id}) joined the chat from ${
@@ -336,6 +337,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("user-joined", {
       message: `${user.name} joined the chat`,
       user: user,
+      userId: user.baseId, // Send the original user ID for matching
     });
 
     console.log(`${user.name} (${user.id}) joined the chat via React`);
@@ -424,6 +426,7 @@ io.on("connection", (socket) => {
           socket.broadcast.emit("user-left", {
             message: `${user.name} left the chat`,
             user: user,
+            userId: user.baseId, // Send the original user ID for matching
           });
           console.log(`${user.name} left the chat`);
         } else {

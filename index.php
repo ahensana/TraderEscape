@@ -1,6 +1,8 @@
 <?php 
 session_start();
 require_once __DIR__ . '/includes/db_functions.php';
+require_once __DIR__ . '/includes/auth_functions.php';
+require_once __DIR__ . '/includes/community_functions.php';
 
 // Track page view
 $userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
@@ -9,6 +11,15 @@ trackPageView('home', $userId, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_U
 // Log user activity if logged in
 if ($userId) {
     logUserActivity($userId, 'page_view', 'Viewed home page', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['page' => 'home']));
+}
+
+// Check if user has community access
+$hasCommunityAccess = false;
+if (isLoggedIn()) {
+    $currentUser = getCurrentUser();
+    if ($currentUser) {
+        $hasCommunityAccess = hasCommunityAccess($currentUser['id']);
+    }
 }
 
 include 'includes/header.php'; 
@@ -50,6 +61,298 @@ include 'includes/header.php';
             color: #ffffff;
             line-height: 1.6;
             overflow-x: hidden;
+        }
+
+        /* Community Join Modal Styles */
+        .community-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            position: relative;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px 20px;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .modal-body {
+            padding: 25px 30px 30px;
+            text-align: center;
+        }
+
+        .modal-description {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        #requestBtn {
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(107, 114, 128, 0.2);
+            border: 1px solid rgba(107, 114, 128, 0.3);
+            color: #9ca3af;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(107, 114, 128, 0.3);
+            color: #d1d5db;
+        }
+
+        .message-display {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+            margin: 25px auto 0 auto;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .success-message {
+            color: #6ee7b7;
+        }
+
+        .error-message {
+            color: #fca5a5;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        /* Button animation states */
+        .btn-primary.requesting {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .btn-primary.requested {
+            animation: successPulse 0.6s ease-out;
+            transform: scale(1.05);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.8; 
+                transform: scale(1.02);
+            }
+        }
+        
+        @keyframes successPulse {
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.1);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .modal-header,
+            .modal-body {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
     
@@ -478,6 +781,41 @@ include 'includes/header.php';
         </svg>
     </button>
 
+    <!-- Community Join Modal -->
+    <div id="communityJoinModal" class="community-modal" style="display: none;">
+        <div class="modal-backdrop" onclick="hideCommunityJoinModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Join Our Trading Community</h3>
+                <button class="modal-close" onclick="hideCommunityJoinModal()" aria-label="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <?php if (isLoggedIn()): ?>
+                    <p class="modal-description">
+                        Join our exclusive trading community to connect with fellow traders, share insights, and learn from experienced professionals.
+                    </p>
+                    <div class="form-actions">
+                        <button type="button" id="requestBtn" class="btn-primary" onclick="submitCommunityRequest()">Send Request</button>
+                    </div>
+                    <div id="requestMessage" class="message-display" style="display: none;"></div>
+                <?php else: ?>
+                    <p class="modal-description">
+                        To join our exclusive trading community, you need to be a registered member. Sign in to your account or create a new one to request community access.
+                    </p>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="hideCommunityJoinModal()">Cancel</button>
+                        <a href="login.php" class="btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Sign In to Request Access</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <?php include 'includes/footer.php'; ?>
 
     <!-- Scripts with defer for better performance -->
@@ -563,8 +901,153 @@ include 'includes/header.php';
         
         // Chat icon functionality
         function toggleChatOptions() {
-            // Redirect to chat page
-            window.location.href = './chat.php';
+            // Check if user has community access first
+            if (window.userHasCommunityAccess) {
+                // User has access, go directly to chat
+                window.location.href = 'chat.php';
+            } else {
+                // User needs to request access, show modal
+                showCommunityJoinModal();
+            }
+        }
+        
+        // Community Join Modal Functions
+        function showCommunityJoinModal() {
+            const modal = document.getElementById('communityJoinModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                 // Reset button state if user is logged in
+                 const requestBtn = document.getElementById('requestBtn');
+                 if (requestBtn) {
+                     requestBtn.disabled = false;
+                     requestBtn.innerHTML = 'Send Request';
+                     requestBtn.classList.remove('requesting', 'requested');
+                     requestBtn.style.background = '';
+                     requestBtn.style.borderColor = '';
+                 }
+                
+                // Hide any previous messages
+                const messageDiv = document.getElementById('requestMessage');
+                if (messageDiv) {
+                    messageDiv.style.display = 'none';
+                }
+                
+                // Focus on the modal for accessibility
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    setTimeout(() => modalContent.focus(), 100);
+                }
+            }
+        }
+        
+        function hideCommunityJoinModal() {
+            const modal = document.getElementById('communityJoinModal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                
+                // Clear form
+                const form = document.getElementById('communityJoinForm');
+                if (form) {
+                    form.reset();
+                }
+                
+                // Hide any messages
+                const messageDiv = document.getElementById('joinMessage');
+                if (messageDiv) {
+                    messageDiv.style.display = 'none';
+                }
+            }
+        }
+        
+        function submitCommunityRequest() {
+            const requestBtn = document.getElementById('requestBtn');
+            const messageDiv = document.getElementById('requestMessage');
+            
+            // Show loading state with animation
+            requestBtn.disabled = true;
+            requestBtn.innerHTML = '<div class="loading-spinner"></div> Requesting...';
+            requestBtn.classList.add('requesting');
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('message', ''); // Empty message for simplified flow
+            
+            // Start timer for minimum loading duration
+            const startTime = Date.now();
+            const minLoadingTime = 2000; // 2 seconds minimum
+            
+            // Submit the request
+            fetch('./submit_community_request.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Calculate remaining time to ensure minimum loading duration
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+                
+                // Wait for remaining time before processing response
+                setTimeout(() => {
+                    if (data.success) {
+                        // Success animation - change to "Requested"
+                        requestBtn.classList.remove('requesting');
+                        requestBtn.classList.add('requested');
+                        requestBtn.innerHTML = '✓ Requested';
+                        requestBtn.style.background = '#10b981';
+                        requestBtn.style.borderColor = '#10b981';
+                        
+                        // Show success message
+                        messageDiv.style.display = 'block';
+                        messageDiv.className = 'success-message';
+                        messageDiv.textContent = data.message;
+                        
+                        // Hide modal after 3 seconds
+                        setTimeout(() => {
+                            hideCommunityJoinModal();
+                        }, 3000);
+                    } else {
+                        // Error state
+                        requestBtn.classList.remove('requesting');
+                        requestBtn.disabled = false;
+                        requestBtn.innerHTML = 'Send Request';
+                        
+                        messageDiv.style.display = 'block';
+                        messageDiv.className = 'error-message';
+                        messageDiv.textContent = data.message;
+                        
+                        // Hide message after 3 seconds
+                        setTimeout(() => {
+                            messageDiv.style.display = 'none';
+                        }, 3000);
+                    }
+                }, remainingTime);
+            })
+            .catch(error => {
+                // Calculate remaining time to ensure minimum loading duration
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+                
+                // Wait for remaining time before processing error
+                setTimeout(() => {
+                    // Error state
+                    requestBtn.classList.remove('requesting');
+                    requestBtn.disabled = false;
+                    requestBtn.innerHTML = 'Send Request';
+                    
+                    messageDiv.style.display = 'block';
+                    messageDiv.className = 'error-message';
+                    messageDiv.textContent = 'An error occurred. Please try again.';
+                    
+                    // Hide message after 3 seconds
+                    setTimeout(() => {
+                        messageDiv.style.display = 'none';
+                    }, 3000);
+                }, remainingTime);
+            });
         }
         
         // Add keyboard support for chat icon
@@ -609,6 +1092,10 @@ include 'includes/header.php';
                 console.log('Chat icon created manually!');
             }
         });
+        
+        // Set community access status for JavaScript
+        window.userHasCommunityAccess = <?php echo $hasCommunityAccess ? 'true' : 'false'; ?>;
+        console.log('User has community access:', window.userHasCommunityAccess);
     </script>
 </body>
 </html>

@@ -7,6 +7,8 @@ require_once __DIR__ . '/includes/auth_functions.php';
 function authenticateUser($email, $password) {
     try {
         $pdo = getDB();
+        
+        // First, try to authenticate as a regular user
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND is_active = TRUE");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -18,6 +20,26 @@ function authenticateUser($email, $password) {
             
             return $user;
         }
+        
+        // If not found in users table, try to authenticate as admin
+        $stmt = $pdo->prepare("SELECT * FROM admins WHERE email = ?");
+        $stmt->execute([$email]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($admin && password_verify($password, $admin['password'])) {
+            // Create a user-like array for admin login
+            $adminUser = [
+                'id' => $admin['id'],
+                'full_name' => $admin['username'] ?? 'Admin',
+                'username' => $admin['username'] ?? 'admin',
+                'email' => $admin['email'],
+                'is_admin' => true, // Flag to indicate this is an admin
+                'community_access' => 1 // Admins automatically have community access
+            ];
+            
+            return $adminUser;
+        }
+        
         return false;
     } catch (Exception $e) {
         error_log("Authentication error: " . $e->getMessage());
@@ -91,6 +113,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['full_name'] = $user['full_name'];
+                
+                // Store admin flag and community access in session
+                if (isset($user['is_admin'])) {
+                    $_SESSION['user']['is_admin'] = $user['is_admin'];
+                }
+                if (isset($user['community_access'])) {
+                    $_SESSION['user']['community_access'] = $user['community_access'];
+                }
+                
+                // Store complete user data in session
+                $_SESSION['user'] = $user;
                 
                 // Log successful login
                 logUserActivity($user['id'], 'login', 'User logged in successfully', $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['action' => 'login']));

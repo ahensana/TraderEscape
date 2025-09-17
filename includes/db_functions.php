@@ -108,6 +108,10 @@ function getSiteSetting($key, $default = null) {
 function trackPageView($pageSlug, $userId = null, $ipAddress = null, $userAgent = null, $referrer = null, $sessionId = null) {
     try {
         $pdo = getDB();
+        if (!$pdo) {
+            error_log("Database connection not available for tracking page view");
+            return false;
+        }
         
         // Use stored procedure if available
         $stmt = $pdo->prepare("CALL TrackPageView(?, ?, ?, ?, ?, ?)");
@@ -117,6 +121,11 @@ function trackPageView($pageSlug, $userId = null, $ipAddress = null, $userAgent 
     } catch (Exception $e) {
         // Fallback to direct insert if stored procedure fails
         try {
+            $pdo = getDB();
+            if (!$pdo) {
+                error_log("Database connection not available for fallback page view tracking");
+                return false;
+            }
             $stmt = $pdo->prepare("INSERT INTO page_views (page_slug, user_id, ip_address, user_agent, referrer, session_id) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$pageSlug, $userId, $ipAddress, $userAgent, $referrer, $sessionId]);
             
@@ -138,6 +147,10 @@ function trackPageView($pageSlug, $userId = null, $ipAddress = null, $userAgent 
 function logUserActivity($userId, $activityType, $description = '', $ipAddress = null, $userAgent = null, $metadata = null) {
     try {
         $pdo = getDB();
+        if (!$pdo) {
+            error_log("Database connection not available for logging user activity");
+            return false;
+        }
         
         // Use stored procedure if available
         $stmt = $pdo->prepare("CALL LogUserActivity(?, ?, ?, ?, ?, ?)");
@@ -147,6 +160,11 @@ function logUserActivity($userId, $activityType, $description = '', $ipAddress =
     } catch (Exception $e) {
         // Fallback to direct insert if stored procedure fails
         try {
+            $pdo = getDB();
+            if (!$pdo) {
+                error_log("Database connection not available for fallback user activity logging");
+                return false;
+            }
             $stmt = $pdo->prepare("INSERT INTO user_activity_log (user_id, activity_type, description, ip_address, user_agent, metadata) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$userId, $activityType, $description, $ipAddress, $userAgent, $metadata]);
             return true;
@@ -207,6 +225,7 @@ function getUserStats($userId) {
     } catch (Exception $e) {
         // Fallback to direct query if stored procedure fails
         try {
+            $pdo = getDB();
             $stmt = $pdo->prepare("
                 SELECT 
                     u.username,

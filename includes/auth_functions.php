@@ -55,9 +55,52 @@ function getCurrentUser() {
     
     try {
         $pdo = getDB();
-        $stmt = $pdo->prepare("SELECT id, username, email, full_name, is_active FROM users WHERE id = ? AND is_active = TRUE");
+        
+        // First try to get from users table (including admin status)
+        $stmt = $pdo->prepare("SELECT id, username, email, full_name, is_active, COALESCE(is_admin, 0) as is_admin FROM users WHERE id = ? AND is_active = TRUE");
         $stmt->execute([$_SESSION['user_id']]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user) {
+            return $user;
+        }
+        
+        // If not found in users table, try to get from admins table (fallback for existing admins)
+        $stmt = $pdo->prepare("SELECT id, username, email FROM admins WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($admin) {
+            // Create a user-like array for admin
+            return [
+                'id' => $admin['id'],
+                'username' => $admin['username'] ?? 'admin',
+                'email' => $admin['email'],
+                'full_name' => $admin['username'] ?? 'Admin',
+                'is_active' => true,
+                'is_admin' => true
+            ];
+        }
+        
+        // If still not found, try by email (in case ID doesn't match)
+        if (isset($_SESSION['email'])) {
+            $stmt = $pdo->prepare("SELECT id, username, email FROM admins WHERE email = ?");
+            $stmt->execute([$_SESSION['email']]);
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($admin) {
+                return [
+                    'id' => $admin['id'],
+                    'username' => $admin['username'] ?? 'admin',
+                    'email' => $admin['email'],
+                    'full_name' => $admin['username'] ?? 'Admin',
+                    'is_active' => true,
+                    'is_admin' => true
+                ];
+            }
+        }
+        
+        return null;
     } catch (Exception $e) {
         error_log("Error getting current user: " . $e->getMessage());
         return null;

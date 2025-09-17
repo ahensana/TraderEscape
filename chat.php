@@ -1,16 +1,21 @@
 <?php
 session_start();
 require_once __DIR__ . '/includes/auth_functions.php';
+require_once __DIR__ . '/includes/community_functions.php';
 
 // Check if user is logged in
 if (!isLoggedIn()) {
     // User is not logged in, show login popup instead of chat
     $showLoginPopup = true;
     $currentUser = null;
+    $hasCommunityAccess = false;
 } else {
     // User is logged in, get their information
     $currentUser = getCurrentUser();
     $showLoginPopup = false;
+    
+    // Check if user has community access
+    $hasCommunityAccess = hasCommunityAccess($currentUser['id']);
 }
 ?>
 
@@ -58,6 +63,34 @@ if (!isLoggedIn()) {
         z-index: 1000;
         transform: translateX(-100%);
         will-change: transform;
+    }
+    
+    /* Sidebar content area - scrollable */
+    .new-sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Custom scrollbar for sidebar */
+    .new-sidebar-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .new-sidebar-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    
+    .new-sidebar-content::-webkit-scrollbar-thumb {
+        background: rgba(37, 99, 235, 0.5);
+        border-radius: 3px;
+    }
+    
+    .new-sidebar-content::-webkit-scrollbar-thumb:hover {
+        background: rgba(37, 99, 235, 0.7);
     }
     
     .new-sidebar.open {
@@ -202,10 +235,11 @@ if (!isLoggedIn()) {
     
     /* Sidebar Sections */
     .new-sidebar-section {
-        flex: 1;
+        flex: 0 0 auto;
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        min-height: 0;
     }
     
     .new-section-header {
@@ -214,6 +248,35 @@ if (!isLoggedIn()) {
         align-items: center;
         justify-content: space-between;
         border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .new-section-header:hover {
+        background: rgba(37, 99, 235, 0.1);
+    }
+    
+    .new-section-header.collapsible {
+        cursor: pointer;
+    }
+    
+    .new-section-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+    }
+    
+    .new-section-arrow {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.3s ease;
+        color: rgba(255, 255, 255, 0.6);
+        transform: rotate(-90deg);
+    }
+    
+    .new-section-arrow.expanded {
+        transform: rotate(0deg);
     }
     
     .new-section-header h3 {
@@ -239,6 +302,7 @@ if (!isLoggedIn()) {
         flex: 1;
         overflow-y: auto;
         padding: 8px 0;
+        max-height: 200px;
     }
     
     .new-user-item {
@@ -296,6 +360,13 @@ if (!isLoggedIn()) {
         min-width: 0;
     }
     
+    .new-user-name-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    
     .new-user-name {
         color: white;
         font-weight: 500;
@@ -304,12 +375,160 @@ if (!isLoggedIn()) {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 1;
+    }
+    
+    .admin-status {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-left: 8px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
     }
     
     .new-user-last-seen {
         color: rgba(255, 255, 255, 0.5);
         font-size: 0.8rem;
         margin: 0;
+    }
+    
+    .admin-badge {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Community Requests Styles */
+    .new-requests-count {
+        background: rgba(245, 158, 11, 0.3);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .new-requests-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+        max-height: 0;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .new-requests-list.expanded {
+        max-height: 300px;
+        padding: 8px 0;
+    }
+
+    .new-request-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .new-request-item:hover {
+        background: rgba(37, 99, 235, 0.1);
+    }
+
+    .new-request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .new-request-user {
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .new-request-status {
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .new-request-status.pending {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+    }
+
+    .new-request-status.approved {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+    }
+
+    .new-request-status.rejected {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+    }
+
+    .new-request-message {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.8rem;
+        margin: 4px 0;
+    }
+
+    .new-request-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+    }
+
+    .new-request-btn {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex: 1;
+    }
+
+    .new-request-btn.approve {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .new-request-btn.approve:hover {
+        background: rgba(16, 185, 129, 0.3);
+    }
+
+    .new-request-btn.reject {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .new-request-btn.reject:hover {
+        background: rgba(239, 68, 68, 0.3);
+    }
+
+    .new-request-btn.remove {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .new-request-btn.remove:hover {
+        background: rgba(245, 158, 11, 0.3);
     }
     
     /* Sidebar Footer */
@@ -338,6 +557,422 @@ if (!isLoggedIn()) {
     .new-settings-btn:hover {
         background: rgba(37, 99, 235, 0.2);
         color: white;
+    }
+    
+    .leave-chat-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+    }
+    
+    /* Leave Chat Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    }
+    
+    .modal-content {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 16px;
+        padding: 0;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .modal-header h3 {
+        color: white;
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    .modal-body {
+        padding: 24px;
+        text-align: center;
+    }
+    
+    .modal-icon {
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .modal-body p {
+        color: white;
+        margin: 0 0 8px 0;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    
+    .modal-subtitle {
+        color: rgba(255, 255, 255, 0.7) !important;
+        font-size: 0.9rem !important;
+        font-weight: 400 !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        padding: 16px 24px 24px;
+        justify-content: center;
+    }
+    
+    /* Confirmation Modal Styles */
+    .confirmation-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        backdrop-filter: blur(5px);
+    }
+    
+    .confirmation-modal-content {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 16px;
+        padding: 0;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    .confirmation-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .confirmation-modal-header h3 {
+        color: white;
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .confirmation-modal-close {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 24px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .confirmation-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    .confirmation-modal-body {
+        padding: 24px;
+        text-align: center;
+    }
+    
+    .confirmation-modal-body p {
+        color: white;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+    
+    .confirmation-modal-footer {
+        display: flex;
+        gap: 12px;
+        padding: 16px 24px 24px;
+        justify-content: center;
+    }
+    
+    .confirmation-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 80px;
+    }
+    
+    .confirmation-btn.cancel {
+        background: rgba(107, 114, 128, 0.2);
+        color: #9ca3af;
+        border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    
+    .confirmation-btn.cancel:hover {
+        background: rgba(107, 114, 128, 0.3);
+        color: #d1d5db;
+    }
+    
+    .confirmation-btn.confirm {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .confirmation-btn.confirm:hover {
+        background: linear-gradient(135deg, #2563eb, #1e40af);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .confirmation-btn.confirm.danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .confirmation-btn.confirm.danger:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    /* User Management Modal Styles */
+    .user-management-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10002;
+        backdrop-filter: blur(5px);
+    }
+
+    .user-management-modal-content {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 16px;
+        padding: 0;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    .user-management-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-management-modal-header h3 {
+        color: white;
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .user-management-modal-close {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 24px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .user-management-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .user-management-modal-body {
+        padding: 24px;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-avatar-large {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 600;
+        color: white;
+        margin-right: 16px;
+    }
+
+    .user-details h4 {
+        color: white;
+        margin: 0 0 4px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .user-details p {
+        color: rgba(255, 255, 255, 0.6);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .user-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .user-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .user-action-btn.make-admin {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .user-action-btn.make-admin:hover {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+
+    .user-action-btn.remove-user {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .user-action-btn.remove-user:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        transform: translateY(-1px);
     }
     
     /* Sidebar Toggle Button */
@@ -677,6 +1312,73 @@ if (!isLoggedIn()) {
     
     .emoji-reaction:hover {
         background: rgba(37, 99, 235, 0.2);
+        transform: scale(1.1);
+    }
+    
+    /* Image Modal */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(10px);
+    }
+    
+    .image-modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .image-modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .image-modal img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    .image-modal-header {
+        color: white;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .image-modal-close {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .image-modal-close:hover {
+        background: rgba(0, 0, 0, 0.8);
         transform: scale(1.1);
     }
     
@@ -1600,18 +2302,119 @@ if (!isLoggedIn()) {
         </div>
     </div>
 </div>
+<?php elseif (!$hasCommunityAccess): ?>
+<!-- Community Access Required Popup -->
+<div class="login-popup-overlay" id="communityAccessPopup">
+    <div class="login-popup">
+        <button class="close-btn" onclick="closeCommunityAccessPopup()">&times;</button>
+        <img src="assets/bubble-chat.png" alt="Chat Icon" class="chat-icon" style="width: 80px; height: 80px; object-fit: contain; filter: brightness(0) invert(1); display: block; margin: 0 auto 20px auto;">
+        <h2>Access Revoked</h2>
+        <p>You have been removed from our trading community due to a violation of the community guidelines. To regain access, you will need to submit a new request for access.</p>
+        <div class="login-buttons">
+            <button class="login-btn login-btn-primary" onclick="submitCommunityRequest()">Request Access</button>
+            <button class="login-btn login-btn-secondary" onclick="closeCommunityAccessPopup()">Maybe Later</button>
+        </div>
+        <div id="requestMessage" class="message-display" style="display: none; margin-top: 15px; text-align: center; font-size: 14px; color: #10b981;"></div>
+    </div>
+</div>
+<?php endif; ?>
 
 <script>
 function closeLoginPopup() {
     // Redirect to home page when popup is closed
     window.location.href = 'index.php';
 }
+
+function closeCommunityAccessPopup() {
+    // Redirect to home page when popup is closed
+    window.location.href = 'index.php';
+}
+
+function submitCommunityRequest() {
+    const requestBtn = document.querySelector('#communityAccessPopup .login-btn-primary');
+    const messageDiv = document.getElementById('requestMessage');
+    
+    // Show loading state
+    requestBtn.disabled = true;
+    requestBtn.innerHTML = 'Requesting...';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('message', ''); // Empty message for simplified flow
+    
+    // Submit the request
+    fetch('./submit_community_request.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            messageDiv.style.display = 'block';
+            messageDiv.textContent = 'Request submitted successfully!';
+            messageDiv.style.color = '#10b981';
+            
+            // Hide message after 2 seconds and redirect
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+                window.location.href = 'index.php';
+            }, 2000);
+        } else {
+            // Show error message
+            messageDiv.style.display = 'block';
+            messageDiv.textContent = data.message || 'An error occurred. Please try again.';
+            messageDiv.style.color = '#ef4444';
+            
+            // Reset button
+            requestBtn.disabled = false;
+            requestBtn.innerHTML = 'Request Access';
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Show error message
+        messageDiv.style.display = 'block';
+        messageDiv.textContent = 'An error occurred. Please try again.';
+        messageDiv.style.color = '#ef4444';
+        
+        // Reset button
+        requestBtn.disabled = false;
+        requestBtn.innerHTML = 'Request Access';
+        
+        // Hide message after 3 seconds
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 3000);
+    });
+}
+
+function togglePendingMembers() {
+    const requestsList = document.getElementById('newRequestsList');
+    const arrow = document.querySelector('.new-section-arrow');
+    
+    if (requestsList && arrow) {
+        if (requestsList.classList.contains('expanded')) {
+            // Collapse
+            requestsList.classList.remove('expanded');
+            arrow.classList.remove('expanded');
+        } else {
+            // Expand
+            requestsList.classList.add('expanded');
+            arrow.classList.add('expanded');
+        }
+    }
+}
 </script>
-<?php else: ?>
 
 <!-- New Independent Sidebar -->
 <div class="new-sidebar" id="newSidebar">
-    <!-- Sidebar Header -->
+    <!-- Sidebar Header - Fixed -->
     <div class="new-sidebar-header">
         <div class="new-sidebar-title">
             <img src="assets/bubble-chat.png" alt="Chat Icon" class="new-sidebar-icon">
@@ -1619,58 +2422,113 @@ function closeLoginPopup() {
         </div>
     </div>
 
-    <!-- Search Bar -->
-    <div class="new-sidebar-search">
-        <div class="new-search-container">
-            <svg class="new-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input type="text" placeholder="Search messages..." class="new-search-input" id="newSearchInput">
+    <!-- Scrollable Content Area -->
+    <div class="new-sidebar-content">
+        <!-- Search Bar -->
+        <div class="new-sidebar-search">
+            <div class="new-search-container">
+                <svg class="new-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" placeholder="Search messages..." class="new-search-input" id="newSearchInput">
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="new-sidebar-actions">
+            <button class="new-action-btn" onclick="showAllMessages()" title="All Messages">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>All Messages</span>
+            </button>
+                <button class="new-action-btn" onclick="showMediaMessages()" title="Media">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21,15 16,10 5,21"></polyline>
+                </svg>
+                <span>Media</span>
+            </button>
+        </div>
+
+        <!-- Community Requests Section (Admin Only) -->
+        <?php if (isLoggedIn() && $currentUser && isAdmin($currentUser['id'])): ?>
+                <div class="new-sidebar-section" id="adminRequestsSection">
+                    <div class="new-section-header collapsible" onclick="togglePendingMembers()">
+                        <div class="new-section-toggle">
+                            <svg class="new-section-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6,9 12,15 18,9"></polyline>
+                            </svg>
+                            <h3>Pending Members</h3>
+                        </div>
+                        <span class="new-requests-count" id="newRequestsCount">0</span>
+                    </div>
+            <div class="new-requests-list" id="newRequestsList">
+                <!-- Community requests will be populated here -->
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Community Members Section -->
+        <div class="new-sidebar-section">
+            <div class="new-section-header">
+                <h3>Community Members</h3>
+                <span class="new-online-count" id="newOnlineCount">0</span>
+            </div>
+            <div class="new-online-users" id="newOnlineUsers">
+                <!-- Community members will be populated here -->
+            </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="new-sidebar-actions">
-        <button class="new-action-btn" onclick="showAllMessages()" title="All Messages">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <span>All Messages</span>
-        </button>
-            <button class="new-action-btn" onclick="showMediaMessages()" title="Media">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21,15 16,10 5,21"></polyline>
-            </svg>
-            <span>Media</span>
-        </button>
-    </div>
-
-    <!-- Online Users Section -->
-    <div class="new-sidebar-section">
-        <div class="new-section-header">
-            <h3>Online Users</h3>
-            <span class="new-online-count" id="newOnlineCount">0</span>
-        </div>
-        <div class="new-online-users" id="newOnlineUsers">
-            <!-- Online users will be populated here -->
-        </div>
-    </div>
-
-    <!-- Chat Settings -->
+    <!-- Chat Settings - Fixed at bottom -->
     <div class="new-sidebar-footer">
-        <button class="new-settings-btn" onclick="showChatSettings()" title="Settings">
+        <button class="new-settings-btn" onclick="goToHome()" title="Back to Home">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9,22 9,12 15,12 15,22"></polyline>
             </svg>
-            <span>Settings</span>
+            <span>Back to Home</span>
         </button>
+        <?php if (!isAdmin($currentUser['id'])): ?>
+        <button class="new-settings-btn leave-chat-btn" onclick="leaveChat()" title="Leave Chat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16,17 21,12 16,7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Leave Chat</span>
+        </button>
+        <?php endif; ?>
     </div>
 </div>
 
+<!-- Leave Chat Confirmation Modal -->
+<div id="leaveChatModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Leave Chat</h3>
+            <button class="modal-close" onclick="closeLeaveChatModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16,17 21,12 16,7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <p>Are you sure you want to leave the chat?</p>
+            <p class="modal-subtitle">You will be disconnected from the chat and redirected to the home page.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeLeaveChatModal()">Cancel</button>
+            <button class="btn-danger" onclick="confirmLeaveChat()">Leave Chat</button>
+        </div>
+    </div>
+</div>
 
 <div class="chat-container">
     
@@ -1772,6 +2630,55 @@ function closeLoginPopup() {
     </div>
 </div>
 
+<!-- User Management Modal -->
+<div id="userManagementModal" class="user-management-modal">
+    <div class="user-management-modal-content">
+        <div class="user-management-modal-header">
+            <h3 id="userManagementTitle">Manage User</h3>
+            <button class="user-management-modal-close" onclick="hideUserManagementModal()">&times;</button>
+        </div>
+        <div class="user-management-modal-body">
+            <div class="user-info">
+                <div class="user-avatar-large" id="userManagementAvatar"></div>
+                <div class="user-details">
+                    <h4 id="userManagementName"></h4>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button class="user-action-btn make-admin" onclick="makeUserAdmin()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                    Make Admin
+                </button>
+                <button class="user-action-btn remove-user" onclick="removeUser()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"></path>
+                    </svg>
+                    Remove User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="confirmation-modal">
+    <div class="confirmation-modal-content">
+        <div class="confirmation-modal-header">
+            <h3 id="confirmationTitle">Confirm Action</h3>
+            <button class="confirmation-modal-close" onclick="hideConfirmationModal()">&times;</button>
+        </div>
+        <div class="confirmation-modal-body">
+            <p id="confirmationMessage">Are you sure you want to perform this action?</p>
+        </div>
+        <div class="confirmation-modal-footer">
+            <button class="confirmation-btn cancel" onclick="hideConfirmationModal()">Cancel</button>
+            <button class="confirmation-btn confirm" id="confirmActionBtn">Confirm</button>
+        </div>
+    </div>
+</div>
+
 <!-- Socket.IO CDN -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -1808,6 +2715,12 @@ class CommunityChat {
         // Initialize new sidebar
         this.initializeNewSidebar();
         
+        // Load community requests if user is admin
+        this.loadCommunityRequests();
+        
+        // Load community members for all users
+        this.loadCommunityMembers();
+        
         console.log('Cleared reply state on page load - replyToMessageId:', replyToMessageId);
         
         console.log('User data from server:', window.userData);
@@ -1832,7 +2745,7 @@ class CommunityChat {
         if (window.userData && window.userData.username) {
             const user = {
                 id: 'user_' + window.userData.id,
-                name: window.userData.full_name || window.userData.username,
+                name: window.userData.username, // Use username instead of full_name
                 color: colors[Math.floor(Math.random() * colors.length)],
                 deviceInfo: deviceInfo
             };
@@ -2032,11 +2945,19 @@ class CommunityChat {
         });
         
         this.socket.on('user-joined', (data) => {
-            this.addSystemMessage(data.message);
+            console.log('User joined event:', data);
+            // No status updates - users remain as "Community member" always
         });
         
         this.socket.on('user-left', (data) => {
-            this.addSystemMessage(data.message);
+            console.log('User left event:', data);
+            // No status updates - users remain as "Community member" always
+        });
+        
+        this.socket.on('user-kicked', (data) => {
+            console.log('User kicked event:', data);
+            // Redirect to home page
+            window.location.href = 'index.php';
         });
         
         this.socket.on('user-typing', (data) => {
@@ -2480,8 +3401,11 @@ class CommunityChat {
     }
     
     updateOnlineUsers(users) {
-        // Update the new sidebar online users
-        updateNewUserList(users);
+        // Don't update community members from socket users - only show approved users list
+        // updateNewUserList(users);
+        
+        // No community members updates from socket - only show approved users list
+        // this.updateCommunityMembersOnlineStatus(users);
         
         // Also update the old sidebar if it exists
         if (this.onlineUsersContainer) {
@@ -2502,6 +3426,24 @@ class CommunityChat {
             this.onlineUsersContainer.appendChild(userElement);
         });
         }
+    }
+    
+    // Update online status for all community members
+    updateCommunityMembersOnlineStatus(onlineUsers) {
+        // Get all community member elements
+        const memberElements = document.querySelectorAll('[data-user-id]');
+        
+        memberElements.forEach(memberElement => {
+            const userId = memberElement.getAttribute('data-user-id');
+            // Check if any online user has a baseId that matches this user ID
+            const isOnline = onlineUsers.some(user => {
+                // Extract numeric ID from baseId (e.g., "user_3" -> "3")
+                const numericBaseId = user.baseId ? user.baseId.replace('user_', '') : null;
+                return numericBaseId == userId;
+            });
+            
+            this.updateUserOnlineStatus(userId, isOnline);
+        });
     }
     
     autoResize() {
@@ -2615,7 +3557,7 @@ class CommunityChat {
             html += `<div class="grid-image-item" data-image-id="${imageId}" data-image-url="http://localhost:3000${file.url}" data-image-name="${file.originalName}">
                 <img src="http://localhost:3000${file.url}" alt="${file.originalName}" 
                      class="grid-image cursor-pointer" 
-                     onclick="window.open('http://localhost:3000${file.url}', '_blank')"
+                     onclick="openImageModal('http://localhost:3000${file.url}', '${file.originalName}')"
                      style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
                 ${showOverlay ? `<div class="image-overlay">+${count - 5}</div>` : ''}
             </div>`;
@@ -2797,6 +3739,177 @@ class CommunityChat {
             localStorage.setItem('chat_replies', JSON.stringify(storedReplies));
             console.log('Cleaned up incorrect reply data');
         }
+    }
+
+    async loadCommunityRequests() {
+        try {
+            const response = await fetch('get_community_requests.php');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.updateCommunityRequestsUI(data.requests);
+            } else {
+                console.error('Failed to load community requests:', data.message);
+            }
+        } catch (error) {
+            console.error('Error loading community requests:', error);
+        }
+    }
+    
+    async loadCommunityMembers() {
+        try {
+            console.log('Loading community members...');
+            const response = await fetch('get_community_members.php');
+            const data = await response.json();
+            
+            console.log('Community members response:', data);
+            
+            if (data.success) {
+                console.log('Loaded community members:', data.members);
+                this.updateCommunityMembersUI(data.members);
+            } else {
+                console.error('Failed to load community members:', data.message);
+                console.error('Debug info:', data.debug);
+            }
+        } catch (error) {
+            console.error('Error loading community members:', error);
+        }
+    }
+
+    updateCommunityRequestsUI(requests) {
+        const requestsList = document.getElementById('newRequestsList');
+        const requestsCount = document.getElementById('newRequestsCount');
+        
+        if (!requestsList || !requestsCount) return;
+        
+        // Update count
+        requestsCount.textContent = requests.length;
+        
+        // Clear existing requests
+        requestsList.innerHTML = '';
+        
+        if (requests.length === 0) {
+            requestsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.8rem;">No requests</div>';
+            return;
+        }
+        
+        // Add each request
+        requests.forEach(request => {
+            const requestItem = document.createElement('div');
+            requestItem.className = 'new-request-item';
+            requestItem.innerHTML = this.renderRequestItem(request);
+            requestsList.appendChild(requestItem);
+        });
+    }
+    
+    updateCommunityMembersUI(members) {
+        console.log('Updating community members UI with:', members);
+        const membersContainer = document.getElementById('newOnlineUsers');
+        const membersCount = document.getElementById('newOnlineCount');
+        
+        console.log('Members container:', membersContainer);
+        console.log('Members count element:', membersCount);
+        
+        if (!membersContainer || !membersCount) return;
+        
+        // Update count
+        membersCount.textContent = members.length;
+        
+        // Clear existing members
+        membersContainer.innerHTML = '';
+        
+        if (members.length === 0) {
+            membersContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">No community members</div>';
+            return;
+        }
+        
+        // Add each member
+        members.forEach(member => {
+            console.log('Adding member:', member);
+            const memberItem = document.createElement('div');
+            memberItem.className = 'new-user-item';
+            memberItem.setAttribute('data-user-id', member.id);
+            
+            // Show admin status on the right side of the username
+            const adminStatus = member.is_admin ? '<span class="admin-status">Team TradersEscape</span>' : '';
+            
+            // Show "You" for the current user, otherwise show the member name
+            const displayName = (window.userData && member.id == window.userData.id) ? 'You' : member.name;
+            
+            memberItem.innerHTML = `
+                <div class="new-user-avatar" style="background-color: ${member.color}">
+                    ${displayName.charAt(0).toUpperCase()}
+                    <div class="new-user-status offline"></div>
+                </div>
+                <div class="new-user-info">
+                    <div class="new-user-name-container">
+                        <div class="new-user-name">${displayName}</div>
+                        ${adminStatus}
+                    </div>
+                </div>
+            `;
+            
+            // Add click event for admins to manage users (but not for other admins)
+            if (window.userData && window.userData.is_admin && !member.is_admin) {
+                memberItem.style.cursor = 'pointer';
+                memberItem.addEventListener('click', () => {
+                    showUserManagementModal(member);
+                });
+            }
+            
+            membersContainer.appendChild(memberItem);
+        });
+        
+        console.log('Community members UI updated successfully');
+    }
+    
+    // Update online status for a specific user
+    updateUserOnlineStatus(userId, isOnline) {
+        console.log(`Updating user ${userId} status to ${isOnline ? 'online' : 'offline'}`);
+        const memberItem = document.querySelector(`[data-user-id="${userId}"]`);
+        console.log('Found member item:', memberItem);
+        
+        if (memberItem) {
+            const statusElement = memberItem.querySelector('.new-user-status');
+            const statusTextElement = memberItem.querySelector('.new-user-last-seen');
+            
+            console.log('Status element:', statusElement);
+            console.log('Status text element:', statusTextElement);
+            
+            if (statusElement && statusTextElement) {
+                if (isOnline) {
+                    statusElement.className = 'new-user-status online';
+                    statusTextElement.textContent = 'Online now';
+                } else {
+                    statusElement.className = 'new-user-status offline';
+                    statusTextElement.textContent = 'Community member';
+                }
+                console.log(`Updated user ${userId} status successfully`);
+            }
+        } else {
+            console.log(`User ${userId} not found in community members list`);
+        }
+    }
+    
+    renderRequestItem(request) {
+        const name = request.username || request.full_name || 'Unknown';
+        const message = request.request_message || 'No message';
+        
+        // Since we only get pending requests now, always show approve/reject buttons
+        const actionsHtml = `
+            <div class="new-request-actions">
+                <button class="new-request-btn approve" onclick="handleRequestAction(${request.id}, 'approve')">Approve</button>
+                <button class="new-request-btn reject" onclick="handleRequestAction(${request.id}, 'reject')">Reject</button>
+            </div>
+        `;
+        
+        return `
+            <div class="new-request-header">
+                <div class="new-request-user">${name}</div>
+                <div class="new-request-status pending">pending</div>
+            </div>
+            ${actionsHtml}
+        `;
     }
 
     restoreReplyData() {
@@ -3057,10 +4170,6 @@ function showMediaMessages() {
     event.target.closest('.new-action-btn').classList.add('active');
 }
 
-function showChatSettings() {
-    // Placeholder for chat settings
-    alert('Chat settings will be implemented here!');
-}
 
 // Search functionality for new sidebar
 function initializeNewSearch() {
@@ -3107,7 +4216,7 @@ function updateNewUserList(users) {
     onlineUsersContainer.innerHTML = '';
     
     if (users.length === 0) {
-        onlineUsersContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">No users online</div>';
+        onlineUsersContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">No community members</div>';
         return;
     }
     
@@ -3704,9 +4813,418 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Current reply data in localStorage:', storedReplies);
         return storedReplies;
     };
+    
+    // Image Modal Functions - moved outside DOMContentLoaded for global access
 });
+
+// Image Modal Functions - Global functions for onclick handlers
+function openImageModal(imageUrl, imageName) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('imageModalImg');
+    const modalHeader = document.getElementById('imageModalHeader');
+    
+    modalImg.src = imageUrl;
+    modalHeader.textContent = imageName || 'Image';
+    modal.classList.add('show');
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('show');
+    
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeImageModal();
+    }
+});
+
+// Go to Home function
+function goToHome() {
+    window.location.href = 'index.php';
+}
+
+function leaveChat() {
+    // Show the custom modal
+    const modal = document.getElementById('leaveChatModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeLeaveChatModal() {
+    // Hide the modal
+    const modal = document.getElementById('leaveChatModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+async function confirmLeaveChat() {
+    try {
+        // Call API to remove community access
+        const response = await fetch('leave_chat.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Disconnect from socket if connected
+            if (window.chatInstance && window.chatInstance.socket) {
+                window.chatInstance.socket.disconnect();
+            }
+            
+            // Clear any stored chat data
+            localStorage.removeItem('chat_current_user');
+            localStorage.removeItem('chat_replies');
+            
+            // Redirect to home page immediately (no alert message)
+            window.location.href = 'index.php';
+        } else {
+            // Show error message with debug info if available
+            const errorMessage = data.debug ? `${data.message} (${data.debug})` : data.message;
+            showNotification(errorMessage, 'error');
+            console.error('Leave chat error:', data);
+        }
+    } catch (error) {
+        console.error('Error leaving chat:', error);
+        showNotification('An error occurred while leaving the chat', 'error');
+    }
+}
+
+// Add event listeners for modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('leaveChatModal');
+            const confirmationModal = document.getElementById('confirmationModal');
+            const userManagementModal = document.getElementById('userManagementModal');
+
+            // Close modal when clicking outside
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeLeaveChatModal();
+                    }
+                });
+            }
+
+            // Close confirmation modal when clicking outside
+            if (confirmationModal) {
+                confirmationModal.addEventListener('click', function(e) {
+                    if (e.target === confirmationModal) {
+                        hideConfirmationModal();
+                    }
+                });
+            }
+
+            // Close user management modal when clicking outside
+            if (userManagementModal) {
+                userManagementModal.addEventListener('click', function(e) {
+                    if (e.target === userManagementModal) {
+                        hideUserManagementModal();
+                    }
+                });
+            }
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('leaveChatModal');
+                    const confirmationModal = document.getElementById('confirmationModal');
+                    const userManagementModal = document.getElementById('userManagementModal');
+
+                    if (modal && modal.style.display === 'flex') {
+                        closeLeaveChatModal();
+                    } else if (confirmationModal && confirmationModal.style.display === 'flex') {
+                        hideConfirmationModal();
+                    } else if (userManagementModal && userManagementModal.style.display === 'flex') {
+                        hideUserManagementModal();
+                    }
+                }
+            });
+        });
+
+// Handle community request actions
+function handleRequestAction(id, action) {
+    // Show confirmation modal
+    showConfirmationModal(id, action);
+}
+
+// Show confirmation modal
+function showConfirmationModal(id, action) {
+    const modal = document.getElementById('confirmationModal');
+    const title = document.getElementById('confirmationTitle');
+    const message = document.getElementById('confirmationMessage');
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    
+    // Set title and message based on action
+    if (action === 'approve') {
+        title.textContent = 'Approve Request';
+        message.textContent = 'Are you sure you want to approve this community request?';
+        confirmBtn.textContent = 'Approve';
+        confirmBtn.className = 'confirmation-btn confirm';
+    } else if (action === 'reject') {
+        title.textContent = 'Reject Request';
+        message.textContent = 'Are you sure you want to reject this community request?';
+        confirmBtn.textContent = 'Reject';
+        confirmBtn.className = 'confirmation-btn confirm danger';
+    } else if (action === 'remove') {
+        title.textContent = 'Remove User';
+        message.textContent = 'Are you sure you want to remove this user from the community?';
+        confirmBtn.textContent = 'Remove';
+        confirmBtn.className = 'confirmation-btn confirm danger';
+    }
+    
+    // Show modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Set up confirm button action
+    confirmBtn.onclick = () => {
+        hideConfirmationModal();
+        executeRequestAction(id, action);
+    };
+}
+
+// Hide confirmation modal
+function hideConfirmationModal() {
+    const modal = document.getElementById('confirmationModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// User Management Modal Functions
+let currentManagedUser = null;
+
+// Show user management modal
+function showUserManagementModal(user) {
+    currentManagedUser = user;
+    const modal = document.getElementById('userManagementModal');
+    const avatar = document.getElementById('userManagementAvatar');
+    const name = document.getElementById('userManagementName');
+    
+    // Set user info
+    avatar.style.backgroundColor = user.color;
+    avatar.textContent = user.name.charAt(0).toUpperCase();
+    name.textContent = user.name;
+    
+    // Show modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// Make functions globally accessible
+window.showUserManagementModal = showUserManagementModal;
+window.hideUserManagementModal = hideUserManagementModal;
+window.makeUserAdmin = makeUserAdmin;
+window.removeUser = removeUser;
+
+// Hide user management modal
+function hideUserManagementModal() {
+    const modal = document.getElementById('userManagementModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentManagedUser = null;
+}
+
+// Make user admin
+async function makeUserAdmin() {
+    if (!currentManagedUser) return;
+    
+    console.log('Making user admin:', currentManagedUser);
+    
+    try {
+        const requestData = {
+            user_id: currentManagedUser.id,
+            username: currentManagedUser.name,
+            email: currentManagedUser.email
+        };
+        
+        console.log('Sending request data:', requestData);
+        
+        const response = await fetch('make_user_admin_temp.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+        
+        const data = JSON.parse(responseText);
+        
+        if (data.success) {
+            hideUserManagementModal();
+            // Reload community members to show updated status
+            if (window.chatInstance) {
+                window.chatInstance.loadCommunityMembers();
+            }
+            // No notification - silent admin promotion
+        } else {
+            console.error('Make admin failed:', data);
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error making user admin:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
+}
+
+// Remove user
+async function removeUser() {
+    if (!currentManagedUser) return;
+    
+    // Remove user directly without confirmation
+    await executeRemoveUser(currentManagedUser.id);
+}
+
+// Execute remove user action
+async function executeRemoveUser(userId) {
+    try {
+        const response = await fetch('remove_user_from_community.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            hideUserManagementModal();
+            // Reload community members to remove the user
+            if (window.chatInstance) {
+                window.chatInstance.loadCommunityMembers();
+            }
+            // No notification - direct removal without feedback
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error removing user:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
+}
+
+// Execute the actual request action
+async function executeRequestAction(id, action) {
+    try {
+        if (action === 'remove_user') {
+            // Handle user removal from community members (direct removal, no confirmation)
+            await executeRemoveUser(id);
+            return;
+        }
+        
+        const response = await fetch('handle_community_request.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                id: id
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reload community requests
+            if (window.chatInstance) {
+                window.chatInstance.loadCommunityRequests();
+                // Also reload community members when someone is approved
+                window.chatInstance.loadCommunityMembers();
+            }
+            
+            // No alert message - just reload the data
+        } else {
+            // Only show error messages for actual errors
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error handling request action:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        max-width: 300px;
+        word-wrap: break-word;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    } else if (type === 'error') {
+        notification.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+    } else {
+        notification.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS animations for notifications
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
 </script>
 
-<?php endif; ?>
-
+<!-- Image Modal -->
+<div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <div class="image-modal-content" onclick="event.stopPropagation()">
+        <div class="image-modal-close" onclick="closeImageModal()">&times;</div>
+        <div class="image-modal-header" id="imageModalHeader"></div>
+        <img id="imageModalImg" src="" alt="">
+    </div>
+</div>
 

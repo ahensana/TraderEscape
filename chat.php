@@ -341,6 +341,7 @@ if (!isLoggedIn()) {
         height: 12px;
         border-radius: 50%;
         border: 2px solid rgba(15, 23, 42, 0.95);
+        display: none;
     }
     
     .new-user-status.online {
@@ -1288,6 +1289,53 @@ if (!isLoggedIn()) {
         text-align: center;
     }
     
+    .context-menu-delete {
+        color: #dc2626 !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        margin-top: 4px;
+        padding-top: 12px;
+    }
+    
+    .context-menu-delete:hover {
+        background: rgba(220, 38, 38, 0.1) !important;
+        color: #dc2626 !important;
+    }
+    
+    /* Deleted Message Styles */
+.message-deleted {
+    opacity: 0.8 !important;
+    background: #f3f4f6 !important;
+    border-radius: 12px !important;
+    border: none !important;
+    margin: 8px 0 !important;
+}
+
+/* Override background for both own and regular deleted messages */
+.message-deleted.own {
+    background: #f3f4f6 !important;
+}
+
+.message-deleted .message-content {
+    background: transparent !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+}
+
+.deleted-message {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: #6b7280 !important;
+    font-style: italic;
+    background: transparent !important;
+    border-radius: 12px;
+}
+
+.deleted-message i {
+    margin-right: 8px;
+    color: #dc2626 !important;
+}
+    
     .emoji-reactions {
         display: flex;
         gap: 4px;
@@ -1967,6 +2015,7 @@ if (!isLoggedIn()) {
         border-radius: 50%;
         background: #10b981;
         box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        display: none;
     }
     
     /* Typing Indicator */
@@ -2209,7 +2258,7 @@ if (!isLoggedIn()) {
     
     .login-buttons {
         display: flex;
-        gap: 15px;
+        gap: 50px;
         justify-content: center;
         flex-wrap: wrap;
     }
@@ -2424,34 +2473,34 @@ function togglePendingMembers() {
 
     <!-- Scrollable Content Area -->
     <div class="new-sidebar-content">
-        <!-- Search Bar -->
-        <div class="new-sidebar-search">
-            <div class="new-search-container">
-                <svg class="new-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input type="text" placeholder="Search messages..." class="new-search-input" id="newSearchInput">
-            </div>
+    <!-- Search Bar -->
+    <div class="new-sidebar-search">
+        <div class="new-search-container">
+            <svg class="new-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input type="text" placeholder="Search messages..." class="new-search-input" id="newSearchInput">
         </div>
+    </div>
 
-        <!-- Quick Actions -->
-        <div class="new-sidebar-actions">
-            <button class="new-action-btn" onclick="showAllMessages()" title="All Messages">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <span>All Messages</span>
-            </button>
-                <button class="new-action-btn" onclick="showMediaMessages()" title="Media">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21,15 16,10 5,21"></polyline>
-                </svg>
-                <span>Media</span>
-            </button>
-        </div>
+    <!-- Quick Actions -->
+    <div class="new-sidebar-actions">
+        <button class="new-action-btn" onclick="showAllMessages()" title="All Messages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>All Messages</span>
+        </button>
+            <button class="new-action-btn" onclick="showMediaMessages()" title="Media">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21,15 16,10 5,21"></polyline>
+            </svg>
+            <span>Media</span>
+        </button>
+    </div>
 
         <!-- Community Requests Section (Admin Only) -->
         <?php if (isLoggedIn() && $currentUser && isAdmin($currentUser['id'])): ?>
@@ -2472,12 +2521,12 @@ function togglePendingMembers() {
         <?php endif; ?>
 
         <!-- Community Members Section -->
-        <div class="new-sidebar-section">
-            <div class="new-section-header">
+    <div class="new-sidebar-section">
+        <div class="new-section-header">
                 <h3>Community Members</h3>
-                <span class="new-online-count" id="newOnlineCount">0</span>
-            </div>
-            <div class="new-online-users" id="newOnlineUsers">
+            <span class="new-online-count" id="newOnlineCount">0</span>
+        </div>
+        <div class="new-online-users" id="newOnlineUsers">
                 <!-- Community members will be populated here -->
             </div>
         </div>
@@ -2579,6 +2628,32 @@ function togglePendingMembers() {
             <div class="context-menu-item" onclick="replyToMessage()">
                 <i class="bi bi-reply"></i>
                 <span>Reply</span>
+            </div>
+            <div class="context-menu-item context-menu-delete" id="deleteMessageOption" onclick="deleteMessage()" style="display: none;">
+                <i class="bi bi-trash"></i>
+                <span>Delete this message</span>
+            </div>
+        </div>
+        
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteConfirmationModal" class="confirmation-modal" style="display: none;">
+            <div class="confirmation-modal-content">
+                <div class="confirmation-modal-header">
+                    <h3>Delete Message</h3>
+                    <button class="confirmation-modal-close" onclick="hideDeleteConfirmationModal()" aria-label="Close">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="confirmation-modal-body">
+                    <p>Are you sure you want to delete this message? This action cannot be undone.</p>
+                </div>
+                <div class="confirmation-modal-footer">
+                    <button class="confirmation-btn cancel" onclick="hideDeleteConfirmationModal()">Cancel</button>
+                    <button class="confirmation-btn confirm danger" onclick="confirmDeleteMessage()">Delete Message</button>
+                </div>
             </div>
         </div>
         
@@ -2716,7 +2791,9 @@ class CommunityChat {
         this.initializeNewSidebar();
         
         // Load community requests if user is admin
-        this.loadCommunityRequests();
+        if (window.userData && window.userData.is_admin) {
+            this.loadCommunityRequests();
+        }
         
         // Load community members for all users
         this.loadCommunityMembers();
@@ -3037,6 +3114,66 @@ class CommunityChat {
             this.updateOnlineUsers(formattedUsers);
         });
 
+        this.socket.on('message_deleted', (data) => {
+            console.log('Message deleted by admin:', data.messageId);
+            console.log('Deleted by:', data.deletedBy);
+            console.log('Deleted message:', data.deletedMessage);
+            
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                console.log('Found message element, updating to show deletion');
+                
+                // Update the message content to show deletion indicator
+                const messageContent = messageElement.querySelector('.message-content');
+                if (messageContent) {
+                    // Check if this is the current user's own message using the original sender ID
+                    const isOwnMessage = data.originalSenderId && data.originalSenderId.startsWith(this.currentUser.id);
+                    const deletionText = isOwnMessage 
+                        ? `Your message was deleted by ${data.deletedBy}`
+                        : `This message was deleted by ${data.deletedBy}`;
+                    
+                    messageContent.innerHTML = `
+                        <div class="deleted-message">
+                            <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
+                            <span style="color: #6b7280; font-style: italic;">${deletionText}</span>
+                        </div>
+                    `;
+                }
+                
+                // Add deleted class for styling and ensure consistent appearance
+                messageElement.classList.add('message-deleted');
+                // Keep 'own' class for positioning but override background color
+                messageElement.style.background = '#f3f4f6 !important';
+                messageElement.style.borderRadius = '12px';
+                messageElement.style.border = 'none';
+                messageElement.style.margin = '8px 0';
+                
+                // Remove any file attachments
+                const fileAttachments = messageElement.querySelector('.file-attachment');
+                if (fileAttachments) {
+                    fileAttachments.remove();
+                }
+                
+                // Remove any reactions
+                const reactionsContainer = messageElement.querySelector('.emoji-reactions');
+                if (reactionsContainer) {
+                    reactionsContainer.remove();
+                }
+                
+                // Remove reply preview if exists
+                const replyPreview = messageElement.querySelector('.reply-preview');
+                if (replyPreview) {
+                    replyPreview.remove();
+                }
+                
+            } else {
+                console.log('Message element not found in DOM for ID:', data.messageId);
+                // Try to find by different selectors as fallback
+                const allMessages = document.querySelectorAll('[data-message-id]');
+                console.log('Available message IDs in DOM:', Array.from(allMessages).map(el => el.getAttribute('data-message-id')));
+            }
+        });
+
         this.socket.on('user_stop_typing', (data) => {
             this.showTypingIndicator(data.username, false);
         });
@@ -3290,48 +3427,75 @@ class CommunityChat {
         
         console.log('addMessage - Final reply data to be rendered:', replyData);
         
+        // Check if message is deleted
+        const isDeleted = messageData.isDeleted || false;
+        if (isDeleted) {
+            messageElement.classList.add('message-deleted');
+            // Keep 'own' class for positioning but override background color
+            // Ensure consistent grey styling for deleted messages
+            messageElement.style.background = '#f3f4f6 !important';
+            messageElement.style.borderRadius = '12px';
+            messageElement.style.border = 'none';
+            messageElement.style.margin = '8px 0';
+            
+            // Debug logging
+            console.log('Deleted message debug:', {
+                originalSenderId: messageData.originalSenderId,
+                currentUserId: this.currentUser.id,
+                isOwnMessage: messageData.originalSenderId && messageData.originalSenderId.startsWith(this.currentUser.id),
+                deletedBy: messageData.deletedBy
+            });
+        }
+        
         messageElement.innerHTML = `
             ${!isOwn ? `<div class="message-avatar" style="background-color: ${messageData.color}">
                 ${messageData.sender.charAt(0).toUpperCase()}
             </div>` : ''}
             <div class="message-content">
-                ${replyData ? `
-                    ${!isOwn ? `<div style="color: #000000; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>` : ''}
-                    <div class="reply-preview" style="background: rgba(37, 99, 235, 0.1); border-left: 3px solid #2563eb; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 0.85rem;">
-                        <div style="color: #000000; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
-                        ${replyData.imageUrl ? `
-                            <img src="${replyData.imageUrl}" alt="Reply image" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
-                        ` : `
-                            <div style="color: #000000; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
-                        `}
-                    </div>
-                ` : ''}
-                ${messageData.text && !(messageData.files && messageData.files.length > 0 && messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/'))) ? `
-                    <div class="message-info">
-                        ${!isOwn && !replyData ? `<span class="message-sender">${messageData.sender}</span>` : ''}
-                    </div>
-                    <div class="text-message-container">
-                        <div class="message-text ${isOwn ? 'own-message-text' : 'other-message-text'}">${this.escapeHtml(messageData.text)}</div>
-                        <div class="text-time">${timeString}</div>
+                ${isDeleted ? `
+                    <div class="deleted-message">
+                        <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
+                        <span style="color: #6b7280; font-style: italic;">${messageData.originalSenderId && messageData.originalSenderId.startsWith(this.currentUser.id) ? 'Your message was deleted by' : 'This message was deleted by'} ${messageData.deletedBy || 'admin'}</span>
                     </div>
                 ` : `
-                    <div class="message-info">
-                        ${!isOwn && !replyData ? `<span class="message-sender">${messageData.sender}</span>` : ''}
-                    </div>
+                    ${replyData ? `
+                        ${!isOwn ? `<div style="color: #000000; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">${messageData.sender}</div>` : ''}
+                        <div class="reply-preview" style="background: rgba(37, 99, 235, 0.1); border-left: 3px solid #2563eb; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 0.85rem;">
+                            <div style="color: #000000; font-weight: 600; margin-bottom: 2px;">${replyData.sender}</div>
+                            ${replyData.imageUrl ? `
+                                <img src="${replyData.imageUrl}" alt="Reply image" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                            ` : `
+                                <div style="color: #000000; font-style: italic;">${replyData.text.substring(0, 50)}${replyData.text.length > 50 ? '...' : ''}</div>
+                            `}
+                        </div>
+                    ` : ''}
+                    ${messageData.text && !(messageData.files && messageData.files.length > 0 && messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/'))) ? `
+                        <div class="message-info">
+                            ${!isOwn && !replyData ? `<span class="message-sender">${messageData.sender}</span>` : ''}
+                        </div>
+                        <div class="text-message-container">
+                            <div class="message-text ${isOwn ? 'own-message-text' : 'other-message-text'}">${this.escapeHtml(messageData.text)}</div>
+                            <div class="text-time">${timeString}</div>
+                        </div>
+                    ` : `
+                        <div class="message-info">
+                            ${!isOwn && !replyData ? `<span class="message-sender">${messageData.sender}</span>` : ''}
+                        </div>
+                    `}
+                    ${messageData.files && messageData.files.length > 0 ? this.renderFileAttachments(messageData.files) : ''}
+                    ${messageData.files && messageData.files.length > 0 && messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `
+                        <div class="image-caption">
+                            ${messageData.text ? `<div class="caption-text ${isOwn ? 'own-caption-text' : 'other-caption-text'}">${this.escapeHtml(messageData.text)}</div>` : ''}
+                            <div class="caption-time">${timeString}</div>
+                        </div>
+                    ` : ''}
+                    ${messageData.files && messageData.files.length > 0 && messageData.files.some(file => !file.mimetype || !file.mimetype.startsWith('image/')) && !messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `
+                        <div class="document-caption">
+                            ${messageData.text ? `<div class="caption-text ${isOwn ? 'own-caption-text' : 'other-caption-text'}">${this.escapeHtml(messageData.text)}</div>` : ''}
+                            <div class="caption-time">${timeString}</div>
+                        </div>
+                    ` : ''}
                 `}
-                ${messageData.files && messageData.files.length > 0 ? this.renderFileAttachments(messageData.files) : ''}
-                ${messageData.files && messageData.files.length > 0 && messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `
-                    <div class="image-caption">
-                        ${messageData.text ? `<div class="caption-text ${isOwn ? 'own-caption-text' : 'other-caption-text'}">${this.escapeHtml(messageData.text)}</div>` : ''}
-                        <div class="caption-time">${timeString}</div>
-                    </div>
-                ` : ''}
-                ${messageData.files && messageData.files.length > 0 && messageData.files.some(file => !file.mimetype || !file.mimetype.startsWith('image/')) && !messageData.files.some(file => file.mimetype && file.mimetype.startsWith('image/')) ? `
-                    <div class="document-caption">
-                        ${messageData.text ? `<div class="caption-text ${isOwn ? 'own-caption-text' : 'other-caption-text'}">${this.escapeHtml(messageData.text)}</div>` : ''}
-                        <div class="caption-time">${timeString}</div>
-                    </div>
-                ` : ''}
             </div>
         `;
         
@@ -4288,6 +4452,14 @@ function showContextMenu(event, messageId, messageData) {
     currentContextMessage = { id: messageId, data: messageData };
     console.log('Set currentContextMessage to:', currentContextMessage);
     
+    // Show/hide delete option based on admin status
+    const deleteOption = document.getElementById('deleteMessageOption');
+    if (window.userData && window.userData.is_admin) {
+        deleteOption.style.display = 'flex';
+    } else {
+        deleteOption.style.display = 'none';
+    }
+    
     // Position the context menu near the clicked element
     const rect = event.target.getBoundingClientRect();
     const contextMenuWidth = 150; // Approximate width of context menu
@@ -4339,6 +4511,131 @@ function hideContextMenu() {
     const contextMenu = document.getElementById('messageContextMenu');
     contextMenu.classList.remove('show');
     document.removeEventListener('click', hideContextMenu);
+}
+
+function deleteMessage() {
+    if (!currentContextMessage) {
+        console.log('No current context message');
+        return;
+    }
+    
+    // Check if user is admin
+    if (!window.userData || !window.userData.is_admin) {
+        console.log('Only admins can delete messages');
+        return;
+    }
+    
+    const messageId = currentContextMessage.id;
+    const messageData = currentContextMessage.data;
+    
+    console.log('Attempting to delete message:', messageId);
+    console.log('Message data:', messageData);
+    
+    // Hide context menu first
+    hideContextMenu();
+    
+    // Show custom confirmation modal
+    showDeleteConfirmationModal();
+}
+
+function showDeleteConfirmationModal() {
+    const modal = document.getElementById('deleteConfirmationModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Focus on the modal for accessibility
+        const modalContent = modal.querySelector('.confirmation-modal-content');
+        if (modalContent) {
+            setTimeout(() => modalContent.focus(), 100);
+        }
+    }
+}
+
+function hideDeleteConfirmationModal() {
+    const modal = document.getElementById('deleteConfirmationModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function confirmDeleteMessage() {
+    if (!currentContextMessage) {
+        console.log('No current context message');
+        return;
+    }
+    
+    const messageId = currentContextMessage.id;
+    const messageData = currentContextMessage.data;
+    
+    // Hide confirmation modal
+    hideDeleteConfirmationModal();
+    
+    // Update message to show deletion indicator immediately for the admin
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+        console.log('Updating message to show deletion for admin');
+        
+        // Update the message content to show deletion indicator
+        const messageContent = messageElement.querySelector('.message-content');
+        if (messageContent) {
+            // Check if this is the admin's own message
+            const isOwnMessage = messageElement.classList.contains('own');
+            const deletionText = isOwnMessage 
+                ? `Your message was deleted by ${window.userData.username}`
+                : `This message was deleted by ${window.userData.username}`;
+            
+            messageContent.innerHTML = `
+                <div class="deleted-message">
+                    <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
+                    <span style="color: #6b7280; font-style: italic;">${deletionText}</span>
+                </div>
+            `;
+        }
+        
+        // Add deleted class for styling and ensure consistent appearance
+        messageElement.classList.add('message-deleted');
+        // Keep 'own' class for positioning but override background color
+        messageElement.style.background = '#f3f4f6 !important';
+        messageElement.style.borderRadius = '12px';
+        messageElement.style.border = 'none';
+        messageElement.style.margin = '8px 0';
+        
+        // Remove any file attachments
+        const fileAttachments = messageElement.querySelector('.file-attachment');
+        if (fileAttachments) {
+            fileAttachments.remove();
+        }
+        
+        // Remove any reactions
+        const reactionsContainer = messageElement.querySelector('.emoji-reactions');
+        if (reactionsContainer) {
+            reactionsContainer.remove();
+        }
+        
+        // Remove reply preview if exists
+        const replyPreview = messageElement.querySelector('.reply-preview');
+        if (replyPreview) {
+            replyPreview.remove();
+        }
+        
+    } else {
+        console.log('Message element not found in DOM for admin');
+    }
+    
+    // Send delete request to server via socket
+    if (window.chatInstance && window.chatInstance.socket) {
+        console.log('Sending delete request to server');
+        window.chatInstance.socket.emit('delete_message', {
+            messageId: messageId,
+            adminId: window.userData.id
+        });
+    } else {
+        console.log('Socket not available');
+    }
+    
+    console.log('Delete request sent for message:', messageId);
 }
 
 function reactToMessage(emoji) {

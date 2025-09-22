@@ -196,6 +196,7 @@ include 'includes/header.php';
         .form-actions {
             display: flex;
             justify-content: center;
+            gap: 20px;
             margin-top: 25px;
         }
         

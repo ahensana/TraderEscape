@@ -72,6 +72,8 @@ const upload = multer({
 // Store connected users
 const connectedUsers = new Map();
 const messageHistory = [];
+// Track deleted messages to prevent them from being restored
+const deletedMessages = new Set();
 // Track recent disconnections to detect page refreshes
 const recentDisconnections = new Map(); // baseId -> timestamp
 
@@ -206,7 +208,18 @@ io.on("connection", (socket) => {
     // Send user list to all clients
     io.emit("user-list", Array.from(connectedUsers.values()));
 
-    // Send message history to new user
+    // Send message history to new user (include deleted messages with deletion indicator)
+    console.log(
+      `Sending message history to new user ${user.name}. Total messages: ${messageHistory.length}`
+    );
+    console.log(
+      "Message history:",
+      messageHistory.map((msg) => ({
+        id: msg.id,
+        text: msg.text.substring(0, 50) + "...",
+        deleted: deletedMessages.has(msg.id),
+      }))
+    );
     socket.emit("message-history", messageHistory.slice(-50)); // Last 50 messages
 
     // Check if this is a reconnection (same baseId already exists OR recently disconnected)
@@ -333,6 +346,17 @@ io.on("connection", (socket) => {
     connectedUsers.set(socket.id, user);
     io.emit("user-list", Array.from(connectedUsers.values()));
     socket.emit("user_joined", { userId: socket.id, username: user.name });
+    console.log(
+      `Sending message history to React user ${user.name}. Total messages: ${messageHistory.length}`
+    );
+    console.log(
+      "Message history:",
+      messageHistory.map((msg) => ({
+        id: msg.id,
+        text: msg.text.substring(0, 50) + "...",
+        deleted: deletedMessages.has(msg.id),
+      }))
+    );
     socket.emit("message-history", messageHistory.slice(-50));
     socket.broadcast.emit("user-joined", {
       message: `${user.name} joined the chat`,
@@ -398,6 +422,69 @@ io.on("connection", (socket) => {
     });
 
     console.log(`${user.name} cleared the chat`);
+  });
+
+  // Handle delete message request (admin only)
+  socket.on("delete_message", (data) => {
+    const user = connectedUsers.get(socket.id);
+    if (!user) return;
+
+    console.log(`Delete message request from ${user.name}:`, data);
+
+    // Find and remove the message from history
+    console.log(`Looking for message ID: ${data.messageId}`);
+    console.log(`Current message history length: ${messageHistory.length}`);
+    console.log(
+      "Available message IDs:",
+      messageHistory.map((msg) => msg.id)
+    );
+
+    const messageIndex = messageHistory.findIndex(
+      (msg) => msg.id == data.messageId
+    );
+    if (messageIndex !== -1) {
+      const originalMessage = messageHistory[messageIndex];
+
+      // Replace message content with deletion indicator
+      const deletedMessage = {
+        ...originalMessage,
+        text: `This message was deleted by ${user.name}`,
+        isDeleted: true,
+        deletedBy: user.name,
+        deletedAt: new Date(),
+        originalText: originalMessage.text,
+        originalSenderId: originalMessage.senderId, // Keep original sender ID for personalization
+      };
+
+      // Update the message in history instead of removing it
+      messageHistory[messageIndex] = deletedMessage;
+
+      // Add to deleted messages set to prevent restoration
+      deletedMessages.add(data.messageId);
+      console.log(`Message marked as deleted: ${originalMessage.text}`);
+      console.log(
+        `Message history length after deletion: ${messageHistory.length}`
+      );
+      console.log(`Deleted messages count: ${deletedMessages.size}`);
+
+      // Broadcast to all clients that the message was deleted
+      io.emit("message_deleted", {
+        messageId: data.messageId,
+        deletedBy: user.name,
+        deletedMessage: deletedMessage,
+        originalSenderId: originalMessage.senderId, // Include original sender ID for personalization
+      });
+
+      console.log(
+        `Message ${data.messageId} deleted by ${user.name} and broadcasted to all clients`
+      );
+    } else {
+      console.log(`Message ${data.messageId} not found in history`);
+      console.log(
+        "Available message IDs:",
+        messageHistory.map((msg) => msg.id)
+      );
+    }
   });
 
   // Handle user disconnect

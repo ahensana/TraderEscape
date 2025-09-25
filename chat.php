@@ -1322,6 +1322,11 @@ if (!isLoggedIn()) {
     border-radius: 12px !important;
     border: none !important;
     margin: 8px 0 !important;
+    pointer-events: none !important; /* Make unclickable */
+    user-select: none !important; /* Make text unselectable */
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
 }
 
 /* Override background for both own and regular deleted messages */
@@ -4695,8 +4700,8 @@ function deleteMessage() {
     // Hide context menu first
     hideContextMenu();
     
-    // Show custom confirmation modal
-    showDeleteConfirmationModal();
+    // Directly delete the message without confirmation
+    confirmDeleteMessage();
 }
 
 function showDeleteConfirmationModal() {

@@ -1301,6 +1301,20 @@ if (!isLoggedIn()) {
         color: #dc2626 !important;
     }
     
+    /* Own Message Context Menu */
+    .own-message-context-menu {
+        z-index: 10001;
+    }
+    
+    .own-message-context-menu .context-menu-item {
+        color: #dc2626;
+    }
+    
+    .own-message-context-menu .context-menu-item:hover {
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+    }
+    
     /* Deleted Message Styles */
 .message-deleted {
     opacity: 0.8 !important;
@@ -2603,7 +2617,7 @@ function togglePendingMembers() {
             <!-- Messages will be populated here -->
         </div>
         
-        <!-- Context Menu -->
+        <!-- Context Menu for Other Messages -->
         <div class="message-context-menu" id="messageContextMenu">
             <div class="context-menu-item" onclick="reactToMessage('👍')">
                 <i class="bi bi-hand-thumbs-up"></i>
@@ -2635,6 +2649,14 @@ function togglePendingMembers() {
             </div>
         </div>
         
+        <!-- Context Menu for Own Messages -->
+        <div class="message-context-menu own-message-context-menu" id="ownMessageContextMenu">
+            <div class="context-menu-item" onclick="unsendMessage()">
+                <i class="bi bi-arrow-return-left"></i>
+                <span>Unsend</span>
+            </div>
+        </div>
+        
         <!-- Delete Confirmation Modal -->
         <div id="deleteConfirmationModal" class="confirmation-modal" style="display: none;">
             <div class="confirmation-modal-content">
@@ -2653,6 +2675,28 @@ function togglePendingMembers() {
                 <div class="confirmation-modal-footer">
                     <button class="confirmation-btn cancel" onclick="hideDeleteConfirmationModal()">Cancel</button>
                     <button class="confirmation-btn confirm danger" onclick="confirmDeleteMessage()">Delete Message</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Unsend Confirmation Modal -->
+        <div id="unsendConfirmationModal" class="confirmation-modal" style="display: none;">
+            <div class="confirmation-modal-content">
+                <div class="confirmation-modal-header">
+                    <h3>Unsend Message</h3>
+                    <button class="confirmation-modal-close" onclick="hideUnsendConfirmationModal()" aria-label="Close">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="confirmation-modal-body">
+                    <p>Are you sure you want to unsend this message? This will remove it for everyone and cannot be undone.</p>
+                </div>
+                <div class="confirmation-modal-footer">
+                    <button class="confirmation-btn cancel" onclick="hideUnsendConfirmationModal()">Cancel</button>
+                    <button class="confirmation-btn confirm danger" onclick="confirmUnsendMessage()">Unsend</button>
                 </div>
             </div>
         </div>
@@ -3128,14 +3172,24 @@ class CommunityChat {
                 if (messageContent) {
                     // Check if this is the current user's own message using the original sender ID
                     const isOwnMessage = data.originalSenderId && data.originalSenderId.startsWith(this.currentUser.id);
+                    const deletedAt = data.deletedAt ? new Date(data.deletedAt) : new Date();
+                    const timeString = deletedAt.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
                     const deletionText = isOwnMessage 
-                        ? `Your message was deleted by ${data.deletedBy}`
-                        : `This message was deleted by ${data.deletedBy}`;
+                        ? `Your message was deleted by ${data.deletedBy} at ${timeString}`
+                        : `This message was deleted by ${data.deletedBy} at ${timeString}`;
                     
+                    // Replace the entire message content, removing any reply previews and original content
                     messageContent.innerHTML = `
-                        <div class="deleted-message">
-                            <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
-                            <span style="color: #6b7280; font-style: italic;">${deletionText}</span>
+                        <div class="deleted-message" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                            <div style="display: flex; align-items: center;">
+                                <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
+                                <span style="color: #6b7280; font-style: italic;">${deletionText.replace(` at ${timeString}`, '')}</span>
+                            </div>
+                            <div class="text-time" style="color: #6b7280; font-size: 0.75rem; flex-shrink: 0;">${timeString}</div>
                         </div>
                     `;
                 }
@@ -3163,7 +3217,17 @@ class CommunityChat {
                 // Remove reply preview if exists
                 const replyPreview = messageElement.querySelector('.reply-preview');
                 if (replyPreview) {
+                    console.log('Removing reply preview from deleted message');
                     replyPreview.remove();
+                } else {
+                    console.log('No reply preview found in deleted message');
+                }
+                
+                // Also remove any sender name that might be outside message-content
+                const senderName = messageElement.querySelector('.message-sender');
+                if (senderName) {
+                    console.log('Removing sender name from deleted message');
+                    senderName.remove();
                 }
                 
             } else {
@@ -3171,6 +3235,38 @@ class CommunityChat {
                 // Try to find by different selectors as fallback
                 const allMessages = document.querySelectorAll('[data-message-id]');
                 console.log('Available message IDs in DOM:', Array.from(allMessages).map(el => el.getAttribute('data-message-id')));
+            }
+        });
+
+        this.socket.on('message_unsent', (data) => {
+            console.log('Message unsent:', data.messageId);
+            console.log('Unsent by:', data.unsentBy);
+            console.log('Original message:', data.originalMessage);
+            
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                console.log('Found message element, removing it completely');
+                
+                // For unsend, we completely remove the message from the DOM
+                // This is different from delete which shows a deletion indicator
+                messageElement.remove();
+                
+                console.log(`Message ${data.messageId} completely removed from DOM`);
+                
+            } else {
+                console.log('Message element not found in DOM for unsend ID:', data.messageId);
+                console.log('This is normal if the message was already removed by the user who unsent it');
+                
+                // Check if this is the current user's own message that was already removed
+                const isOwnMessage = data.originalSenderId && data.originalSenderId.startsWith(this.currentUser.id);
+                if (isOwnMessage) {
+                    console.log('This was the current user\'s own message that was already removed - no action needed');
+                } else {
+                    console.log('This was another user\'s message - it should have been removed but wasn\'t found');
+                    // Try to find by different selectors as fallback
+                    const allMessages = document.querySelectorAll('[data-message-id]');
+                    console.log('Available message IDs in DOM:', Array.from(allMessages).map(el => el.getAttribute('data-message-id')));
+                }
             }
         });
 
@@ -3429,6 +3525,13 @@ class CommunityChat {
         
         // Check if message is deleted
         const isDeleted = messageData.isDeleted || false;
+        console.log('Message being rendered:', {
+            id: messageData.id,
+            text: messageData.text?.substring(0, 50) + '...',
+            isDeleted: isDeleted,
+            deletedBy: messageData.deletedBy,
+            originalSenderId: messageData.originalSenderId
+        });
         if (isDeleted) {
             messageElement.classList.add('message-deleted');
             // Keep 'own' class for positioning but override background color
@@ -3453,9 +3556,12 @@ class CommunityChat {
             </div>` : ''}
             <div class="message-content">
                 ${isDeleted ? `
-                    <div class="deleted-message">
-                        <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
-                        <span style="color: #6b7280; font-style: italic;">${messageData.originalSenderId && messageData.originalSenderId.startsWith(this.currentUser.id) ? 'Your message was deleted by' : 'This message was deleted by'} ${messageData.deletedBy || 'admin'}</span>
+                    <div class="deleted-message" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                        <div style="display: flex; align-items: center;">
+                            <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
+                            <span style="color: #6b7280; font-style: italic;">${messageData.originalSenderId && messageData.originalSenderId.startsWith(this.currentUser.id) ? 'Your message was deleted by' : 'This message was deleted by'} ${messageData.deletedBy || 'admin'}</span>
+                        </div>
+                        ${messageData.deletedAt ? `<div class="text-time" style="color: #6b7280; font-size: 0.75rem; flex-shrink: 0;">${new Date(messageData.deletedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>` : ''}
                     </div>
                 ` : `
                     ${replyData ? `
@@ -3499,10 +3605,16 @@ class CommunityChat {
             </div>
         `;
         
-        // Add right-click event listener for non-own messages
+        // Add right-click event listener for messages
         if (!isOwn) {
+            // For other users' messages - show reaction/reply/delete menu
             messageElement.addEventListener('contextmenu', (e) => {
                 showContextMenu(e, messageData.id, messageData);
+            });
+        } else {
+            // For own messages - show unsend menu
+            messageElement.addEventListener('contextmenu', (e) => {
+                showOwnMessageContextMenu(e, messageData.id, messageData);
             });
         }
         
@@ -4099,7 +4211,8 @@ class CommunityChat {
                                    messageElement.getAttribute('data-reply-to-id');
                 
                 // If message has no reply preview but should have one (has reply data), try to restore it
-                if (!replyPreview && messageId && hasReplyData) {
+                // BUT don't restore reply previews on deleted messages
+                if (!replyPreview && messageId && hasReplyData && !messageElement.classList.contains('message-deleted')) {
                     const storedReplyData = this.getStoredReplyData(messageId);
                     if (storedReplyData) {
                         console.log('Restoring reply preview for message with reply data:', messageId);
@@ -4513,6 +4626,54 @@ function hideContextMenu() {
     document.removeEventListener('click', hideContextMenu);
 }
 
+function showOwnMessageContextMenu(event, messageId, messageData) {
+    console.log('showOwnMessageContextMenu called with:', { messageId, messageData });
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const contextMenu = document.getElementById('ownMessageContextMenu');
+    console.log('Own message context menu element:', contextMenu);
+    
+    // Set current context message for unsend functionality
+    currentContextMessage = { id: messageId, data: messageData };
+    console.log('Set currentContextMessage to:', currentContextMessage);
+    
+    // Position the context menu on the left side of the message
+    const rect = event.target.getBoundingClientRect();
+    const contextMenuWidth = 120; // Approximate width of context menu
+    const contextMenuHeight = 60; // Approximate height of context menu
+    
+    // Calculate position relative to the clicked element (left side for own messages)
+    let left = rect.left - contextMenuWidth - 20; // Position 20px to the left of the message
+    let top = rect.top + (rect.height / 2) - (contextMenuHeight / 2); // Center vertically on the element
+    
+    // Ensure the context menu stays within viewport bounds
+    if (left < 10) {
+        left = 10;
+    }
+    if (top < 10) {
+        top = 10;
+    }
+    if (top + contextMenuHeight > window.innerHeight - 10) {
+        top = window.innerHeight - contextMenuHeight - 10;
+    }
+    
+    contextMenu.style.left = left + 'px';
+    contextMenu.style.top = top + 'px';
+    contextMenu.classList.add('show');
+    
+    // Hide context menu when clicking elsewhere
+    setTimeout(() => {
+        document.addEventListener('click', hideOwnMessageContextMenu);
+    }, 100);
+}
+
+function hideOwnMessageContextMenu() {
+    const contextMenu = document.getElementById('ownMessageContextMenu');
+    contextMenu.classList.remove('show');
+    document.removeEventListener('click', hideOwnMessageContextMenu);
+}
+
 function deleteMessage() {
     if (!currentContextMessage) {
         console.log('No current context message');
@@ -4582,14 +4743,23 @@ function confirmDeleteMessage() {
         if (messageContent) {
             // Check if this is the admin's own message
             const isOwnMessage = messageElement.classList.contains('own');
+            const deletedAt = new Date();
+            const timeString = deletedAt.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
             const deletionText = isOwnMessage 
-                ? `Your message was deleted by ${window.userData.username}`
-                : `This message was deleted by ${window.userData.username}`;
+                ? `Your message was deleted by ${window.userData.username} at ${timeString}`
+                : `This message was deleted by ${window.userData.username} at ${timeString}`;
             
             messageContent.innerHTML = `
-                <div class="deleted-message">
-                    <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
-                    <span style="color: #6b7280; font-style: italic;">${deletionText}</span>
+                <div class="deleted-message" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center;">
+                        <i class="bi bi-trash" style="color: #dc2626; margin-right: 8px;"></i>
+                        <span style="color: #6b7280; font-style: italic;">${deletionText.replace(` at ${timeString}`, '')}</span>
+                    </div>
+                    <div class="text-time" style="color: #6b7280; font-size: 0.75rem; flex-shrink: 0;">${timeString}</div>
                 </div>
             `;
         }
@@ -4617,7 +4787,17 @@ function confirmDeleteMessage() {
         // Remove reply preview if exists
         const replyPreview = messageElement.querySelector('.reply-preview');
         if (replyPreview) {
+            console.log('Removing reply preview from admin deleted message');
             replyPreview.remove();
+        } else {
+            console.log('No reply preview found in admin deleted message');
+        }
+        
+        // Also remove any sender name that might be outside message-content
+        const senderName = messageElement.querySelector('.message-sender');
+        if (senderName) {
+            console.log('Removing sender name from admin deleted message');
+            senderName.remove();
         }
         
     } else {
@@ -4636,6 +4816,88 @@ function confirmDeleteMessage() {
     }
     
     console.log('Delete request sent for message:', messageId);
+}
+
+function unsendMessage() {
+    if (!currentContextMessage) {
+        console.log('No current context message');
+        return;
+    }
+    
+    const messageId = currentContextMessage.id;
+    const messageData = currentContextMessage.data;
+    
+    console.log('Attempting to unsend message:', messageId);
+    console.log('Message data:', messageData);
+    
+    // Hide context menu first
+    hideOwnMessageContextMenu();
+    
+    // Directly unsend the message without confirmation
+    confirmUnsendMessage();
+}
+
+function showUnsendConfirmationModal() {
+    const modal = document.getElementById('unsendConfirmationModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Focus on the modal for accessibility
+        const modalContent = modal.querySelector('.confirmation-modal-content');
+        if (modalContent) {
+            setTimeout(() => modalContent.focus(), 100);
+        }
+    }
+}
+
+function hideUnsendConfirmationModal() {
+    const modal = document.getElementById('unsendConfirmationModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function confirmUnsendMessage() {
+    if (!currentContextMessage) {
+        console.log('No current context message');
+        return;
+    }
+    
+    const messageId = currentContextMessage.id;
+    const messageData = currentContextMessage.data;
+    
+    // Hide confirmation modal
+    hideUnsendConfirmationModal();
+    
+    // Remove message completely from DOM immediately for the user
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+        console.log('Removing message completely from DOM for user');
+        
+        // For unsend, we completely remove the message from the DOM
+        messageElement.remove();
+        
+        console.log(`Message ${messageId} completely removed from DOM`);
+    }
+    
+    // Send unsend request to server via socket
+    if (window.chatInstance && window.chatInstance.socket) {
+        console.log('Sending unsend request to server');
+        console.log('Message ID being sent:', messageId, 'Type:', typeof messageId);
+        window.chatInstance.socket.emit('unsend_message', {
+            messageId: messageId,
+            userId: window.userData.id
+        });
+    } else {
+        console.log('Socket not available for unsend');
+    }
+    
+    // Clear the current context message
+    currentContextMessage = null;
+    
+    console.log('Unsend request sent for message:', messageId);
 }
 
 function reactToMessage(emoji) {

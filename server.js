@@ -74,6 +74,8 @@ const connectedUsers = new Map();
 const messageHistory = [];
 // Track deleted messages to prevent them from being restored
 const deletedMessages = new Set();
+// Track unsent messages to completely remove them from history
+const unsentMessages = new Set();
 // Track recent disconnections to detect page refreshes
 const recentDisconnections = new Map(); // baseId -> timestamp
 
@@ -208,19 +210,30 @@ io.on("connection", (socket) => {
     // Send user list to all clients
     io.emit("user-list", Array.from(connectedUsers.values()));
 
-    // Send message history to new user (include deleted messages with deletion indicator)
+    // Send message history to new user (exclude only unsent messages, keep deleted messages visible)
+    const filteredHistory = messageHistory.filter(
+      (msg) => !unsentMessages.has(msg.id)
+    );
     console.log(
-      `Sending message history to new user ${user.name}. Total messages: ${messageHistory.length}`
+      `Sending message history to new user ${user.name}. Total messages: ${messageHistory.length}, Filtered: ${filteredHistory.length}`
     );
     console.log(
       "Message history:",
       messageHistory.map((msg) => ({
         id: msg.id,
         text: msg.text.substring(0, 50) + "...",
+        isDeleted: msg.isDeleted,
         deleted: deletedMessages.has(msg.id),
+        unsent: unsentMessages.has(msg.id),
       }))
     );
-    socket.emit("message-history", messageHistory.slice(-50)); // Last 50 messages
+    console.log("Deleted messages set:", Array.from(deletedMessages));
+    console.log("Unsent messages set:", Array.from(unsentMessages));
+    console.log(
+      "Filtered message IDs:",
+      filteredHistory.map((msg) => msg.id)
+    );
+    socket.emit("message-history", filteredHistory.slice(-50)); // Last 50 non-unsent messages
 
     // Check if this is a reconnection (same baseId already exists OR recently disconnected)
     const isReconnection =
@@ -346,8 +359,12 @@ io.on("connection", (socket) => {
     connectedUsers.set(socket.id, user);
     io.emit("user-list", Array.from(connectedUsers.values()));
     socket.emit("user_joined", { userId: socket.id, username: user.name });
+    // Send filtered message history to React user (exclude only unsent messages, keep deleted messages visible)
+    const filteredHistory = messageHistory.filter(
+      (msg) => !unsentMessages.has(msg.id)
+    );
     console.log(
-      `Sending message history to React user ${user.name}. Total messages: ${messageHistory.length}`
+      `Sending message history to React user ${user.name}. Total messages: ${messageHistory.length}, Filtered: ${filteredHistory.length}`
     );
     console.log(
       "Message history:",
@@ -355,9 +372,16 @@ io.on("connection", (socket) => {
         id: msg.id,
         text: msg.text.substring(0, 50) + "...",
         deleted: deletedMessages.has(msg.id),
+        unsent: unsentMessages.has(msg.id),
       }))
     );
-    socket.emit("message-history", messageHistory.slice(-50));
+    console.log("Deleted messages set:", Array.from(deletedMessages));
+    console.log("Unsent messages set:", Array.from(unsentMessages));
+    console.log(
+      "Filtered message IDs:",
+      filteredHistory.map((msg) => msg.id)
+    );
+    socket.emit("message-history", filteredHistory.slice(-50));
     socket.broadcast.emit("user-joined", {
       message: `${user.name} joined the chat`,
       user: user,
@@ -446,12 +470,18 @@ io.on("connection", (socket) => {
       const originalMessage = messageHistory[messageIndex];
 
       // Replace message content with deletion indicator
+      const deletedAt = new Date();
+      const timeString = deletedAt.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
       const deletedMessage = {
         ...originalMessage,
-        text: `This message was deleted by ${user.name}`,
+        text: `This message was deleted by ${user.name} at ${timeString}`,
         isDeleted: true,
         deletedBy: user.name,
-        deletedAt: new Date(),
+        deletedAt: deletedAt,
         originalText: originalMessage.text,
         originalSenderId: originalMessage.senderId, // Keep original sender ID for personalization
       };
@@ -477,6 +507,85 @@ io.on("connection", (socket) => {
 
       console.log(
         `Message ${data.messageId} deleted by ${user.name} and broadcasted to all clients`
+      );
+    } else {
+      console.log(`Message ${data.messageId} not found in history`);
+      console.log(
+        "Available message IDs:",
+        messageHistory.map((msg) => msg.id)
+      );
+    }
+  });
+
+  // Handle unsend message request (user can unsend their own messages)
+  socket.on("unsend_message", (data) => {
+    const user = connectedUsers.get(socket.id);
+    if (!user) return;
+
+    console.log(`Unsend message request from ${user.name}:`, data);
+
+    // Find the message in history
+    console.log(
+      `Looking for message ID: ${
+        data.messageId
+      } (type: ${typeof data.messageId})`
+    );
+    console.log(`Current message history length: ${messageHistory.length}`);
+    console.log(
+      "Available message IDs:",
+      messageHistory.map((msg) => `${msg.id} (type: ${typeof msg.id})`)
+    );
+
+    const messageIndex = messageHistory.findIndex(
+      (msg) => msg.id === data.messageId || msg.id == data.messageId
+    );
+    if (messageIndex !== -1) {
+      const originalMessage = messageHistory[messageIndex];
+
+      // Check if the user is trying to unsend their own message
+      // Compare both the full ID and the base ID to handle different ID formats
+      const isOwnMessage =
+        originalMessage.senderId === user.id ||
+        originalMessage.senderId.startsWith(user.baseId) ||
+        user.id.startsWith(originalMessage.senderId.split("_")[0]);
+
+      if (!isOwnMessage) {
+        console.log(
+          `User ${user.name} (${user.id}) tried to unsend message that doesn't belong to them. Message senderId: ${originalMessage.senderId}`
+        );
+        return;
+      }
+
+      // Check if message is already deleted or unsent
+      if (originalMessage.isDeleted || originalMessage.isUnsent) {
+        console.log(`Message ${data.messageId} is already deleted or unsent`);
+        return;
+      }
+
+      // For unsend, we completely remove the message from history
+      // This is different from delete which marks the message as deleted
+      messageHistory.splice(messageIndex, 1);
+
+      // Add to unsent messages set to prevent restoration
+      unsentMessages.add(data.messageId);
+      console.log(
+        `Message completely removed from history: ${originalMessage.text}`
+      );
+      console.log(
+        `Message history length after unsend: ${messageHistory.length}`
+      );
+      console.log(`Unsent messages count: ${unsentMessages.size}`);
+
+      // Broadcast to all clients that the message was unsent
+      io.emit("message_unsent", {
+        messageId: data.messageId,
+        unsentBy: user.name,
+        originalMessage: originalMessage,
+        originalSenderId: originalMessage.senderId, // Include original sender ID for personalization
+      });
+
+      console.log(
+        `Message ${data.messageId} unsent by ${user.name} and broadcasted to all clients`
       );
     } else {
       console.log(`Message ${data.messageId} not found in history`);

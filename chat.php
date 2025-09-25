@@ -3219,6 +3219,12 @@ class CommunityChat {
                     reactionsContainer.remove();
                 }
                 
+                // Remove reactions from localStorage
+                const storedReactions = JSON.parse(localStorage.getItem('chat_reactions') || '{}');
+                delete storedReactions[data.messageId];
+                localStorage.setItem('chat_reactions', JSON.stringify(storedReactions));
+                console.log('Removed reactions from localStorage for deleted message:', data.messageId);
+                
                 // Remove reply preview if exists
                 const replyPreview = messageElement.querySelector('.reply-preview');
                 if (replyPreview) {
@@ -3275,9 +3281,229 @@ class CommunityChat {
             }
         });
 
+        this.socket.on('message-reaction', (data) => {
+            console.log('Received reaction broadcast:', data);
+            console.log('Current user ID:', this.currentUser.id);
+            console.log('Reaction user ID:', data.userId);
+            console.log('Server count:', data.count);
+            console.log('Is current user?', data.userId === this.currentUser.id || data.userId.startsWith(this.currentUser.id));
+            
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                // Find or create the reactions container
+                let reactionsContainer = messageElement.querySelector('.emoji-reactions');
+                if (!reactionsContainer) {
+                    reactionsContainer = document.createElement('div');
+                    reactionsContainer.className = 'emoji-reactions';
+                    // Append to message-content for consistent positioning
+                    const messageContent = messageElement.querySelector('.message-content');
+                    if (messageContent) {
+                        messageContent.appendChild(reactionsContainer);
+                    } else {
+                        messageElement.appendChild(reactionsContainer);
+                    }
+                }
+                
+                // Add the reaction with server-provided count
+                this.addReactionToContainer(reactionsContainer, data.emoji, data.userId, data.userName, data.count);
+            } else {
+                console.log('Message element not found for reaction:', data.messageId);
+            }
+        });
+
+        this.socket.on('message-reaction-remove', (data) => {
+            console.log('Received reaction removal broadcast:', data);
+            console.log('New count after removal:', data.newCount);
+            
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                const reactionsContainer = messageElement.querySelector('.emoji-reactions');
+                if (reactionsContainer) {
+                    this.removeReactionFromContainer(reactionsContainer, data.emoji, data.userId, data.newCount);
+                }
+            } else {
+                console.log('Message element not found for reaction removal:', data.messageId);
+            }
+        });
+
         this.socket.on('user_stop_typing', (data) => {
             this.showTypingIndicator(data.username, false);
         });
+    }
+    
+    addReactionToContainer(reactionsContainer, emoji, userId, userName, serverCount = null) {
+        // Check if this emoji already exists
+        const existingReaction = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
+        
+        // Check if this reaction is from the current user (don't increment if it's our own reaction)
+        const isCurrentUser = userId === this.currentUser.id || userId.startsWith(this.currentUser.id);
+        
+        console.log('addReactionToContainer called:', {
+            emoji,
+            userId,
+            userName,
+            isCurrentUser,
+            hasExistingReaction: !!existingReaction,
+            currentCount: existingReaction ? existingReaction.dataset.count : 'none',
+            serverCount: serverCount
+        });
+        
+        if (existingReaction) {
+            // Use server count if provided, otherwise use local logic
+            if (serverCount !== null) {
+                // Update with server-provided count
+                existingReaction.dataset.count = serverCount;
+                existingReaction.innerHTML = `${emoji} ${serverCount}`;
+                
+                // Update user IDs list
+                const existingUserIds = existingReaction.dataset.userIds || '';
+                const userIds = existingUserIds ? existingUserIds.split(',') : [];
+                if (!userIds.includes(userId)) {
+                    userIds.push(userId);
+                    existingReaction.dataset.userIds = userIds.join(',');
+                }
+                
+                console.log(`Updated reaction count to server count: ${serverCount}`);
+            } else {
+                // Fallback to local logic (for backward compatibility)
+                const existingUserIds = existingReaction.dataset.userIds || '';
+                const userIds = existingUserIds ? existingUserIds.split(',') : [];
+                const userAlreadyReacted = userIds.includes(userId);
+                
+                console.log('Existing user IDs:', userIds);
+                console.log('User already reacted:', userAlreadyReacted);
+                
+                if (!userAlreadyReacted) {
+                    // User doesn't have this reaction yet - add them and increment count
+                    const currentCount = parseInt(existingReaction.dataset.count) || 0;
+                    const newCount = currentCount + 1;
+                    existingReaction.dataset.count = newCount;
+                    existingReaction.innerHTML = `${emoji} ${newCount}`;
+                    
+                    // Add user to the list
+                    userIds.push(userId);
+                    existingReaction.dataset.userIds = userIds.join(',');
+                    
+                    console.log(`Incremented reaction count from ${currentCount} to ${newCount}`);
+                } else {
+                    console.log('User already has this reaction, skipping increment');
+                }
+            }
+        } else {
+            // Add new reaction
+            const count = serverCount !== null ? serverCount : 1;
+            const reactionElement = document.createElement('div');
+            reactionElement.className = 'emoji-reaction';
+            reactionElement.dataset.emoji = emoji;
+            reactionElement.dataset.count = count.toString();
+            reactionElement.dataset.userId = userId;
+            reactionElement.dataset.userIds = userId; // Store user IDs as comma-separated string
+            reactionElement.innerHTML = `${emoji} ${count}`;
+            reactionElement.style.cursor = 'pointer';
+            
+            // Add click event to show context menu
+            reactionElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                reactionElement.blur();
+                const messageElement = reactionsContainer.closest('[data-message-id]');
+                const messageId = messageElement ? messageElement.getAttribute('data-message-id') : null;
+                
+                // Don't show context menu for own messages
+                if (messageElement && messageElement.classList.contains('own')) {
+                    console.log('Cannot show reaction menu for own message');
+                    return;
+                }
+                
+                const messageData = {
+                    id: messageId,
+                    sender: messageElement ? messageElement.dataset.senderName || 'Unknown' : 'Unknown'
+                };
+                showContextMenu(e, messageId, messageData);
+            });
+            
+            reactionsContainer.appendChild(reactionElement);
+        }
+        
+        // Store reactions in localStorage for persistence
+        const messageElement = reactionsContainer.closest('[data-message-id]');
+        if (messageElement) {
+            const messageId = messageElement.getAttribute('data-message-id');
+            storeReactions(messageId, reactionsContainer);
+        }
+    }
+    
+    removeReactionFromContainer(reactionsContainer, emoji, userId, serverCount = null) {
+        console.log('removeReactionFromContainer called:', {
+            emoji,
+            userId,
+            currentUserId: this.currentUser.id,
+            serverCount: serverCount
+        });
+        
+        // Find the reaction element for this specific emoji
+        const reactionElement = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
+        if (reactionElement) {
+            // Use server count if provided, otherwise use local logic
+            if (serverCount !== null) {
+                if (serverCount === 0) {
+                    // Remove the reaction completely
+                    reactionElement.remove();
+                    console.log('Removed reaction completely (server count is 0)');
+                } else {
+                    // Update with server-provided count
+                    reactionElement.dataset.count = serverCount;
+                    reactionElement.innerHTML = `${emoji} ${serverCount}`;
+                    
+                    // Remove the user from the userIds list
+                    const userIds = reactionElement.dataset.userIds ? reactionElement.dataset.userIds.split(',') : [];
+                    const updatedUserIds = userIds.filter(id => id !== userId);
+                    reactionElement.dataset.userIds = updatedUserIds.join(',');
+                    
+                    console.log(`Updated reaction count to server count: ${serverCount}`);
+                }
+            } else {
+                // Fallback to local logic (for backward compatibility)
+                const currentCount = parseInt(reactionElement.dataset.count) || 0;
+                
+                // Check if this user actually has this reaction
+                const userIds = reactionElement.dataset.userIds ? reactionElement.dataset.userIds.split(',') : [];
+                const hasUserReaction = userIds.includes(userId);
+                
+                console.log('User IDs with this reaction:', userIds);
+                console.log('User has this reaction:', hasUserReaction);
+                
+                if (!hasUserReaction) {
+                    console.log('User does not have this reaction, skipping removal');
+                    return;
+                }
+                
+                // Remove the user from the userIds list
+                const updatedUserIds = userIds.filter(id => id !== userId);
+                reactionElement.dataset.userIds = updatedUserIds.join(',');
+                
+                if (currentCount > 1) {
+                    // Decrease count
+                    const newCount = currentCount - 1;
+                    reactionElement.dataset.count = newCount;
+                    reactionElement.innerHTML = `${emoji} ${newCount}`;
+                    console.log(`Decreased reaction count from ${currentCount} to ${newCount}`);
+                } else {
+                    // Remove the reaction completely
+                    reactionElement.remove();
+                    console.log('Removed reaction completely');
+                }
+            }
+            
+            // Store reactions in localStorage for persistence
+            const messageElement = reactionsContainer.closest('[data-message-id]');
+            if (messageElement) {
+                const messageId = messageElement.getAttribute('data-message-id');
+                storeReactions(messageId, reactionsContainer);
+            }
+        } else {
+            console.log('Reaction element not found for removal:', emoji);
+        }
     }
     
     bindEvents() {
@@ -4789,6 +5015,12 @@ function confirmDeleteMessage() {
             reactionsContainer.remove();
         }
         
+        // Remove reactions from localStorage
+        const storedReactions = JSON.parse(localStorage.getItem('chat_reactions') || '{}');
+        delete storedReactions[messageId];
+        localStorage.setItem('chat_reactions', JSON.stringify(storedReactions));
+        console.log('Removed reactions from localStorage for admin deleted message:', messageId);
+        
         // Remove reply preview if exists
         const replyPreview = messageElement.querySelector('.reply-preview');
         if (replyPreview) {
@@ -4912,6 +5144,13 @@ function reactToMessage(emoji) {
     const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
     const currentUserId = window.chatInstance.currentUser.id;
     
+    // Check if this is the user's own message - prevent reactions to own messages
+    if (messageElement && messageElement.classList.contains('own')) {
+        console.log('User cannot react to their own message');
+        hideContextMenu();
+        return;
+    }
+    
     if (messageElement) {
         let reactionsContainer = messageElement.querySelector('.emoji-reactions');
         if (!reactionsContainer) {
@@ -4920,45 +5159,31 @@ function reactToMessage(emoji) {
             messageElement.querySelector('.message-content').appendChild(reactionsContainer);
         }
         
-        // Remove user's previous reaction if any
-        const userPreviousReaction = reactionsContainer.querySelector(`[data-user-id="${currentUserId}"]`);
-        if (userPreviousReaction) {
-            const previousEmoji = userPreviousReaction.dataset.emoji;
-            const previousCount = parseInt(userPreviousReaction.dataset.count);
-            
-            if (previousCount > 1) {
-                // Decrease count of previous emoji
-                userPreviousReaction.dataset.count = (previousCount - 1).toString();
-                userPreviousReaction.innerHTML = `${previousEmoji} ${previousCount - 1}`;
-            } else {
-                // Remove previous emoji completely
-                userPreviousReaction.remove();
-            }
-        }
-        
-        // Check if the new emoji already exists
+        // Check if user already has this specific emoji reaction
         const existingReaction = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
         if (existingReaction) {
-            // Increment count and add user ID
-            const count = parseInt(existingReaction.dataset.count) + 1;
-            existingReaction.dataset.count = count;
-            existingReaction.innerHTML = `${emoji} ${count}`;
-            existingReaction.dataset.userId = currentUserId;
-            existingReaction.style.cursor = 'pointer';
-            // Remove existing click listener if any
-            existingReaction.replaceWith(existingReaction.cloneNode(true));
-            // Add new click listener
-            const newReaction = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
-            newReaction.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                newReaction.blur();
-                const messageData = {
-                    id: messageId,
-                    sender: messageElement.dataset.senderName || 'Unknown'
-                };
-                showContextMenu(e, messageId, messageData);
-            });
+            const userIds = existingReaction.dataset.userIds ? existingReaction.dataset.userIds.split(',') : [];
+            const userAlreadyReacted = userIds.includes(currentUserId);
+            
+            if (userAlreadyReacted) {
+                // User already has this reaction - do nothing (no toggle off)
+                console.log('User already has this reaction - no action taken');
+                hideContextMenu();
+                return;
+            } else {
+                // User doesn't have this reaction - add it
+                console.log('User adding new reaction');
+                
+                const currentCount = parseInt(existingReaction.dataset.count);
+                const newCount = currentCount + 1;
+                existingReaction.dataset.count = newCount;
+                existingReaction.innerHTML = `${emoji} ${newCount}`;
+                
+                // Add user to userIds list
+                userIds.push(currentUserId);
+                existingReaction.dataset.userIds = userIds.join(',');
+                existingReaction.style.cursor = 'pointer';
+            }
         } else {
             // Add new reaction
             const reactionElement = document.createElement('div');
@@ -4972,6 +5197,13 @@ function reactToMessage(emoji) {
                 e.stopPropagation();
                 e.preventDefault();
                 reactionElement.blur();
+                
+                // Don't show context menu for own messages
+                if (messageElement && messageElement.classList.contains('own')) {
+                    console.log('Cannot show reaction menu for own message');
+                    return;
+                }
+                
                 const messageData = {
                     id: messageId,
                     sender: messageElement.dataset.senderName || 'Unknown'
@@ -5005,7 +5237,8 @@ function storeReactions(messageId, reactionsContainer) {
         const emoji = element.dataset.emoji;
         const count = parseInt(element.dataset.count);
         const userId = element.dataset.userId;
-        reactions[emoji] = { count: count, userId: userId };
+        const userIds = element.dataset.userIds || userId; // Store all user IDs
+        reactions[emoji] = { count: count, userId: userId, userIds: userIds };
     });
     
     // Store in localStorage
@@ -5023,6 +5256,11 @@ function restoreReactions(messageId) {
     if (messageReactions) {
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         if (messageElement) {
+            // Don't restore reactions for deleted messages
+            if (messageElement.classList.contains('message-deleted')) {
+                console.log('Skipping reaction restoration for deleted message:', messageId);
+                return;
+            }
             let reactionsContainer = messageElement.querySelector('.emoji-reactions');
             if (!reactionsContainer) {
                 reactionsContainer = document.createElement('div');
@@ -5040,12 +5278,20 @@ function restoreReactions(messageId) {
                 reactionElement.dataset.emoji = emoji;
                 reactionElement.dataset.count = reactionData.count.toString();
                 reactionElement.dataset.userId = reactionData.userId;
+                reactionElement.dataset.userIds = reactionData.userIds || reactionData.userId; // Restore user IDs
                 reactionElement.innerHTML = `${emoji} ${reactionData.count}`;
                 reactionElement.style.cursor = 'pointer';
                 reactionElement.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     reactionElement.blur();
+                    
+                    // Don't show context menu for own messages
+                    if (messageElement && messageElement.classList.contains('own')) {
+                        console.log('Cannot show reaction menu for own message');
+                        return;
+                    }
+                    
                     const messageData = {
                         id: messageId,
                         sender: messageElement.dataset.senderName || 'Unknown'

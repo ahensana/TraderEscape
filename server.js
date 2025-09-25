@@ -76,6 +76,10 @@ const messageHistory = [];
 const deletedMessages = new Set();
 // Track unsent messages to completely remove them from history
 const unsentMessages = new Set();
+// Track user reactions to handle replacement
+const userReactions = new Map(); // messageId_userId -> emoji
+// Track global reaction counts per message
+const messageReactions = new Map(); // messageId -> {emoji: {count: number, users: Set}}
 // Track recent disconnections to detect page refreshes
 const recentDisconnections = new Map(); // baseId -> timestamp
 
@@ -593,6 +597,102 @@ io.on("connection", (socket) => {
         "Available message IDs:",
         messageHistory.map((msg) => msg.id)
       );
+    }
+  });
+
+  // Handle message reactions
+  socket.on("message-reaction", (data) => {
+    const user = connectedUsers.get(socket.id);
+    if (!user) {
+      console.log("Unauthorized reaction attempt");
+      return;
+    }
+
+    console.log(
+      `User ${user.name} reacted with ${data.emoji} to message ${data.messageId}`
+    );
+
+    // Check if user is trying to react to their own message
+    const originalMessage = messageHistory.find(
+      (msg) => msg.id === data.messageId
+    );
+    if (originalMessage && originalMessage.senderId === data.userId) {
+      console.log(`User ${user.name} cannot react to their own message`);
+      return;
+    }
+
+    // Check if user had a previous reaction to this message
+    const messageKey = `${data.messageId}_${data.userId}`;
+    const previousReaction = userReactions.get(messageKey);
+
+    // Update global reaction state first
+    if (!messageReactions.has(data.messageId)) {
+      messageReactions.set(data.messageId, {});
+    }
+    const messageReactionData = messageReactions.get(data.messageId);
+
+    // Check if user already has this specific reaction
+    if (
+      messageReactionData[data.emoji] &&
+      messageReactionData[data.emoji].users.has(data.userId)
+    ) {
+      // User already has this reaction - do nothing (no toggle off)
+      console.log(
+        `User ${user.name} already has ${data.emoji} reaction - no action taken`
+      );
+      return; // Exit early, don't do anything
+    } else {
+      // User doesn't have this reaction - check if they have any other reaction
+      if (previousReaction && previousReaction.size > 0) {
+        // User has a different reaction - remove the old one first
+        const oldEmoji = Array.from(previousReaction)[0]; // Get the first (and only) reaction
+        console.log(
+          `User ${user.name} changing reaction from ${oldEmoji} to ${data.emoji}`
+        );
+
+        // Remove old reaction
+        if (messageReactionData[oldEmoji]) {
+          messageReactionData[oldEmoji].users.delete(data.userId);
+          messageReactionData[oldEmoji].count =
+            messageReactionData[oldEmoji].users.size;
+
+          // Broadcast removal of old reaction
+          io.emit("message-reaction-remove", {
+            messageId: data.messageId,
+            emoji: oldEmoji,
+            userId: data.userId,
+            userName: user.name,
+            newCount: messageReactionData[oldEmoji].count,
+          });
+        }
+      }
+
+      // Add new reaction
+      console.log(`User ${user.name} adding ${data.emoji} reaction`);
+
+      if (!messageReactionData[data.emoji]) {
+        messageReactionData[data.emoji] = { count: 0, users: new Set() };
+      }
+
+      messageReactionData[data.emoji].users.add(data.userId);
+      messageReactionData[data.emoji].count =
+        messageReactionData[data.emoji].users.size;
+
+      // Update user reactions tracking (replace old with new)
+      if (!userReactions.has(messageKey)) {
+        userReactions.set(messageKey, new Set());
+      }
+      userReactions.get(messageKey).clear(); // Clear all previous reactions
+      userReactions.get(messageKey).add(data.emoji); // Add new reaction
+
+      // Broadcast the new reaction with current count to all clients
+      io.emit("message-reaction", {
+        messageId: data.messageId,
+        emoji: data.emoji,
+        userId: data.userId,
+        userName: user.name,
+        count: messageReactionData[data.emoji].count,
+      });
     }
   });
 

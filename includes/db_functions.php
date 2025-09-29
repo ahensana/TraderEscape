@@ -220,36 +220,42 @@ function getUserStats($userId) {
         // Use stored procedure if available
         $stmt = $pdo->prepare("CALL GetUserStats(?)");
         $stmt->execute([$userId]);
-        return $stmt->fetch();
+        $result = $stmt->fetch();
+        
+        if ($result) {
+            return $result;
+        }
         
     } catch (Exception $e) {
-        // Fallback to direct query if stored procedure fails
-        try {
-            $pdo = getDB();
-            $stmt = $pdo->prepare("
-                SELECT 
-                    u.username,
-                    u.full_name,
-                    u.email,
-                    u.created_at as member_since,
-                    u.last_login,
-                    COUNT(DISTINCT utu.tool_id) as tools_used,
-                    COUNT(DISTINCT ulp.content_id) as content_accessed,
-                    SUM(CASE WHEN ulp.is_completed = TRUE THEN 1 ELSE 0 END) as content_completed,
-                    SUM(utu.usage_duration) as total_tool_usage_time
-                FROM users u
-                LEFT JOIN user_tool_usage utu ON u.id = utu.user_id
-                LEFT JOIN user_learning_progress ulp ON u.id = ulp.user_id
-                WHERE u.id = ?
-                GROUP BY u.username, u.full_name, u.email, u.created_at, u.last_login
-            ");
-            $stmt->execute([$userId]);
-            return $stmt->fetch();
-            
-        } catch (Exception $fallbackError) {
-            error_log("Error getting user stats: " . $fallbackError->getMessage());
-            return false;
-        }
+        error_log("GetUserStats stored procedure failed: " . $e->getMessage());
+    }
+    
+    // Fallback to direct query if stored procedure fails
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("
+            SELECT 
+                u.username,
+                u.full_name,
+                u.email,
+                u.created_at as member_since,
+                u.last_login,
+                COUNT(DISTINCT utu.tool_id) as tools_used,
+                COUNT(DISTINCT ulp.content_id) as content_accessed,
+                SUM(CASE WHEN ulp.is_completed = TRUE THEN 1 ELSE 0 END) as content_completed,
+                SUM(utu.usage_duration) as total_tool_usage_time
+            FROM users u
+            LEFT JOIN user_tool_usage utu ON u.id = utu.user_id
+            LEFT JOIN user_learning_progress ulp ON u.id = ulp.user_id
+            WHERE u.id = ?
+            GROUP BY u.username, u.full_name, u.email, u.created_at, u.last_login
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetch();
+        
+    } catch (Exception $fallbackError) {
+        error_log("Error getting user stats: " . $fallbackError->getMessage());
+        return false;
     }
 }
 

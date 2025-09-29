@@ -7,6 +7,9 @@
 // Debug mode (set to true for development, false for production)
 define('DEBUG_MODE', true);
 
+// Application timezone (set to your local timezone)
+define('APP_TIMEZONE', 'Asia/Kolkata'); // Change this to your timezone
+
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'traderescape_db');
@@ -47,7 +50,7 @@ class Database {
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, DB_OPTIONS);
             $this->connected = true;
             
-            // Set timezone to match server
+            // Set timezone to UTC for consistency
             $this->connection->exec("SET time_zone = '+00:00'");
             
         } catch (PDOException $e) {

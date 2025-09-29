@@ -57,7 +57,7 @@ function getCurrentUser() {
         $pdo = getDB();
         
         // First try to get from users table (including admin status)
-        $stmt = $pdo->prepare("SELECT id, username, email, full_name, is_active, COALESCE(is_admin, 0) as is_admin FROM users WHERE id = ? AND is_active = TRUE");
+        $stmt = $pdo->prepare("SELECT id, username, email, full_name, is_active, COALESCE(is_admin, 0) as is_admin, last_login, created_at FROM users WHERE id = ? AND is_active = TRUE");
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         

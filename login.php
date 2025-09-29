@@ -14,9 +14,16 @@ function authenticateUser($email, $password) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($user && password_verify($password, $user['password_hash'])) {
-            // Update last_login timestamp
-            $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-            $updateStmt->execute([$user['id']]);
+            // Set application timezone
+            date_default_timezone_set(APP_TIMEZONE);
+            
+            // Update last_login timestamp with current local time
+            $currentTime = date('Y-m-d H:i:s');
+            $updateStmt = $pdo->prepare("UPDATE users SET last_login = ? WHERE id = ?");
+            $updateStmt->execute([$currentTime, $user['id']]);
+            
+            // Log the login time for debugging
+            error_log("User {$user['id']} logged in at: " . $currentTime . " (App timezone: " . APP_TIMEZONE . ")");
             
             return $user;
         }
@@ -145,9 +152,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_message = 'Please fill in all fields.';
         } elseif ($password !== $confirm_password) {
             $error_message = 'Passwords do not match.';
-        } elseif (strlen($password) < 6) {
-            $error_message = 'Password must be at least 6 characters long.';
+        } elseif (strlen($password) < 8) {
+            $error_message = 'Password must be at least 8 characters long.';
+        } elseif (strlen($password) > 128) {
+            $error_message = 'Password must be no more than 128 characters long.';
+        } elseif (!preg_match('/[A-Z]/', $password)) {
+            $error_message = 'Password must contain at least one uppercase letter.';
+        } elseif (!preg_match('/[0-9]/', $password)) {
+            $error_message = 'Password must contain at least one number.';
+        } elseif (!preg_match('/[^A-Za-z0-9]/', $password)) {
+            $error_message = 'Password must contain at least one special character.';
         } else {
+            // Check if email already exists
+            try {
+                $pdo = getDB();
+                $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                $stmt->execute([$email]);
+                if ($stmt->fetch()) {
+                    $error_message = 'email_exists';
+                }
+            } catch (Exception $e) {
+                $error_message = 'Registration failed. Please try again.';
+            }
+        }
+        
+        if (empty($error_message)) {
             $result = registerUser($full_name, $username, $email, $password);
             if ($result['success']) {
                 $success_message = $result['message'];
@@ -208,9 +237,12 @@ include 'includes/header.php';
             border-radius: 16px;
             backdrop-filter: blur(20px);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 3rem;
+            padding: 1.5rem;
             position: relative;
             overflow: hidden;
+            /* Prevent any floating animations */
+            transform: none !important;
+            transition: none !important;
         }
 
         .auth-container::before {
@@ -223,10 +255,17 @@ include 'includes/header.php';
             background: linear-gradient(90deg, #ffffff, #f8fafc, #e2e8f0);
         }
 
+        /* Prevent any hover animations on auth-container and its children */
+        .auth-container:hover,
+        .auth-container *:hover {
+            transform: none !important;
+            transition: none !important;
+        }
+
         .auth-header {
             text-align: center;
-            margin-bottom: 3rem;
-            padding-top: 1rem;
+            margin-bottom: 1.5rem;
+            padding-top: 0;
         }
 
         .auth-title {
@@ -252,7 +291,7 @@ include 'includes/header.php';
             background: rgba(255, 255, 255, 0.05);
             border-radius: 16px;
             padding: 6px;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
             overflow: hidden;
@@ -266,13 +305,12 @@ include 'includes/header.php';
             width: calc(50% - 6px);
             background: linear-gradient(135deg, #ffffff, #f8fafc);
             border-radius: 12px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
 
         .toggle-slider.slide-right {
-            transform: translateX(100%);
+            left: calc(50%);
         }
 
         .toggle-btn {
@@ -288,7 +326,6 @@ include 'includes/header.php';
             color: #ffffff;
             border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 600;
             font-size: 1rem;
             z-index: 2;
@@ -299,22 +336,8 @@ include 'includes/header.php';
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        .toggle-btn:hover:not(.active) {
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
-
-        .toggle-btn:active {
-            transform: translateY(0);
-        }
-
         .toggle-btn i {
             font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-btn:hover i {
-            transform: scale(1.1);
         }
 
         /* Remove any blue background from form-toggle::before */
@@ -350,21 +373,14 @@ include 'includes/header.php';
         /* Forms */
         .auth-form {
             display: none;
-            animation: fadeIn 0.5s ease-out;
         }
 
         .auth-form.active {
             display: block;
         }
-        
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .form-label {
@@ -377,13 +393,12 @@ include 'includes/header.php';
 
         .form-input {
             width: 100%;
-            padding: 1.25rem;
+            padding: 1rem;
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.05);
             color: #ffffff;
             font-size: 1rem;
-            transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             line-height: 1.5;
         }
@@ -393,7 +408,6 @@ include 'includes/header.php';
             border-color: #ffffff;
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
         }
 
          .form-input::placeholder {
@@ -413,7 +427,7 @@ include 'includes/header.php';
 
          .password-toggle {
              position: absolute;
-             right: 1rem;
+             right: 0.75rem;
              top: 50%;
              transform: translateY(-50%);
              background: none;
@@ -422,25 +436,62 @@ include 'includes/header.php';
              cursor: pointer;
              padding: 0.5rem;
              border-radius: 6px;
-             transition: all 0.3s ease;
              display: flex;
              align-items: center;
              justify-content: center;
+             z-index: 10;
+             transition: none !important;
+             transform: translateY(-50%) !important;
          }
 
          .password-toggle:hover {
              color: #ffffff;
-             background: rgba(255, 255, 255, 0.1);
+             transform: translateY(-50%) !important;
          }
 
          .password-toggle:focus {
              outline: none;
-             color: #ffffff;
-             background: rgba(255, 255, 255, 0.15);
+         }
+
+         .password-toggle:active {
+             transform: translateY(-50%) !important;
          }
 
          .password-toggle i {
              font-size: 1.1rem;
+         }
+
+         /* Password Strength Indicator */
+         .password-strength {
+             margin-top: 0.5rem;
+             font-size: 0.85rem;
+         }
+
+         .strength-requirements {
+             display: grid;
+             grid-template-columns: 1fr 1fr;
+             gap: 0.25rem;
+             margin-top: 0.5rem;
+         }
+
+         .requirement {
+             display: flex;
+             align-items: center;
+             gap: 0.5rem;
+             font-size: 0.8rem;
+             color: #94a3b8;
+         }
+
+         .requirement.valid {
+             color: #10b981;
+         }
+
+         .requirement.invalid {
+             color: #ef4444;
+         }
+
+         .requirement i {
+             font-size: 0.75rem;
          }
 
         /* Buttons */
@@ -449,33 +500,17 @@ include 'includes/header.php';
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            padding: 1.25rem 2rem;
+            padding: 1rem 1.5rem;
             border: none;
             border-radius: 12px;
             font-weight: 700;
             font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             position: relative;
             overflow: hidden;
             text-transform: none;
             letter-spacing: 0.025em;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.6s ease;
-        }
-
-        .btn:hover::before {
-            left: 100%;
         }
 
         .btn-primary {
@@ -485,21 +520,9 @@ include 'includes/header.php';
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            color: #0f172a;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn-primary:active {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
         .btn-full {
             width: 100%;
-            padding: 1.5rem 2rem;
+            padding: 1.25rem 1.5rem;
             font-size: 1.125rem;
         }
 
@@ -513,12 +536,6 @@ include 'includes/header.php';
             gap: 0.75rem;
             font-weight: 500;
             font-size: 0.9rem;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .alert-error {
@@ -535,7 +552,7 @@ include 'includes/header.php';
 
         /* Legal */
         .auth-legal {
-            margin-top: 2rem;
+            margin-top: 1rem;
             text-align: center;
         }
 
@@ -550,12 +567,6 @@ include 'includes/header.php';
             color: #ffffff;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .legal-link:hover {
-            color: #e2e8f0;
-            text-decoration: underline;
         }
 
          /* Responsive */
@@ -705,10 +716,30 @@ include 'includes/header.php';
                          <div class="password-input-wrapper">
                             <input type="password" id="signupPassword" name="password" class="form-input" 
                                    placeholder="Create a strong password"
-                                   required autocomplete="new-password" minlength="6">
+                                   required autocomplete="new-password" minlength="8" maxlength="128">
                              <button type="button" class="password-toggle" onclick="togglePassword('signupPassword')">
                                  <i class="bi bi-eye" id="signupPasswordIcon"></i>
                              </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-requirements">
+                                <div class="requirement" id="length-req">
+                                    <i class="bi bi-circle"></i>
+                                    <span>8+ characters</span>
+                                </div>
+                                <div class="requirement" id="uppercase-req">
+                                    <i class="bi bi-circle"></i>
+                                    <span>Uppercase letter</span>
+                                </div>
+                                <div class="requirement" id="number-req">
+                                    <i class="bi bi-circle"></i>
+                                    <span>Number</span>
+                                </div>
+                                <div class="requirement" id="special-req">
+                                    <i class="bi bi-circle"></i>
+                                    <span>Special character</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -717,7 +748,7 @@ include 'includes/header.php';
                          <div class="password-input-wrapper">
                             <input type="password" id="signupConfirmPassword" name="confirm_password" class="form-input" 
                                    placeholder="Confirm your password"
-                                   required autocomplete="new-password" minlength="6">
+                                   required autocomplete="new-password" minlength="8" maxlength="128">
                              <button type="button" class="password-toggle" onclick="togglePassword('signupConfirmPassword')">
                                  <i class="bi bi-eye" id="signupConfirmPasswordIcon"></i>
                              </button>
@@ -748,19 +779,187 @@ include 'includes/header.php';
 
     <!-- Scripts -->
      <script>
-         // Password toggle functionality
-         function togglePassword(inputId) {
-             const input = document.getElementById(inputId);
-             const icon = document.getElementById(inputId + 'Icon');
-             
-             if (input.type === 'password') {
-                 input.type = 'text';
-                 icon.className = 'bi bi-eye-slash';
-             } else {
-                 input.type = 'password';
-                 icon.className = 'bi bi-eye';
-             }
-         }
+        // Password toggle functionality
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + 'Icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: true, // Removed lowercase requirement
+                number: /[0-9]/.test(password),
+                special: /[^A-Za-z0-9]/.test(password)
+            };
+
+            // Update visual indicators
+            document.getElementById('length-req').className = requirements.length ? 'requirement valid' : 'requirement invalid';
+            document.getElementById('uppercase-req').className = requirements.uppercase ? 'requirement valid' : 'requirement invalid';
+            document.getElementById('number-req').className = requirements.number ? 'requirement valid' : 'requirement invalid';
+            document.getElementById('special-req').className = requirements.special ? 'requirement valid' : 'requirement invalid';
+
+            // Update icons
+            const icons = {
+                length: document.querySelector('#length-req i'),
+                uppercase: document.querySelector('#uppercase-req i'),
+                number: document.querySelector('#number-req i'),
+                special: document.querySelector('#special-req i')
+            };
+
+            Object.keys(icons).forEach(key => {
+                if (requirements[key]) {
+                    icons[key].className = 'bi bi-check-circle-fill';
+                } else {
+                    icons[key].className = 'bi bi-circle';
+                }
+            });
+
+            return Object.values(requirements).every(req => req);
+        }
+
+        // Add real-time password strength checking
+        document.getElementById('signupPassword').addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+        });
+
+        // Email validation function
+        function showEmailExistsAlert() {
+            // Remove any existing email alerts
+            const existingAlert = document.getElementById('email-exists-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            // Create the alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'email-exists-alert';
+            alertDiv.style.cssText = `
+                color: #ef4444;
+                font-size: 0.875rem;
+                font-weight: 500;
+                text-align: center;
+            `;
+            alertDiv.innerHTML = `Email already exists!`;
+
+            // Find the Create Account button and insert alert after it
+            const createAccountButton = document.querySelector('#registerForm .btn-full');
+            if (createAccountButton) {
+                // Insert the alert after the button, before the legal text
+                createAccountButton.parentNode.insertBefore(alertDiv, createAccountButton.nextSibling);
+                
+                // Style the alert
+                alertDiv.style.cssText = `
+                    color: #ef4444;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    text-align: center;
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                `;
+            } else {
+                // Fallback: append to form
+                const form = document.getElementById('registerForm');
+                if (form) {
+                    form.appendChild(alertDiv);
+                    alertDiv.style.cssText = `
+                        color: #ef4444;
+                        font-size: 0.875rem;
+                        font-weight: 500;
+                        text-align: center;
+                        margin-top: 1rem;
+                        margin-bottom: 1rem;
+                    `;
+                }
+            }
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                if (alertDiv && alertDiv.parentNode) {
+                    alertDiv.style.opacity = '0';
+                    alertDiv.style.transition = 'opacity 0.3s ease-out';
+                    setTimeout(() => {
+                        if (alertDiv && alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 300);
+                }
+            }, 3000);
+        }
+
+        // Password mismatch alert function
+        function showPasswordMismatchAlert() {
+            // Remove any existing password mismatch alerts
+            const existingAlert = document.getElementById('password-mismatch-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            // Create the alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'password-mismatch-alert';
+            alertDiv.style.cssText = `
+                color: #ef4444;
+                font-size: 0.875rem;
+                font-weight: 500;
+                text-align: center;
+            `;
+            alertDiv.innerHTML = `Passwords do not match!`;
+
+            // Find the Create Account button and insert alert after it
+            const createAccountButton = document.querySelector('#registerForm .btn-full');
+            if (createAccountButton) {
+                // Insert the alert after the button, before the legal text
+                createAccountButton.parentNode.insertBefore(alertDiv, createAccountButton.nextSibling);
+                
+                // Style the alert
+                alertDiv.style.cssText = `
+                    color: #ef4444;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    text-align: center;
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                `;
+            } else {
+                // Fallback: append to form
+                const form = document.getElementById('registerForm');
+                if (form) {
+                    form.appendChild(alertDiv);
+                    alertDiv.style.cssText = `
+                        color: #ef4444;
+                        font-size: 0.875rem;
+                        font-weight: 500;
+                        text-align: center;
+                        margin-top: 1rem;
+                        margin-bottom: 1rem;
+                    `;
+                }
+            }
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                if (alertDiv && alertDiv.parentNode) {
+                    alertDiv.style.opacity = '0';
+                    alertDiv.style.transition = 'opacity 0.3s ease-out';
+                    setTimeout(() => {
+                        if (alertDiv && alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 300);
+                }
+            }, 3000);
+        }
 
          // Form toggle functionality with slider animation
         document.querySelectorAll('.toggle-btn').forEach(btn => {
@@ -804,12 +1003,52 @@ include 'includes/header.php';
 
         // Form validation
         document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
             const confirmPassword = document.getElementById('signupConfirmPassword').value;
             
+            // Email validation
+            if (!email || email.length === 0) {
+                e.preventDefault();
+                alert('Please enter an email address.');
+                return false;
+            }
+            
+            // Password validation
+            if (password.length < 8) {
+                e.preventDefault();
+                alert('Password must be at least 8 characters long.');
+                return false;
+            }
+            
+            if (password.length > 128) {
+                e.preventDefault();
+                alert('Password must be no more than 128 characters long.');
+                return false;
+            }
+            
+            if (!/[A-Z]/.test(password)) {
+                e.preventDefault();
+                alert('Password must contain at least one uppercase letter.');
+                return false;
+            }
+            
+            
+            if (!/[0-9]/.test(password)) {
+                e.preventDefault();
+                alert('Password must contain at least one number.');
+                return false;
+            }
+            
+            if (!/[^A-Za-z0-9]/.test(password)) {
+                e.preventDefault();
+                alert('Password must contain at least one special character.');
+                return false;
+            }
+            
             if (password !== confirmPassword) {
                 e.preventDefault();
-                alert('Passwords do not match!');
+                showPasswordMismatchAlert();
                 return false;
             }
         });
@@ -826,6 +1065,11 @@ include 'includes/header.php';
         // Handle form visibility based on PHP variables
         <?php if (isset($show_login_form) && $show_login_form): ?>
             showLoginForm();
+        <?php endif; ?>
+
+        // Handle email exists error
+        <?php if (isset($error_message) && $error_message === 'email_exists'): ?>
+            showEmailExistsAlert();
         <?php endif; ?>
 
 

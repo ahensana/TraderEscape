@@ -1006,7 +1006,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="info-item">
                                         <span class="label">Last Login:</span>
-                                        <span class="value"><?php echo date('F j, Y g:i A', strtotime($userStats['last_login'] ?? $currentUser['last_login'] ?? 'now')); ?></span>
+                                        <span class="value"><?php 
+                                            // Set timezone for display
+                                            date_default_timezone_set(APP_TIMEZONE);
+                                            echo date('F j, Y g:i A', strtotime($userStats['last_login'] ?? $currentUser['last_login'] ?? 'now')); 
+                                        ?></span>
                                     </div>
                                     <div class="info-item">
                                         <span class="label">Status:</span>

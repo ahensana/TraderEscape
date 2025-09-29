@@ -681,6 +681,13 @@ include 'includes/header.php';
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>Sign In</span>
                     </button>
+                    
+                    <!-- Forgot Password Link -->
+                    <div class="forgot-password-link" style="text-align: center; margin-top: 1rem;">
+                        <a href="forgot_password.php" style="color: #3b82f6; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: text-decoration 0.2s ease;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                            Forgot password?
+                        </a>
+                    </div>
                 </form>
 
                 <!-- Registration Form -->
@@ -1102,6 +1109,7 @@ include 'includes/header.php';
             if (titleEl) titleEl.textContent = title;
             if (subtitleEl) subtitleEl.textContent = subtitle;
         }
+
 
     </script>
 </body>

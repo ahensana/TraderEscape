@@ -1,0 +1,13 @@
+{
+  "name": "traderescape/email-system",
+  "description": "Email system for TraderEscape application",
+  "type": "project",
+  "require": {
+    "phpmailer/phpmailer": "^6.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "TraderEscape\\": "src/"
+    }
+  }
+}

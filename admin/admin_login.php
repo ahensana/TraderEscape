@@ -1,10 +1,13 @@
 <?php
 session_start();
-$mysqli = new mysqli("localhost", "root", "", "traderescape_db");
 
-$error = "";
+// Prevent page caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
+// Handle POST request before displaying anything
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $mysqli = new mysqli("localhost", "root", "", "traderescape_db");
     $email = $_POST['email'];
     $password = $_POST['password'];
 
@@ -20,17 +23,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $hashedPassword)) {
             $_SESSION['admin_id'] = $id;
             $_SESSION['admin_name'] = $username;
+            $stmt->close();
+            $mysqli->close();
             header("Location: admin_dashboard.php");
             exit;
         } else {
-            $error = "Incorrect password.";
+            $_SESSION['error'] = "Incorrect password.";
         }
     } else {
-        $error = "Email not found.";
+        $_SESSION['error'] = "Email not found.";
     }
     $stmt->close();
+    $mysqli->close();
+    
+    // Redirect to prevent form resubmission
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
 }
-$mysqli->close();
+
+// Get and clear error message after POST redirect
+$error = $_SESSION['error'] ?? '';
+unset($_SESSION['error']);
 ?>
 
 <!DOCTYPE html>
@@ -274,6 +287,40 @@ $mysqli->close();
             color: rgba(255, 255, 255, 0.5);
         }
 
+        /* Password Input Wrapper */
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper .form-input {
+            padding-right: 50px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            padding: 8px;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .password-toggle:focus {
+            outline: none;
+        }
+
         /* ===== BUTTON STYLES ===== */
         .admin-login-btn {
             width: 100%;
@@ -441,21 +488,34 @@ $mysqli->close();
 
                 <div class="form-group">
                     <label for="password" class="form-label">Password</label>
-                    <input 
-                        type="password" 
-                        id="password"
-                        name="password" 
-                        class="form-input" 
-                        placeholder="Enter your password"
-                        required
-                        autocomplete="current-password"
-                    >
+                    <div class="password-input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password"
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="eyeIcon">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="admin-login-btn" id="loginBtn">
                     <span>Sign In to Admin Portal</span>
                 </button>
             </form>
+
+            <!-- Forgot Password Link -->
+            <div class="back-to-home" style="margin-top: 20px;">
+                <a href="forgot_password.php">Forgot Password?</a>
+            </div>
 
             <!-- Back to Home -->
             <div class="back-to-home">
@@ -505,6 +565,44 @@ $mysqli->close();
                 if (form) {
                     form.submit();
                 }
+            }
+        });
+
+        // Auto-hide error message after 3 seconds
+        const errorMessage = document.querySelector('.error-message');
+        if (errorMessage) {
+            setTimeout(() => {
+                errorMessage.style.transition = 'opacity 0.3s ease';
+                errorMessage.style.opacity = '0';
+                setTimeout(() => {
+                    errorMessage.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Password toggle functionality
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', function() {
+            // Toggle password visibility
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            
+            // Toggle icon
+            if (type === 'text') {
+                // Eye slash icon (password visible)
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            } else {
+                // Eye icon (password hidden)
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
             }
         });
     </script>

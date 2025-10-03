@@ -60,9 +60,4 @@
     </button>
 </div>
 
-<!-- Scripts -->
-<script src="./assets/trading-background.js" defer></script>
-<script src="./assets/app.js" defer></script>
-<script src="./assets/animations.js" defer></script>
-<script src="./assets/scroll-animations.js" defer></script>
-<script src="./assets/charts.js" defer></script>
+<!-- Scripts are loaded in individual pages to avoid conflicts -->

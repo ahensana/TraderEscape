@@ -545,7 +545,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed risk management tool', 
     // Chart drawing functions
     function drawEquityCurve(id, rows) {
       const c = $(id);
-      const ctx = c.getContext('2d');
+      const ctx = c.getContext('2d', { willReadFrequently: true });
       ctx.clearRect(0, 0, c.width, c.height);
       
       const cum = [];
@@ -592,7 +592,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed risk management tool', 
 
     function drawHistogram(id, arr) {
       const c = $(id);
-      const ctx = c.getContext('2d');
+      const ctx = c.getContext('2d', { willReadFrequently: true });
       ctx.clearRect(0, 0, c.width, c.height);
       
       if (arr.length === 0) {

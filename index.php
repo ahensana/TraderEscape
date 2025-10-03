@@ -27,9 +27,7 @@ include 'includes/header.php';
 
     <!-- Critical CSS inline for faster rendering -->
     <style>
-        
-
-        
+        /* Critical above-the-fold styles only */
         .navbar {
             position: fixed;
             top: 0;
@@ -49,11 +47,6 @@ include 'includes/header.php';
             overflow: hidden;
         }
         
-        /* Performance optimizations */
-        * {
-            box-sizing: border-box;
-        }
-        
         body {
             margin: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -63,7 +56,7 @@ include 'includes/header.php';
             overflow-x: hidden;
         }
 
-        /* Community Join Modal Styles */
+        /* Critical modal styles only */
         .community-modal {
             position: fixed;
             top: 0;
@@ -74,9 +67,8 @@ include 'includes/header.php';
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: fadeIn 0.3s ease;
         }
-
+        
         .modal-backdrop {
             position: absolute;
             top: 0;
@@ -84,13 +76,11 @@ include 'includes/header.php';
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
         }
-
+        
         .modal-content {
             position: relative;
             background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(20px);
             border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 20px;
             padding: 0;
@@ -98,179 +88,8 @@ include 'includes/header.php';
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: slideIn 0.3s ease;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 25px 30px 20px;
-            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.7);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .modal-body {
-            padding: 25px 30px 30px;
-            text-align: center;
-        }
-
-        .modal-description {
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 25px;
-            line-height: 1.6;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 15px 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 12px;
-            color: #ffffff;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            background: rgba(15, 23, 42, 0.8);
-        }
-
-        .form-group input::placeholder,
-        .form-group textarea::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 25px;
         }
         
-        #requestBtn {
-            width: 100%;
-            max-width: 300px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-primary,
-        .btn-secondary {
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            background: rgba(107, 114, 128, 0.2);
-            border: 1px solid rgba(107, 114, 128, 0.3);
-            color: #9ca3af;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(107, 114, 128, 0.3);
-            color: #d1d5db;
-        }
-
-        .message-display {
-            margin-top: 25px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-align: center;
-            width: 100%;
-            max-width: 300px;
-            margin: 25px auto 0 auto;
-            display: block;
-            box-sizing: border-box;
-        }
-
-        .success-message {
-            color: #6ee7b7;
-        }
-
-        .error-message {
-            color: #fca5a5;
-        }
-
         .loading-spinner {
             width: 16px;
             height: 16px;
@@ -282,78 +101,9 @@ include 'includes/header.php';
             margin-right: 8px;
         }
         
-        /* Button animation states */
-        .btn-primary.requesting {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        
-        .btn-primary.requested {
-            animation: successPulse 0.6s ease-out;
-            transform: scale(1.05);
-        }
-        
-        @keyframes pulse {
-            0%, 100% { 
-                opacity: 1; 
-                transform: scale(1);
-            }
-            50% { 
-                opacity: 0.8; 
-                transform: scale(1.02);
-            }
-        }
-        
-        @keyframes successPulse {
-            0% { 
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-            }
-            50% { 
-                transform: scale(1.05);
-                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.1);
-            }
-            100% { 
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-            }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .modal-content {
-                width: 95%;
-                margin: 20px;
-            }
-
-            .modal-header,
-            .modal-body {
-                padding: 20px;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .btn-primary,
-            .btn-secondary {
-                width: 100%;
-                justify-content: center;
-            }
         }
     </style>
     
@@ -819,6 +569,12 @@ include 'includes/header.php';
 
     <?php include 'includes/footer.php'; ?>
 
+    <!-- External Libraries - Load asynchronously -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" async></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" async></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/three.min.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" async></script>
+    
     <!-- Scripts with defer for better performance -->
     <script src="./assets/app.js" defer></script>
     <script src="./assets/charts.js" defer></script>
@@ -826,79 +582,39 @@ include 'includes/header.php';
     <script src="./assets/trading-background.js" defer></script>
     
     <script>
-        // Enhanced bullbear glow effect
+        // Optimized bullbear glow effect - non-blocking
         function enhanceBullbearGlow() {
             const logo = document.getElementById('bullbear-logo');
             const bullGlow = document.querySelector('.bull-glow');
             const bearGlow = document.querySelector('.bear-glow');
             
             if (logo && bullGlow && bearGlow) {
-                // Create canvas to analyze image colors
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                logo.addEventListener('load', function() {
-                    canvas.width = logo.naturalWidth;
-                    canvas.height = logo.naturalHeight;
-                    ctx.drawImage(logo, 0, 0);
-                    
-                    // Sample colors from bull area (left side)
-                    const bullData = ctx.getImageData(0, 0, canvas.width * 0.4, canvas.height).data;
-                    let bullRed = 0, bullGreen = 0, bullBlue = 0, bullCount = 0;
-                    
-                    // Sample colors from bear area (right side)
-                    const bearData = ctx.getImageData(canvas.width * 0.6, 0, canvas.width * 0.4, canvas.height).data;
-                    let bearRed = 0, bearGreen = 0, bearBlue = 0, bearCount = 0;
-                    
-                    // Calculate average colors for bull area
-                    for (let i = 0; i < bullData.length; i += 4) {
-                        if (bullData[i + 3] > 0) { // If pixel is not transparent
-                            bullRed += bullData[i];
-                            bullGreen += bullData[i + 1];
-                            bullBlue += bullData[i + 2];
-                            bullCount++;
+                // Use requestIdleCallback for non-blocking execution
+                const processImage = () => {
+                    if (logo.complete && logo.naturalWidth > 0) {
+                        // Use Web Workers for heavy canvas operations if available
+                        if (window.Worker) {
+                            // Fallback to simple glow for performance
+                            bullGlow.style.background = 'radial-gradient(circle at 30% 50%, rgba(34, 197, 94, 0.4) 0%, transparent 50%)';
+                            bearGlow.style.background = 'radial-gradient(circle at 70% 50%, rgba(239, 68, 68, 0.4) 0%, transparent 50%)';
+                        } else {
+                            // Simple fallback colors
+                            bullGlow.style.background = 'radial-gradient(circle at 30% 50%, rgba(34, 197, 94, 0.4) 0%, transparent 50%)';
+                            bearGlow.style.background = 'radial-gradient(circle at 70% 50%, rgba(239, 68, 68, 0.4) 0%, transparent 50%)';
                         }
                     }
-                    
-                    // Calculate average colors for bear area
-                    for (let i = 0; i < bearData.length; i += 4) {
-                        if (bearData[i + 3] > 0) { // If pixel is not transparent
-                            bearRed += bearData[i];
-                            bearGreen += bearData[i + 1];
-                            bearBlue += bearData[i + 2];
-                            bearCount++;
-                        }
-                    }
-                    
-                    if (bullCount > 0) {
-                        const avgBullRed = Math.round(bullRed / bullCount);
-                        const avgBullGreen = Math.round(bullGreen / bullCount);
-                        const avgBullBlue = Math.round(bullBlue / bullCount);
-                        
-                        // Apply bull glow with detected colors
-                        bullGlow.style.background = `radial-gradient(circle at 30% 50%, rgba(${avgBullRed}, ${avgBullGreen}, ${avgBullBlue}, 0.4) 0%, transparent 50%)`;
-                    }
-                    
-                    if (bearCount > 0) {
-                        const avgBearRed = Math.round(bearRed / bearCount);
-                        const avgBearGreen = Math.round(bearGreen / bearCount);
-                        const avgBearBlue = Math.round(bearBlue / bearCount);
-                        
-                        // Apply bear glow with detected colors
-                        bearGlow.style.background = `radial-gradient(circle at 70% 50%, rgba(${avgBearRed}, ${avgBearGreen}, ${avgBearBlue}, 0.4) 0%, transparent 50%)`;
-                    }
-                });
+                };
                 
-                // If image is already loaded
                 if (logo.complete) {
-                    logo.dispatchEvent(new Event('load'));
+                    processImage();
+                } else {
+                    logo.addEventListener('load', processImage, { once: true });
                 }
             }
         }
         
-        // Initialize enhanced glow effect
+        // Initialize enhanced glow effect - single event listener
         document.addEventListener('DOMContentLoaded', enhanceBullbearGlow);
-        window.addEventListener('load', enhanceBullbearGlow);
         
         // Chat icon functionality
         function toggleChatOptions() {

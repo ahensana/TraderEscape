@@ -1214,7 +1214,6 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     
     <!-- Custom Styles -->
@@ -3089,7 +3088,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         function drawEquityCurve(id, rows) {
             const c = $(id);
             if (!c) return;
-            const ctx = c.getContext('2d');
+            const ctx = c.getContext('2d', { willReadFrequently: true });
             ctx.clearRect(0, 0, c.width, c.height);
             
             const cum = [];
@@ -3137,7 +3136,7 @@ logUserActivity($currentUser['id'], 'page_view', 'Viewed trading tools page', $_
         function drawHistogram(id, arr) {
             const c = $(id);
             if (!c) return;
-            const ctx = c.getContext('2d');
+            const ctx = c.getContext('2d', { willReadFrequently: true });
             ctx.clearRect(0, 0, c.width, c.height);
             
             if (arr.length === 0) {

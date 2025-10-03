@@ -1,26 +1,74 @@
 /* ===== PREMIUM ANIMATIONS SYSTEM - THE TRADER'S ESCAPE ===== */
 
-// Initialize GSAP ScrollTrigger
-gsap.registerPlugin(ScrollTrigger);
+// Global animation variables - check if already declared
+if (typeof window.animationVars === "undefined") {
+  window.animationVars = {
+    tl: null,
+    particlesInstance: null,
+    threeScene: null,
+    threeRenderer: null,
+    threeCamera: null,
+    typingAnimation: null,
+    floatingShapes: null,
+  };
+}
 
-// Global animation variables
-let tl, particlesInstance, threeScene, threeRenderer, threeCamera;
-let typingAnimation, floatingShapes;
+// Use window variables to avoid redeclaration
+const {
+  tl,
+  particlesInstance,
+  threeScene,
+  threeRenderer,
+  threeCamera,
+  typingAnimation,
+  floatingShapes,
+} = window.animationVars;
 
-// Initialize animations when DOM is loaded
+// Initialize animations when DOM is loaded - with performance optimization
 document.addEventListener("DOMContentLoaded", function () {
   console.log("Initializing premium animations...");
 
-  // Wait for all libraries to load
-  setTimeout(() => {
-    initializeAnimations();
-  }, 100);
+  // Use requestIdleCallback for non-blocking initialization
+  if (window.requestIdleCallback) {
+    requestIdleCallback(() => {
+      waitForGSAP();
+    });
+  } else {
+    // Fallback for browsers without requestIdleCallback
+    setTimeout(() => {
+      waitForGSAP();
+    }, 100);
+  }
 });
 
+function waitForGSAP(attempts = 0) {
+  const maxAttempts = 10;
+
+  if (typeof gsap !== "undefined") {
+    console.log("GSAP loaded, initializing animations...");
+    initializeAnimations();
+  } else if (attempts < maxAttempts) {
+    console.log(`Waiting for GSAP... attempt ${attempts + 1}/${maxAttempts}`);
+    setTimeout(() => waitForGSAP(attempts + 1), 200);
+  } else {
+    console.log("GSAP not available after waiting, using fallback animations");
+    initializeAnimations();
+  }
+}
+
 function initializeAnimations() {
+  // Prevent double initialization
+  if (window.animationsInitialized) {
+    console.log("Animations already initialized, skipping...");
+    return;
+  }
+
   // Check if GSAP is available
   if (typeof gsap === "undefined") {
     console.log("GSAP not available, skipping advanced animations");
+    // Initialize basic animations without GSAP
+    initBasicAnimations();
+    window.animationsInitialized = true;
     return;
   }
 
@@ -29,12 +77,11 @@ function initializeAnimations() {
     gsap.registerPlugin(ScrollTrigger);
   }
 
-  // Initialize
-  //  custom cursor
+  // Initialize custom cursor
   initCustomCursor();
 
-  // Initialize particles
-  initParticles();
+  // Initialize particles (disabled - using custom trading background instead)
+  // initParticles();
 
   // Initialize Three.js
   initThreeJS();
@@ -65,19 +112,88 @@ function initializeAnimations() {
       initCharts();
     }
   }, 2000);
+
+  // Mark animations as initialized
+  window.animationsInitialized = true;
+}
+
+// Basic animations without GSAP
+function initBasicAnimations() {
+  console.log("Initializing basic animations without GSAP...");
+
+  // Initialize basic cursor
+  initBasicCursor();
+
+  // Initialize basic floating elements
+  initBasicFloatingElements();
+
+  // Initialize basic button effects
+  initBasicButtonEffects();
+}
+
+// Basic cursor without GSAP
+function initBasicCursor() {
+  const cursor = document.getElementById("custom-cursor");
+  if (cursor) {
+    document.addEventListener("mousemove", (e) => {
+      cursor.style.left = e.clientX + "px";
+      cursor.style.top = e.clientY + "px";
+    });
+
+    // Add hover effects
+    const hoverElements = document.querySelectorAll(
+      "a, button, .nav-link, .highlight-card, .tool-card"
+    );
+    hoverElements.forEach((element) => {
+      if (element.querySelector(".chart-container")) return;
+
+      element.addEventListener("mouseenter", () =>
+        cursor.classList.add("hover")
+      );
+      element.addEventListener("mouseleave", () =>
+        cursor.classList.remove("hover")
+      );
+    });
+  }
+}
+
+// Basic floating elements without GSAP
+function initBasicFloatingElements() {
+  const floatingCards = document.querySelectorAll(".floating-card");
+  floatingCards.forEach((card) => {
+    card.style.animation = "float 3s ease-in-out infinite";
+  });
+}
+
+// Basic button effects without GSAP
+function initBasicButtonEffects() {
+  const buttons = document.querySelectorAll(".btn");
+  buttons.forEach((button) => {
+    if (button.closest(".auth-container")) return;
+
+    button.addEventListener("mouseenter", () => {
+      button.style.transform = "scale(1.05)";
+    });
+
+    button.addEventListener("mouseleave", () => {
+      button.style.transform = "scale(1)";
+    });
+  });
 }
 
 // Fallback initialization when window loads
 window.addEventListener("load", function () {
   console.log("Window loaded - animations fallback...");
 
-  // Re-initialize animations if GSAP is available
-  setTimeout(() => {
-    if (typeof gsap !== "undefined" && typeof ScrollTrigger !== "undefined") {
-      console.log("Re-initializing animations...");
-      initializeAnimations();
-    }
-  }, 1000);
+  // Only re-initialize if animations haven't been initialized yet
+  if (!window.animationsInitialized) {
+    setTimeout(() => {
+      if (typeof gsap !== "undefined" && typeof ScrollTrigger !== "undefined") {
+        console.log("Re-initializing animations...");
+        initializeAnimations();
+      }
+    }, 1000);
+  }
 });
 
 /* ===== CUSTOM CURSOR ===== */
@@ -160,6 +276,15 @@ function initCustomCursor() {
 
 function initParticles() {
   if (typeof particlesJS !== "undefined") {
+    // Check if particles container exists
+    const particlesContainer = document.getElementById("particles-js");
+    if (!particlesContainer) {
+      console.log(
+        "Particles container not found, skipping particles initialization"
+      );
+      return;
+    }
+
     particlesJS("particles-js", {
       particles: {
         number: {
@@ -375,8 +500,8 @@ function initPremiumFeatures() {
   // Initialize 3D card effects
   init3DCardEffects();
 
-  // Initialize live social proof
-  initLiveSocialProof();
+  // Initialize live social proof (disabled)
+  // initLiveSocialProof();
 }
 
 function initTypingAnimation() {
@@ -387,12 +512,12 @@ function initTypingAnimation() {
   heroTitle.textContent = "";
 
   let i = 0;
-  typingAnimation = setInterval(() => {
+  window.animationVars.typingAnimation = setInterval(() => {
     if (i < text.length) {
       heroTitle.textContent += text.charAt(i);
       i++;
     } else {
-      clearInterval(typingAnimation);
+      clearInterval(window.animationVars.typingAnimation);
       // Add cursor blink effect
       heroTitle.classList.add("typing-complete");
     }
@@ -422,16 +547,23 @@ function initFloatingShapes() {
 
     heroSection.appendChild(shape);
 
-    // Animate shape
-    gsap.to(shape, {
-      duration: 10 + Math.random() * 10,
-      x: (Math.random() - 0.5) * 200,
-      y: (Math.random() - 0.5) * 200,
-      rotation: 360,
-      ease: "none",
-      repeat: -1,
-      yoyo: true,
-    });
+    // Animate shape with GSAP if available
+    if (typeof gsap !== "undefined") {
+      gsap.to(shape, {
+        duration: 10 + Math.random() * 10,
+        x: (Math.random() - 0.5) * 200,
+        y: (Math.random() - 0.5) * 200,
+        rotation: 360,
+        ease: "none",
+        repeat: -1,
+        yoyo: true,
+      });
+    } else {
+      // Basic CSS animation fallback
+      shape.style.animation = `float ${
+        10 + Math.random() * 10
+      }s ease-in-out infinite`;
+    }
   }
 }
 
@@ -449,21 +581,30 @@ function initMagneticHover() {
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
 
-      gsap.to(element, {
-        duration: 0.3,
-        x: x * 0.1,
-        y: y * 0.1,
-        ease: "power2.out",
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(element, {
+          duration: 0.3,
+          x: x * 0.1,
+          y: y * 0.1,
+          ease: "power2.out",
+        });
+      } else {
+        // Basic transform fallback
+        element.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
+      }
     });
 
     element.addEventListener("mouseleave", () => {
-      gsap.to(element, {
-        duration: 0.3,
-        x: 0,
-        y: 0,
-        ease: "power2.out",
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(element, {
+          duration: 0.3,
+          x: 0,
+          y: 0,
+          ease: "power2.out",
+        });
+      } else {
+        element.style.transform = "translate(0, 0)";
+      }
     });
   });
 }
@@ -508,22 +649,32 @@ function init3DCardEffects() {
       const rotateX = (y - centerY) / 10;
       const rotateY = (centerX - x) / 10;
 
-      gsap.to(card, {
-        duration: 0.3,
-        rotateX: rotateX,
-        rotateY: rotateY,
-        transformPerspective: 1000,
-        ease: "power2.out",
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(card, {
+          duration: 0.3,
+          rotateX: rotateX,
+          rotateY: rotateY,
+          transformPerspective: 1000,
+          ease: "power2.out",
+        });
+      } else {
+        // Basic transform fallback
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
     });
 
     card.addEventListener("mouseleave", () => {
-      gsap.to(card, {
-        duration: 0.3,
-        rotateX: 0,
-        rotateY: 0,
-        ease: "power2.out",
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(card, {
+          duration: 0.3,
+          rotateX: 0,
+          rotateY: 0,
+          ease: "power2.out",
+        });
+      } else {
+        card.style.transform =
+          "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+      }
     });
   });
 }
@@ -542,46 +693,78 @@ function initLiveSocialProof() {
   if (heroSection) {
     heroSection.appendChild(socialProofContainer);
 
-    // Animate social proof
-    gsap.fromTo(
-      socialProofContainer,
-      { opacity: 0, y: 20 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        delay: 3,
-        onComplete: () => {
-          setTimeout(() => {
-            gsap.to(socialProofContainer, {
-              opacity: 0,
-              y: -20,
-              duration: 0.5,
-              onComplete: () => {
-                socialProofContainer.remove();
-              },
-            });
-          }, 3000);
-        },
-      }
-    );
+    // Animate social proof with GSAP if available
+    if (typeof gsap !== "undefined") {
+      gsap.fromTo(
+        socialProofContainer,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          delay: 3,
+          onComplete: () => {
+            setTimeout(() => {
+              gsap.to(socialProofContainer, {
+                opacity: 0,
+                y: -20,
+                duration: 0.5,
+                onComplete: () => {
+                  socialProofContainer.remove();
+                },
+              });
+            }, 3000);
+          },
+        }
+      );
+    } else {
+      // Basic CSS animation fallback
+      socialProofContainer.style.opacity = "0";
+      socialProofContainer.style.transform = "translateY(20px)";
+
+      setTimeout(() => {
+        socialProofContainer.style.transition = "all 0.5s ease";
+        socialProofContainer.style.opacity = "1";
+        socialProofContainer.style.transform = "translateY(0)";
+
+        setTimeout(() => {
+          socialProofContainer.style.opacity = "0";
+          socialProofContainer.style.transform = "translateY(-20px)";
+          setTimeout(() => socialProofContainer.remove(), 500);
+        }, 3000);
+      }, 3000);
+    }
   }
 }
 
 /* ===== GSAP ANIMATIONS ===== */
 
 function initGSAPAnimations() {
-  // Hero section animations
+  if (typeof gsap === "undefined") return;
+
+  // Hero section animations - only animate elements that exist
   const heroTimeline = gsap.timeline();
 
-  heroTimeline
-    .from(".hero-badge", {
+  // Check if elements exist before animating
+  const heroBadge = document.querySelector(".hero-badge");
+  const heroTitle = document.querySelector(".hero-title .title-line");
+  const heroSubtitle = document.querySelector(".hero-subtitle");
+  const heroDescription = document.querySelector(".hero-description");
+  const heroButtons = document.querySelector(".hero-buttons");
+  const heroStats = document.querySelector(".hero-stats");
+  const heroTradingIcons = document.querySelector(".hero-trading-icons");
+
+  if (heroBadge) {
+    heroTimeline.from(".hero-badge", {
       duration: 1,
       opacity: 0,
       y: 30,
       ease: "power3.out",
-    })
-    .from(
+    });
+  }
+
+  if (heroTitle) {
+    heroTimeline.from(
       ".hero-title .title-line",
       {
         duration: 1.2,
@@ -591,8 +774,11 @@ function initGSAPAnimations() {
         ease: "power3.out",
       },
       "-=0.5"
-    )
-    .from(
+    );
+  }
+
+  if (heroSubtitle) {
+    heroTimeline.from(
       ".hero-subtitle",
       {
         duration: 1,
@@ -601,8 +787,11 @@ function initGSAPAnimations() {
         ease: "power3.out",
       },
       "-=0.8"
-    )
-    .from(
+    );
+  }
+
+  if (heroDescription) {
+    heroTimeline.from(
       ".hero-description",
       {
         duration: 1,
@@ -611,8 +800,11 @@ function initGSAPAnimations() {
         ease: "power3.out",
       },
       "-=0.6"
-    )
-    .from(
+    );
+  }
+
+  if (heroButtons) {
+    heroTimeline.from(
       ".hero-buttons",
       {
         duration: 1,
@@ -621,8 +813,11 @@ function initGSAPAnimations() {
         ease: "power3.out",
       },
       "-=0.4"
-    )
-    .from(
+    );
+  }
+
+  if (heroStats) {
+    heroTimeline.from(
       ".hero-stats",
       {
         duration: 1,
@@ -631,8 +826,11 @@ function initGSAPAnimations() {
         ease: "power3.out",
       },
       "-=0.6"
-    )
-    .from(
+    );
+  }
+
+  if (heroTradingIcons) {
+    heroTimeline.from(
       ".hero-trading-icons",
       {
         duration: 1,
@@ -642,13 +840,18 @@ function initGSAPAnimations() {
       },
       "-=0.8"
     );
+  }
 }
 
 function startPageAnimations() {
-  // Animate sections on scroll
-  gsap.utils
-    .toArray(".highlight-card, .tool-card, .testimonial-card")
-    .forEach((card) => {
+  if (typeof gsap === "undefined") return;
+
+  // Animate sections on scroll - only if elements exist
+  const cards = gsap.utils.toArray(
+    ".highlight-card, .tool-card, .testimonial-card"
+  );
+  if (cards.length > 0) {
+    cards.forEach((card) => {
       gsap.from(card, {
         scrollTrigger: {
           trigger: card,
@@ -663,28 +866,34 @@ function startPageAnimations() {
         ease: "power3.out",
       });
     });
+  }
 
-  // Animate learning path steps
-  gsap.utils.toArray(".path-step").forEach((step, index) => {
-    gsap.from(step, {
-      scrollTrigger: {
-        trigger: step,
-        start: "top 80%",
-        end: "bottom 20%",
-        toggleActions: "play none none reverse",
-      },
-      duration: 1,
-      opacity: 0,
-      x: -100,
-      delay: index * 0.2,
-      ease: "power3.out",
+  // Animate learning path steps - only if elements exist
+  const pathSteps = gsap.utils.toArray(".path-step");
+  if (pathSteps.length > 0) {
+    pathSteps.forEach((step, index) => {
+      gsap.from(step, {
+        scrollTrigger: {
+          trigger: step,
+          start: "top 80%",
+          end: "bottom 20%",
+          toggleActions: "play none none reverse",
+        },
+        duration: 1,
+        opacity: 0,
+        x: -100,
+        delay: index * 0.2,
+        ease: "power3.out",
+      });
     });
-  });
+  }
 }
 
 /* ===== SCROLL ANIMATIONS ===== */
 
 function initScrollAnimations() {
+  if (typeof gsap === "undefined") return;
+
   // Parallax effects
   gsap.utils.toArray(".floating-card").forEach((card) => {
     const speed = parseFloat(card.dataset.speed) || 0.5;
@@ -719,13 +928,18 @@ function initScrollAnimations() {
 function initFloatingElements() {
   // Animate floating cards
   gsap.utils.toArray(".floating-card").forEach((card) => {
-    gsap.to(card, {
-      duration: 3,
-      y: -20,
-      ease: "power2.inOut",
-      yoyo: true,
-      repeat: -1,
-    });
+    if (typeof gsap !== "undefined") {
+      gsap.to(card, {
+        duration: 3,
+        y: -20,
+        ease: "power2.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+    } else {
+      // Basic CSS animation fallback
+      card.style.animation = "float 3s ease-in-out infinite";
+    }
   });
 
   // Animate bull/bear icons
@@ -733,24 +947,32 @@ function initFloatingElements() {
   const bearIcon = document.querySelector(".bear-icon");
 
   if (bullIcon) {
-    gsap.to(bullIcon, {
-      duration: 2,
-      y: -10,
-      ease: "power2.inOut",
-      yoyo: true,
-      repeat: -1,
-    });
+    if (typeof gsap !== "undefined") {
+      gsap.to(bullIcon, {
+        duration: 2,
+        y: -10,
+        ease: "power2.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+    } else {
+      bullIcon.style.animation = "float 2s ease-in-out infinite";
+    }
   }
 
   if (bearIcon) {
-    gsap.to(bearIcon, {
-      duration: 2.5,
-      y: -8,
-      ease: "power2.inOut",
-      yoyo: true,
-      repeat: -1,
-      delay: 0.5,
-    });
+    if (typeof gsap !== "undefined") {
+      gsap.to(bearIcon, {
+        duration: 2.5,
+        y: -8,
+        ease: "power2.inOut",
+        yoyo: true,
+        repeat: -1,
+        delay: 0.5,
+      });
+    } else {
+      bearIcon.style.animation = "float 2.5s ease-in-out infinite";
+    }
   }
 }
 
@@ -763,20 +985,34 @@ function initCounterAnimations() {
     const target = parseInt(counter.dataset.target);
     const suffix = counter.dataset.suffix || "";
 
-    gsap.to(counter, {
-      scrollTrigger: {
-        trigger: counter,
-        start: "top 80%",
-        toggleActions: "play none none reverse",
-      },
-      duration: 2,
-      innerHTML: target,
-      ease: "power2.out",
-      snap: { innerHTML: 1 },
-      onUpdate: function () {
-        counter.textContent = Math.floor(counter.innerHTML) + suffix;
-      },
-    });
+    if (typeof gsap !== "undefined") {
+      gsap.to(counter, {
+        scrollTrigger: {
+          trigger: counter,
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+        duration: 2,
+        innerHTML: target,
+        ease: "power2.out",
+        snap: { innerHTML: 1 },
+        onUpdate: function () {
+          counter.textContent = Math.floor(counter.innerHTML) + suffix;
+        },
+      });
+    } else {
+      // Basic counter animation fallback
+      let current = 0;
+      const increment = target / 100;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        counter.textContent = Math.floor(current) + suffix;
+      }, 20);
+    }
   });
 }
 
@@ -792,29 +1028,44 @@ function initButtonEffects() {
     }
 
     button.addEventListener("mouseenter", () => {
-      gsap.to(button, {
-        duration: 0.3,
-        scale: 1.05,
-        ease: "power2.out",
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(button, {
+          duration: 0.3,
+          scale: 1.05,
+          ease: "power2.out",
+        });
+      } else {
+        button.style.transform = "scale(1.05)";
+      }
     });
 
     button.addEventListener("mouseleave", () => {
-      gsap.to(button, {
-        duration: 0.3,
-        scale: 1,
-        ease: "power2.out",
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(button, {
+          duration: 0.3,
+          scale: 1,
+          ease: "power2.out",
+        });
+      } else {
+        button.style.transform = "scale(1)";
+      }
     });
 
     button.addEventListener("click", () => {
-      gsap.to(button, {
-        duration: 0.1,
-        scale: 0.95,
-        ease: "power2.out",
-        yoyo: true,
-        repeat: 1,
-      });
+      if (typeof gsap !== "undefined") {
+        gsap.to(button, {
+          duration: 0.1,
+          scale: 0.95,
+          ease: "power2.out",
+          yoyo: true,
+          repeat: 1,
+        });
+      } else {
+        button.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          button.style.transform = "scale(1)";
+        }, 100);
+      }
     });
   });
 }
@@ -825,14 +1076,19 @@ function initButtonEffects() {
 function smoothScrollTo(target) {
   const element = document.querySelector(target);
   if (element) {
-    gsap.to(window, {
-      duration: 1.5,
-      scrollTo: {
-        y: element,
-        offsetY: 100,
-      },
-      ease: "power3.inOut",
-    });
+    if (typeof gsap !== "undefined") {
+      gsap.to(window, {
+        duration: 1.5,
+        scrollTo: {
+          y: element,
+          offsetY: 100,
+        },
+        ease: "power3.inOut",
+      });
+    } else {
+      // Basic smooth scroll fallback
+      element.scrollIntoView({ behavior: "smooth" });
+    }
   }
 }
 
@@ -874,6 +1130,11 @@ style.textContent = `
             opacity: 0;
         }
     }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
 `;
 document.head.appendChild(style);
 
@@ -883,11 +1144,16 @@ window.addRippleEffect = addRippleEffect;
 
 // Scroll to top function
 function scrollToTop() {
-  gsap.to(window, {
-    duration: 1.5,
-    scrollTo: { y: 0 },
-    ease: "power3.inOut",
-  });
+  if (typeof gsap !== "undefined") {
+    gsap.to(window, {
+      duration: 1.5,
+      scrollTo: { y: 0 },
+      ease: "power3.inOut",
+    });
+  } else {
+    // Basic scroll to top fallback
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 window.scrollToTop = scrollToTop;

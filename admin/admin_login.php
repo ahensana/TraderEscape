@@ -321,6 +321,20 @@ unset($_SESSION['error']);
             outline: none;
         }
 
+        /* Hide browser native password toggle buttons */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
+        input[type="password"]::-webkit-credentials-auto-fill-button {
+            display: none !important;
+        }
+
+        input[type="password"]::-webkit-textfield-decoration-container {
+            display: none !important;
+        }
+
         /* ===== BUTTON STYLES ===== */
         .admin-login-btn {
             width: 100%;

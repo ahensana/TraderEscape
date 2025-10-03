@@ -4699,6 +4699,20 @@ body {
   background: rgba(59, 130, 246, 0.1);
 }
 
+/* Hide browser native password toggle buttons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
 /* Form Options */
 .form-options {
   display: flex;

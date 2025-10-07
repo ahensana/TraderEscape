@@ -101,6 +101,78 @@ include 'includes/header.php';
             margin-right: 8px;
         }
         
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 24px 16px 24px;
+        }
+        
+        .modal-body {
+            padding: 0 24px 24px 24px;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .form-actions .btn-primary,
+        .form-actions .btn-secondary {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-align: center;
+        }
+        
+        .form-actions .btn-primary {
+            background: var(--brand-color, #3b82f6);
+            color: white;
+        }
+        
+        .form-actions .btn-primary:hover {
+            background: var(--brand-color-dark, #2563eb);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .form-actions .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .form-actions .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -559,8 +631,7 @@ include 'includes/header.php';
                         To join our exclusive trading community, you need to be a registered member. Sign in to your account or create a new one to request community access.
                     </p>
                     <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="hideCommunityJoinModal()">Cancel</button>
-                        <a href="login.php" class="btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Sign In to Request Access</a>
+                        <a href="login.php" class="btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">Sign In to Request Access</a>
                     </div>
                 <?php endif; ?>
             </div>

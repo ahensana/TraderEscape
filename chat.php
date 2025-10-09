@@ -19,19 +19,84 @@ if (!isLoggedIn()) {
 }
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="description" content="Community Chat - Connect with traders and share insights">
+    <meta name="theme-color" content="#667eea">
+    <title>Community Chat - TraderEscape</title>
+    
+    <!-- Prevent zoom on input focus for iOS -->
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- PWA support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Android specific: Prevent auto-zoom and improve keyboard handling -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="HandheldFriendly" content="true">
+</head>
+<body>
+
 <style>
+    /* CSS Variables for flexible viewport height */
+    :root {
+        --vh: 1vh;
+        --chat-height: 100vh;
+    }
+    
     /* Modern Chat Container */
+    * {
+        box-sizing: border-box;
+    }
+    
+    html {
+        height: 100%;
+        height: -webkit-fill-available;
+    }
+    
     body {
         margin: 0;
         padding: 0;
-        height: 100vh;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        height: 100%;
         overflow: hidden;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* Prevent text selection on mobile for better UX */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        /* Smooth scrolling */
+        -webkit-overflow-scrolling: touch;
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+    }
+    
+    /* Better touch targets for mobile */
+    button, a, .clickable, .message-context-menu {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        touch-action: manipulation;
+    }
+    
+    /* Prevent text selection in UI elements */
+    button, .btn, .action-btn {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
     
     .chat-container {
         display: flex;
         height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         margin: 0;
         border-radius: 0;
@@ -45,6 +110,28 @@ if (!isLoggedIn()) {
         padding: 0;
     }
     
+    /* Sidebar Backdrop for Mobile */
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        backdrop-filter: blur(4px);
+    }
+    
+    .sidebar-backdrop.show {
+        display: block;
+        opacity: 1;
+    }
+    
     /* New Independent Sidebar */
     .new-sidebar {
         position: fixed;
@@ -52,6 +139,8 @@ if (!isLoggedIn()) {
         left: 0;
         width: 300px;
         height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background: rgba(15, 23, 42, 0.95);
         backdrop-filter: blur(20px);
         border-right: 1px solid rgba(37, 99, 235, 0.2);
@@ -72,6 +161,7 @@ if (!isLoggedIn()) {
         overflow-x: hidden;
         display: flex;
         flex-direction: column;
+        -webkit-overflow-scrolling: touch;
     }
     
     /* Custom scrollbar for sidebar */
@@ -121,6 +211,7 @@ if (!isLoggedIn()) {
         border-bottom: 1px solid rgba(37, 99, 235, 0.2);
         display: flex;
         align-items: center;
+        justify-content: space-between;
         background: transparent;
     }
     
@@ -128,6 +219,7 @@ if (!isLoggedIn()) {
         display: flex;
         align-items: center;
         gap: 12px;
+        flex: 1;
     }
     
     .new-sidebar-icon {
@@ -147,16 +239,62 @@ if (!isLoggedIn()) {
     .new-sidebar-close-btn {
         background: none;
         border: none;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.9);
         cursor: pointer;
         padding: 8px;
-        border-radius: 6px;
+        border-radius: 8px;
         transition: all 0.2s ease;
+        display: none; /* Hidden by default on desktop */
+        width: 36px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        line-height: 1;
     }
     
     .new-sidebar-close-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
         color: white;
+        transform: scale(1.1);
+    }
+    
+    .new-sidebar-close-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .new-sidebar-close-btn svg {
+        transition: transform 0.2s ease;
+    }
+    
+    .new-sidebar-close-btn:hover svg {
+        transform: rotate(90deg);
+    }
+    
+    /* Show close button only on mobile */
+    @media (max-width: 768px) {
+        .new-sidebar-close-btn {
+            display: flex;
+        }
+        
+        .new-sidebar-header {
+            padding: 18px 16px;
+        }
+        
+        .new-sidebar-title h2 {
+            font-size: 1.2rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .new-sidebar-close-btn {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .new-sidebar-header {
+            padding: 16px 14px;
+        }
     }
     
     /* Search Bar */
@@ -303,6 +441,7 @@ if (!isLoggedIn()) {
         overflow-y: auto;
         padding: 8px 0;
         max-height: 200px;
+        -webkit-overflow-scrolling: touch;
     }
     
     .new-user-item {
@@ -425,6 +564,7 @@ if (!isLoggedIn()) {
         max-height: 0;
         transition: all 0.3s ease;
         overflow: hidden;
+        -webkit-overflow-scrolling: touch;
     }
     
     .new-requests-list.expanded {
@@ -571,13 +711,16 @@ if (!isLoggedIn()) {
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background: rgba(0, 0, 0, 0.7);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 10000;
         backdrop-filter: blur(5px);
+        overflow-y: auto;
     }
     
     .modal-content {
@@ -676,13 +819,16 @@ if (!isLoggedIn()) {
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background: rgba(0, 0, 0, 0.7);
         display: none;
         align-items: center;
         justify-content: center;
         z-index: 10001;
         backdrop-filter: blur(5px);
+        overflow-y: auto;
     }
     
     .confirmation-modal-content {
@@ -801,13 +947,16 @@ if (!isLoggedIn()) {
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background: rgba(0, 0, 0, 0.7);
         display: none;
         align-items: center;
         justify-content: center;
         z-index: 10002;
         backdrop-filter: blur(5px);
+        overflow-y: auto;
     }
 
     .user-management-modal-content {
@@ -1047,7 +1196,10 @@ if (!isLoggedIn()) {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px);
         width: 100%;
-        border-radius: 20px;
+        border-radius: 0; /* No rounded corners on desktop */
+        min-height: 0;
+        max-height: 100%;
+        overflow: hidden;
     }
     
     .chat-controls {
@@ -1103,6 +1255,10 @@ if (!isLoggedIn()) {
         /* Hide scroll indicators */
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* Internet Explorer 10+ */
+        /* Smooth scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth transition when keyboard appears */
+        transition: padding-bottom 0.3s ease-out;
     }
     
     .chat-messages::-webkit-scrollbar {
@@ -1390,9 +1546,12 @@ if (!isLoggedIn()) {
         left: 0;
         top: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background-color: rgba(0, 0, 0, 0.9);
         backdrop-filter: blur(10px);
+        overflow-y: auto;
     }
     
     .image-modal.show {
@@ -1473,10 +1632,48 @@ if (!isLoggedIn()) {
     .chat-input-container {
         padding: -1px;
         background: white;
-        
         backdrop-filter: blur(20px);
         width: 100%;
         box-sizing: border-box;
+        position: relative;
+        flex-shrink: 0;
+        transition: transform 0.2s ease-out, padding 0.2s ease-out;
+        z-index: 100;
+        margin-bottom: 15px; /* Add space from bottom edge on PC */
+    }
+    
+    /* Keyboard visible state */
+    .chat-input-container.keyboard-visible {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+        z-index: 1001 !important;
+        transform: translateZ(0); /* Force GPU acceleration */
+        -webkit-transform: translateZ(0);
+    }
+    
+    /* Android specific fixes */
+    @supports (-webkit-appearance: none) {
+        @media screen and (max-width: 768px) {
+            body.android-keyboard-open {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
+            
+            .chat-input-container.keyboard-visible {
+                position: fixed !important;
+                bottom: 0 !important;
+            }
+            
+            .chat-messages {
+                max-height: calc(100vh - 150px);
+            }
+        }
     }
     
     .chat-form {
@@ -1484,7 +1681,7 @@ if (!isLoggedIn()) {
         gap: 12px;
         align-items: flex-end;
         background: white;
-        border-radius: 25px;
+        border-radius: 25px; /* Curved corners for chat input on PC */
         padding: 3px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         border: 2px solid rgba(37, 99, 235, 0.3);
@@ -1976,6 +2173,7 @@ if (!isLoggedIn()) {
         /* Hide scroll indicators */
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* Internet Explorer 10+ */
+        -webkit-overflow-scrolling: touch;
     }
     
     .online-users::-webkit-scrollbar {
@@ -2110,6 +2308,7 @@ if (!isLoggedIn()) {
         /* Hide scroll indicators */
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* Internet Explorer 10+ */
+        -webkit-overflow-scrolling: touch;
     }
     
     .emoji-grid::-webkit-scrollbar {
@@ -2145,15 +2344,26 @@ if (!isLoggedIn()) {
         border-radius: 20px;
     }
     
+    /* Desktop - Hide backdrop */
+    @media (min-width: 769px) {
+        .sidebar-backdrop {
+            display: none !important;
+        }
+    }
+    
     /* Mobile Responsive */
     @media (max-width: 768px) {
         body {
-            height: 100vh;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            height: 100%;
             overflow: hidden;
         }
         
         .chat-container {
             height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+            min-height: -webkit-fill-available;
             margin: 0;
             border-radius: 0;
         }
@@ -2171,26 +2381,479 @@ if (!isLoggedIn()) {
             left: 0;
         }
         
+        .chat-main {
+            border-radius: 0;
+        }
+        
+        /* Show backdrop on mobile when sidebar is open */
+        .sidebar-backdrop.show {
+            display: block;
+        }
+        
+        /* Adjust sidebar when keyboard is visible */
+        .new-sidebar {
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+        }
+        
+        .chat-controls {
+            padding: 12px 15px;
+            min-height: auto;
+        }
+        
+        .chat-logo {
+            width: 50px;
+            height: 50px;
+            margin-top: -10px;
+        }
+        
+        .chat-title {
+            font-size: 1.2rem;
+        }
+        
         .chat-messages {
-            padding: 15px;
+            padding: 15px 10px;
         }
         
         .message {
             max-width: 85%;
         }
         
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            font-size: 12px;
+        }
+        
+        .message-content {
+            padding: 8px 10px;
+            max-width: 100%;
+        }
+        
+        .message-sender {
+            font-size: 0.75rem;
+        }
+        
+        .message-text {
+            font-size: 0.9rem;
+        }
+        
+        .text-time {
+            font-size: 0.7rem;
+        }
+        
         .chat-input-container {
-            padding: 15px;
+            padding: 10px;
+            margin-bottom: 0; /* Remove bottom margin on mobile */
+        }
+        
+        .chat-input-container.keyboard-visible {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            padding: 10px !important;
+            background: white !important;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+            z-index: 1001 !important;
+            margin: 0 !important;
+            transform: translateZ(0) !important;
+        }
+        
+        /* Android keyboard visibility improvements */
+        body.android-keyboard-open .chat-container {
+            height: 100vh !important;
+            height: calc(var(--vh, 1vh) * 100) !important;
+        }
+        
+        body.android-keyboard-open .chat-messages {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        .chat-form {
+            padding: 2px;
+            border-radius: 25px;
+            margin-left: 0;
+            width: 100%;
+        }
+        
+        .chat-main {
+            border-radius: 0; /* No curved corners on mobile */
         }
         
         .message-input {
             font-size: 16px;
+            padding: 10px 12px;
+            max-height: 100px;
+        }
+        
+        .send-button {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .emoji-btn, .attach-btn {
+            padding: 6px;
+        }
+        
+        .emoji-icon, .attach-icon {
+            width: 18px;
+            height: 18px;
         }
         
         .emoji-picker {
-            left: 20px;
+            left: 10px;
+            right: 10px;
             bottom: 70px;
+            max-width: none;
+            width: calc(100% - 20px);
+        }
+        
+        .emoji-grid {
+            grid-template-columns: repeat(6, 1fr);
+            max-height: 250px;
+        }
+        
+        .emoji-item {
+            padding: 6px;
+            font-size: 1.1rem;
+        }
+        
+        /* Image grids for mobile */
+        .image-grid {
+            max-width: 250px;
+        }
+        
+        .image-grid.single-image {
+            max-width: 250px;
+        }
+        
+        .image-grid.single-image .grid-image-item {
+            height: 180px;
+        }
+        
+        .image-grid.two-images {
+            max-width: 250px;
+        }
+        
+        .image-grid.two-images .grid-image-item {
+            height: 120px;
+        }
+        
+        .document-attachment {
+            max-width: 250px;
+            padding: 10px;
+        }
+        
+        .file-preview {
+            max-width: 150px;
+            padding: 4px 8px;
+        }
+        
+        .file-name {
+            font-size: 0.8rem;
+        }
+        
+        .file-size {
+            font-size: 0.75rem;
+        }
+        
+        /* Modal adjustments for mobile */
+        .modal-content {
+            width: 95%;
             max-width: 350px;
+        }
+        
+        .modal-header, .modal-body, .modal-footer {
+            padding: 16px;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .confirmation-modal-content,
+        .user-management-modal-content {
+            width: 95%;
+            max-width: 350px;
+        }
+        
+        .user-avatar-large {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+        }
+        
+        .user-details h4 {
+            font-size: 1rem;
+        }
+        
+        /* Message context menu for mobile */
+        .message-context-menu {
+            min-width: 130px;
+        }
+        
+        .context-menu-item {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+        
+        /* Image modal for mobile */
+        .image-modal-content {
+            max-width: 95%;
+        }
+        
+        .image-modal img {
+            max-height: 70vh;
+        }
+        
+        .image-modal-close {
+            top: -35px;
+            width: 35px;
+            height: 35px;
+            font-size: 1.5rem;
+        }
+    }
+    
+    /* Small mobile devices */
+    @media (max-width: 480px) {
+        .chat-title {
+            font-size: 1rem;
+        }
+        
+        .chat-logo {
+            width: 45px;
+            height: 45px;
+        }
+        
+        .chat-controls {
+            padding: 10px;
+        }
+        
+        .chat-messages {
+            padding: 10px 8px;
+        }
+        
+        .message {
+            max-width: 90%;
+        }
+        
+        .message-avatar {
+            width: 24px;
+            height: 24px;
+            font-size: 11px;
+        }
+        
+        .message-content {
+            padding: 6px 8px;
+        }
+        
+        .message-sender {
+            font-size: 0.7rem;
+        }
+        
+        .message-text {
+            font-size: 0.85rem;
+        }
+        
+        .text-time {
+            font-size: 0.65rem;
+        }
+        
+        .chat-input-container {
+            padding: 8px;
+            margin-bottom: 0; /* Remove bottom margin on small mobile */
+        }
+        
+        .chat-input-container.keyboard-visible {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            padding: 8px !important;
+            background: white !important;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+            z-index: 1001 !important;
+            margin: 0 !important;
+            transform: translateZ(0) !important;
+        }
+        
+        .message-input {
+            font-size: 16px;
+            padding: 8px 10px;
+        }
+        
+        .send-button {
+            width: 36px;
+            height: 36px;
+        }
+        
+        .send-button svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .emoji-btn, .attach-btn {
+            padding: 5px;
+        }
+        
+        .emoji-icon, .attach-icon {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .emoji-picker {
+            left: 5px;
+            right: 5px;
+            bottom: 60px;
+            padding: 10px;
+        }
+        
+        .emoji-grid {
+            grid-template-columns: repeat(5, 1fr);
+            max-height: 200px;
+        }
+        
+        .emoji-item {
+            padding: 5px;
+            font-size: 1rem;
+        }
+        
+        /* Image grids for small mobile */
+        .image-grid {
+            max-width: 200px;
+        }
+        
+        .image-grid.single-image {
+            max-width: 200px;
+        }
+        
+        .image-grid.single-image .grid-image-item {
+            height: 150px;
+        }
+        
+        .image-grid.two-images .grid-image-item {
+            height: 100px;
+        }
+        
+        .image-grid.three-images .grid-image-item {
+            height: 80px;
+        }
+        
+        .document-attachment {
+            max-width: 200px;
+            padding: 8px;
+            gap: 8px;
+        }
+        
+        .document-name {
+            font-size: 12px;
+        }
+        
+        .document-details {
+            font-size: 11px;
+        }
+        
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+        
+        .file-preview {
+            max-width: 120px;
+        }
+        
+        .admin-badge {
+            font-size: 0.65rem;
+            padding: 1px 4px;
+        }
+        
+        .admin-status {
+            font-size: 0.7rem;
+            padding: 1px 4px;
+        }
+        
+        /* Modal adjustments for small mobile */
+        .modal-content {
+            width: 95%;
+        }
+        
+        .modal-header h3 {
+            font-size: 1rem;
+        }
+        
+        .modal-body p {
+            font-size: 0.9rem;
+        }
+        
+        .confirmation-btn {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            min-width: 70px;
+        }
+        
+        .user-action-btn {
+            padding: 10px 14px;
+            font-size: 0.85rem;
+        }
+    }
+    
+    /* Extra small devices (older phones) */
+    @media (max-width: 360px) {
+        .chat-title {
+            font-size: 0.9rem;
+        }
+        
+        .chat-logo {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .message {
+            max-width: 95%;
+        }
+        
+        .message-text {
+            font-size: 0.8rem;
+        }
+        
+        .emoji-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .image-grid.single-image {
+            max-width: 180px;
+        }
+        
+        .image-grid.single-image .grid-image-item {
+            height: 130px;
+        }
+    }
+    
+    /* Landscape orientation for mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .chat-messages {
+            padding: 10px;
+        }
+        
+        .message-input {
+            max-height: 60px;
+        }
+        
+        .emoji-picker {
+            max-height: 200px;
+        }
+        
+        .emoji-grid {
+            max-height: 150px;
+        }
+        
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
         }
     }
     
@@ -2223,13 +2886,16 @@ if (!isLoggedIn()) {
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        min-height: -webkit-fill-available;
         background: rgba(0, 0, 0, 0.8);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 10000;
         backdrop-filter: blur(10px);
+        overflow-y: auto;
     }
     
     .login-popup {
@@ -2388,6 +3054,293 @@ if (!isLoggedIn()) {
 <?php endif; ?>
 
 <script>
+// ============================================
+// FLEXIBLE VIEWPORT HEIGHT FOR MOBILE DEVICES
+// ============================================
+// This handles the dynamic address bar on mobile browsers and keyboard
+(function() {
+    let initialHeight = window.innerHeight;
+    let isKeyboardVisible = false;
+    let chatInputContainer = null;
+    let chatMessages = null;
+    
+    // Initialize elements after DOM is ready
+    function initElements() {
+        chatInputContainer = document.querySelector('.chat-input-container');
+        chatMessages = document.querySelector('.chat-messages');
+    }
+    
+    function setViewportHeight() {
+        // Calculate actual viewport height
+        let vh = window.innerHeight * 0.01;
+        // Set CSS variable
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        document.documentElement.style.setProperty('--chat-height', `${window.innerHeight}px`);
+    }
+    
+    function handleKeyboardVisibility(visible) {
+        if (!chatInputContainer) return;
+        
+        const isAndroid = /Android/.test(navigator.userAgent);
+        
+        if (visible) {
+            chatInputContainer.classList.add('keyboard-visible');
+            
+            // Add Android-specific body class
+            if (isAndroid) {
+                document.body.classList.add('android-keyboard-open');
+            }
+            
+            if (chatMessages) {
+                // Add padding to messages when keyboard is visible
+                const inputHeight = chatInputContainer.offsetHeight;
+                chatMessages.style.paddingBottom = `${inputHeight + 10}px`;
+                
+                // Android needs more aggressive positioning
+                if (isAndroid) {
+                    chatMessages.style.maxHeight = `calc(100vh - ${inputHeight + 80}px)`;
+                }
+                
+                // Scroll to bottom
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 150);
+            }
+        } else {
+            chatInputContainer.classList.remove('keyboard-visible');
+            
+            // Remove Android-specific body class
+            if (isAndroid) {
+                document.body.classList.remove('android-keyboard-open');
+            }
+            
+            if (chatMessages) {
+                chatMessages.style.paddingBottom = '';
+                
+                if (isAndroid) {
+                    chatMessages.style.maxHeight = '';
+                }
+            }
+        }
+        isKeyboardVisible = visible;
+    }
+    
+    function detectKeyboard() {
+        const currentHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const heightDiff = initialHeight - currentHeight;
+        
+        // Keyboard is likely visible if height decreased by more than 150px
+        const keyboardVisible = heightDiff > 150;
+        
+        if (keyboardVisible !== isKeyboardVisible) {
+            handleKeyboardVisibility(keyboardVisible);
+        }
+        
+        setViewportHeight();
+    }
+    
+    // Set on load
+    setViewportHeight();
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initElements();
+            setTimeout(() => {
+                initialHeight = window.innerHeight;
+            }, 100);
+        });
+    } else {
+        // DOM already loaded
+        initElements();
+    }
+    
+    // Update on resize (handles orientation changes and address bar)
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            detectKeyboard();
+        }, 100);
+    });
+    
+    // Update on orientation change
+    window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+            initialHeight = window.innerHeight;
+            detectKeyboard();
+        }, 300);
+    });
+    
+    // iOS specific: Update when address bar shows/hides
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // Handle focus on input elements
+        document.addEventListener('focusin', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(() => {
+                    handleKeyboardVisibility(true);
+                    detectKeyboard();
+                }, 300);
+            }
+        });
+        
+        document.addEventListener('focusout', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(() => {
+                    handleKeyboardVisibility(false);
+                    detectKeyboard();
+                    initialHeight = window.innerHeight;
+                }, 300);
+            }
+        });
+        
+        window.addEventListener('scroll', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(detectKeyboard, 100);
+        }, { passive: true });
+    }
+    
+    // Android specific: Handle keyboard visibility with Visual Viewport API
+    if (/Android/.test(navigator.userAgent)) {
+        let androidKeyboardTimer;
+        
+        // Primary method: Visual Viewport API
+        if (window.visualViewport) {
+            let lastVpHeight = window.visualViewport.height;
+            
+            window.visualViewport.addEventListener('resize', function() {
+                const currentVpHeight = window.visualViewport.height;
+                const vpDiff = lastVpHeight - currentVpHeight;
+                
+                // Keyboard appeared if viewport height decreased significantly
+                if (vpDiff > 100) {
+                    handleKeyboardVisibility(true);
+                } else if (vpDiff < -100) {
+                    // Keyboard disappeared if viewport height increased
+                    handleKeyboardVisibility(false);
+                }
+                
+                lastVpHeight = currentVpHeight;
+                setViewportHeight();
+            });
+        }
+        
+        // Secondary method: Focus events with immediate positioning
+        document.addEventListener('focusin', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                clearTimeout(androidKeyboardTimer);
+                
+                // Immediate response
+                if (!chatInputContainer || !chatMessages) {
+                    initElements();
+                }
+                
+                // Force keyboard visible state on Android
+                androidKeyboardTimer = setTimeout(() => {
+                    handleKeyboardVisibility(true);
+                    detectKeyboard();
+                    
+                    // Ensure input is visible above keyboard - FORCE styles
+                    if (chatInputContainer) {
+                        chatInputContainer.style.cssText = `
+                            position: fixed !important;
+                            bottom: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            width: 100% !important;
+                            z-index: 1001 !important;
+                            background: white !important;
+                            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+                            transform: translateZ(0) !important;
+                            padding: ${chatInputContainer.style.padding || '10px'};
+                        `;
+                        chatInputContainer.classList.add('keyboard-visible');
+                    }
+                    
+                    // Adjust messages container
+                    if (chatMessages) {
+                        const inputHeight = chatInputContainer.offsetHeight;
+                        chatMessages.style.paddingBottom = `${inputHeight + 20}px`;
+                    }
+                    
+                    // Scroll to input after a brief delay
+                    setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Additional scroll to ensure visibility
+                        setTimeout(() => {
+                            if (chatMessages) {
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+                        }, 200);
+                    }, 150);
+                }, 100);
+            }
+        });
+        
+        document.addEventListener('focusout', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                clearTimeout(androidKeyboardTimer);
+                
+                androidKeyboardTimer = setTimeout(() => {
+                    handleKeyboardVisibility(false);
+                    detectKeyboard();
+                    
+                    // Clear forced styles on Android
+                    if (chatInputContainer) {
+                        chatInputContainer.style.cssText = '';
+                        chatInputContainer.classList.remove('keyboard-visible');
+                    }
+                    
+                    if (chatMessages) {
+                        chatMessages.style.paddingBottom = '';
+                    }
+                }, 200);
+            }
+        });
+        
+        // Additional: Monitor window resize on Android
+        let lastWindowHeight = window.innerHeight;
+        window.addEventListener('resize', function() {
+            const currentWindowHeight = window.innerHeight;
+            const heightDiff = lastWindowHeight - currentWindowHeight;
+            
+            if (Math.abs(heightDiff) > 150) {
+                if (heightDiff > 0) {
+                    // Height decreased - keyboard appeared
+                    handleKeyboardVisibility(true);
+                } else {
+                    // Height increased - keyboard disappeared
+                    handleKeyboardVisibility(false);
+                }
+            }
+            
+            lastWindowHeight = currentWindowHeight;
+        });
+    }
+    
+    // General input focus/blur handling for all devices
+    document.addEventListener('focusin', function(e) {
+        if (!chatInputContainer || !chatMessages) {
+            initElements();
+        }
+        
+        if (e.target.classList.contains('message-input')) {
+            // Ensure input stays visible
+            setTimeout(() => {
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 300);
+        }
+    });
+    
+    // Prevent body scroll when keyboard is visible (additional safeguard)
+    document.addEventListener('touchmove', function(e) {
+        if (isKeyboardVisible && !chatMessages?.contains(e.target) && !chatInputContainer?.contains(e.target)) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+})();
+
 function closeLoginPopup() {
     // Redirect to home page when popup is closed
     window.location.href = 'index.php';
@@ -2480,6 +3433,9 @@ function togglePendingMembers() {
 }
 </script>
 
+<!-- Sidebar Backdrop for Mobile -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
 <!-- New Independent Sidebar -->
 <div class="new-sidebar" id="newSidebar">
     <!-- Sidebar Header - Fixed -->
@@ -2488,6 +3444,12 @@ function togglePendingMembers() {
             <img src="assets/bubble-chat.png" alt="Chat Icon" class="new-sidebar-icon">
             <h2>Community Chat</h2>
         </div>
+        <button class="new-sidebar-close-btn" onclick="toggleNewSidebar()" title="Close Sidebar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
     </div>
 
     <!-- Scrollable Content Area -->
@@ -4625,14 +5587,31 @@ let currentContextMessage = null;
 let replyToMessageId = null;
 
 // New Sidebar Functions
+function toggleSidebar() {
+    // Alias for toggleNewSidebar to support backdrop click
+    toggleNewSidebar();
+}
+
 function toggleNewSidebar() {
     const sidebar = document.getElementById('newSidebar');
     const toggleBtn = document.getElementById('newSidebarToggleBtn');
     const chatContainer = document.querySelector('.chat-container');
+    const backdrop = document.getElementById('sidebarBackdrop');
     
     if (sidebar && toggleBtn && chatContainer) {
         sidebar.classList.toggle('open');
         chatContainer.classList.toggle('sidebar-open');
+        
+        // Toggle backdrop on mobile
+        if (backdrop) {
+            backdrop.classList.toggle('show');
+            // Prevent body scroll when sidebar is open on mobile
+            if (sidebar.classList.contains('open') && window.innerWidth <= 768) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
         
         // Update toggle button icon with smooth transition
         const icon = toggleBtn.querySelector('svg');
@@ -6038,3 +7017,5 @@ document.head.appendChild(style);
     </div>
 </div>
 
+</body>
+</html>

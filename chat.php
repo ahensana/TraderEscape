@@ -1272,6 +1272,15 @@ if (!isLoggedIn()) {
         max-width: 70%;
         margin-bottom: 8px;
         animation: messageSlideIn 0.3s ease-out;
+        transition: transform 0.1s ease, opacity 0.1s ease;
+        -webkit-touch-callout: none; /* Prevent callout on iOS */
+        -webkit-user-select: none; /* Prevent text selection */
+    }
+    
+    /* Long-press feedback for mobile */
+    .message.long-pressing {
+        transform: scale(0.98);
+        opacity: 0.8;
     }
     
     @keyframes messageSlideIn {
@@ -1309,6 +1318,8 @@ if (!isLoggedIn()) {
         flex-shrink: 0;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         border: 2px solid rgba(255, 255, 255, 0.8);
+        -webkit-touch-callout: none; /* Prevent callout on iOS */
+        -webkit-user-select: none; /* Prevent text selection */
     }
     
     .message-content {
@@ -1320,6 +1331,11 @@ if (!isLoggedIn()) {
         position: relative;
         box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
         max-width: 100%;
+        -webkit-touch-callout: none; /* Prevent callout on iOS */
+        -webkit-user-select: none; /* Prevent text selection on webkit browsers */
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
     
     .message.own .message-content {
@@ -1370,11 +1386,10 @@ if (!isLoggedIn()) {
         flex: 1;
         margin: 0;
         outline: none;
-        user-select: none;
+        user-select: none; /* Disable text selection */
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
-        pointer-events: none;
     }
     
     .text-time {
@@ -1394,13 +1409,13 @@ if (!isLoggedIn()) {
     
     /* Message Context Menu */
     .message-context-menu {
-        position: absolute;
+        position: fixed; /* Changed to fixed for better mobile positioning */
         background: white;
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         border: 1px solid rgba(0, 0, 0, 0.1);
         padding: 8px;
-        z-index: 1000;
+        z-index: 10000;
         display: none;
         min-width: 150px;
         backdrop-filter: blur(10px);
@@ -1419,6 +1434,28 @@ if (!isLoggedIn()) {
         to {
             opacity: 1;
             transform: translateY(0) scale(1);
+        }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(100px);
         }
     }
     
@@ -1459,7 +1496,7 @@ if (!isLoggedIn()) {
     
     /* Own Message Context Menu */
     .own-message-context-menu {
-        z-index: 10001;
+        z-index: 10001 !important;
     }
     
     .own-message-context-menu .context-menu-item {
@@ -1527,7 +1564,7 @@ if (!isLoggedIn()) {
         cursor: pointer;
         transition: all 0.2s ease;
         outline: none;
-        user-select: none;
+        user-select: none; /* Keep emoji reactions non-selectable */
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
@@ -1626,6 +1663,10 @@ if (!isLoggedIn()) {
     .reply-indicator .reply-text {
         color: #666;
         font-style: italic;
+        user-select: none; /* Disable text selection */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
     }
     
     /* Input Area */
@@ -1693,7 +1734,7 @@ if (!isLoggedIn()) {
     .input-wrapper {
         flex: 1;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 8px;
         min-width: 0;
         max-width: 100%;
@@ -1842,6 +1883,10 @@ if (!isLoggedIn()) {
         flex: 1;
         font-size: 0.9rem;
         line-height: 1.4;
+        user-select: none; /* Disable text selection */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
     }
     
     .own-caption-text {
@@ -2496,11 +2541,19 @@ if (!isLoggedIn()) {
         
         .emoji-btn, .attach-btn {
             padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .emoji-icon, .attach-icon {
             width: 18px;
             height: 18px;
+            display: block;
+        }
+        
+        .input-wrapper {
+            align-items: center;
         }
         
         .emoji-picker {
@@ -2592,12 +2645,42 @@ if (!isLoggedIn()) {
         
         /* Message context menu for mobile */
         .message-context-menu {
-            min-width: 130px;
+            min-width: 150px;
+            max-width: 250px;
+            z-index: 10000 !important; /* Ensure it appears above chat input on mobile */
+            position: fixed !important; /* Force fixed positioning on mobile */
+            max-height: none !important; /* Remove height limit to fit all options */
+            overflow-y: visible !important; /* No scrolling - show all options */
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important; /* Better shadow visibility */
+            padding: 4px !important; /* Reduce padding on mobile */
+        }
+        
+        .own-message-context-menu {
+            z-index: 10001 !important; /* Ensure own message menu appears above everything */
+            position: fixed !important;
+            max-height: none !important; /* Remove height limit */
+            overflow-y: visible !important; /* No scrolling */
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+            padding: 4px !important;
         }
         
         .context-menu-item {
-            padding: 6px 10px;
-            font-size: 0.85rem;
+            padding: 8px 12px !important; /* Reduced padding for mobile */
+            font-size: 0.85rem !important; /* Slightly smaller font */
+            min-height: 38px !important; /* Reduced height for mobile */
+            display: flex;
+            align-items: center;
+            gap: 6px !important;
+        }
+        
+        .context-menu-item i {
+            font-size: 0.95rem !important; /* Slightly smaller icon */
+            margin-right: 0 !important;
+        }
+        
+        .context-menu-item span {
+            font-size: 0.85rem !important; /* Ensure consistent text size */
+            line-height: 1.2 !important;
         }
         
         /* Image modal for mobile */
@@ -2698,11 +2781,19 @@ if (!isLoggedIn()) {
         
         .emoji-btn, .attach-btn {
             padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .emoji-icon, .attach-icon {
             width: 16px;
             height: 16px;
+            display: block;
+        }
+        
+        .input-wrapper {
+            align-items: center;
         }
         
         .emoji-picker {
@@ -3610,6 +3701,10 @@ function togglePendingMembers() {
                 <i class="bi bi-reply"></i>
                 <span>Reply</span>
             </div>
+            <div class="context-menu-item" onclick="copyMessageText()">
+                <i class="bi bi-clipboard"></i>
+                <span>Copy</span>
+            </div>
             <div class="context-menu-item context-menu-delete" id="deleteMessageOption" onclick="deleteMessage()" style="display: none;">
                 <i class="bi bi-trash"></i>
                 <span>Delete this message</span>
@@ -3618,6 +3713,10 @@ function togglePendingMembers() {
         
         <!-- Context Menu for Own Messages -->
         <div class="message-context-menu own-message-context-menu" id="ownMessageContextMenu">
+            <div class="context-menu-item" onclick="copyMessageText()">
+                <i class="bi bi-clipboard"></i>
+                <span>Copy</span>
+            </div>
             <div class="context-menu-item" onclick="unsendMessage()">
                 <i class="bi bi-arrow-return-left"></i>
                 <span>Unsend</span>
@@ -4804,11 +4903,47 @@ class CommunityChat {
             messageElement.addEventListener('contextmenu', (e) => {
                 showContextMenu(e, messageData.id, messageData);
             });
+            
+            // Add long-press support for mobile - only on message bubble, not text
+            const messageContent = messageElement.querySelector('.message-content');
+            const messageAvatar = messageElement.querySelector('.message-avatar');
+            
+            if (messageContent) {
+                addLongPressListener(messageContent, (e) => {
+                    // Only trigger if not pressing on text
+                    if (!e.target.closest('.message-text, .caption-text, .reply-text')) {
+                        showContextMenu(e, messageData.id, messageData);
+                    }
+                });
+            }
+            if (messageAvatar) {
+                addLongPressListener(messageAvatar, (e) => {
+                    showContextMenu(e, messageData.id, messageData);
+                });
+            }
         } else {
             // For own messages - show unsend menu
             messageElement.addEventListener('contextmenu', (e) => {
                 showOwnMessageContextMenu(e, messageData.id, messageData);
             });
+            
+            // Add long-press support for mobile - only on message bubble, not text
+            const messageContent = messageElement.querySelector('.message-content');
+            const messageAvatar = messageElement.querySelector('.message-avatar');
+            
+            if (messageContent) {
+                addLongPressListener(messageContent, (e) => {
+                    // Only trigger if not pressing on text
+                    if (!e.target.closest('.message-text, .caption-text, .reply-text')) {
+                        showOwnMessageContextMenu(e, messageData.id, messageData);
+                    }
+                });
+            }
+            if (messageAvatar) {
+                addLongPressListener(messageAvatar, (e) => {
+                    showOwnMessageContextMenu(e, messageData.id, messageData);
+                });
+            }
         }
         
         this.messagesContainer.appendChild(messageElement);
@@ -5758,6 +5893,103 @@ function clearReplyState() {
     console.log('Cleared reply state - replyToMessageId:', replyToMessageId);
 }
 
+// Long-press detection for mobile devices
+function addLongPressListener(element, callback) {
+    let pressTimer;
+    let touchStartX, touchStartY;
+    let isTouchDevice = false;
+    const longPressDuration = 500; // 500ms = 0.5 seconds
+    const moveThreshold = 10; // pixels
+    
+    // Prevent native context menu only on touch devices
+    element.addEventListener('contextmenu', function(e) {
+        // Only prevent default if this is a touch device (mobile)
+        if (isTouchDevice) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        // Allow default context menu on desktop (right-click)
+    }, false);
+    
+    // Touch start
+    element.addEventListener('touchstart', function(e) {
+        // Mark as touch device
+        isTouchDevice = true;
+        
+        // Prevent text selection on long press
+        e.preventDefault();
+        
+        // Get initial touch position
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        
+        // Add visual feedback
+        element.classList.add('long-pressing');
+        
+        // Start the timer
+        pressTimer = setTimeout(() => {
+            // Remove visual feedback
+            element.classList.remove('long-pressing');
+            
+            // Trigger long-press callback
+            // Create a synthetic event with touch coordinates and all necessary methods
+            const syntheticEvent = {
+                preventDefault: () => {
+                    if (e.preventDefault) e.preventDefault();
+                },
+                stopPropagation: () => {
+                    if (e.stopPropagation) e.stopPropagation();
+                },
+                clientX: touchStartX,
+                clientY: touchStartY,
+                target: e.target,
+                type: 'longpress'
+            };
+            
+            // Add haptic feedback on supported devices
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(50); // Short vibration (50ms)
+                }
+            } catch (err) {
+                // Vibration blocked or not supported - silently fail
+                console.debug('Vibration not available:', err.message);
+            }
+            
+            callback(syntheticEvent);
+        }, longPressDuration);
+    }, false);
+    
+    // Touch move - cancel if user moves finger too much
+    element.addEventListener('touchmove', function(e) {
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        
+        // Calculate distance moved
+        const deltaX = Math.abs(touchX - touchStartX);
+        const deltaY = Math.abs(touchY - touchStartY);
+        
+        // If moved more than threshold, cancel long-press
+        if (deltaX > moveThreshold || deltaY > moveThreshold) {
+            clearTimeout(pressTimer);
+            element.classList.remove('long-pressing');
+        }
+    }, false);
+    
+    // Touch end - cancel timer if released before long-press triggers
+    element.addEventListener('touchend', function(e) {
+        clearTimeout(pressTimer);
+        element.classList.remove('long-pressing');
+    }, false);
+    
+    // Touch cancel - cancel timer
+    element.addEventListener('touchcancel', function(e) {
+        clearTimeout(pressTimer);
+        element.classList.remove('long-pressing');
+    }, false);
+}
+
 function showContextMenu(event, messageId, messageData) {
     console.log('showContextMenu called with:', { messageId, messageData });
     event.preventDefault();
@@ -5786,11 +6018,52 @@ function showContextMenu(event, messageId, messageData) {
     // Position the context menu near the clicked element
     const rect = event.target.getBoundingClientRect();
     const contextMenuWidth = 150; // Approximate width of context menu
-    const contextMenuHeight = 200; // Approximate height of context menu
+    const isMobile = window.innerWidth <= 768;
+    const contextMenuHeight = isMobile ? 320 : 290; // Mobile: compact height for all options; Desktop: standard height
     
-    // Calculate position relative to the clicked element
-    let left = rect.right + 20; // Position 10px to the right of the message
-    let top = rect.top + (rect.height / 2) - (contextMenuHeight / 2); // Center vertically on the element
+    // Get chat input position
+    const chatInputArea = document.querySelector('.chat-input-container');
+    let chatInputTop = chatInputArea ? chatInputArea.getBoundingClientRect().top : window.innerHeight - 100;
+    
+    // On iOS, if keyboard might be visible or chat input is very low, use safer calculation
+    if (isMobile && chatInputTop > window.innerHeight * 0.8) {
+        // Chat input is very low on screen, use a safer estimate
+        chatInputTop = window.innerHeight * 0.7;
+    }
+    
+    let left, top;
+    
+    if (isMobile) {
+        // On mobile: Center horizontally and always position above the chat input
+        left = (window.innerWidth - contextMenuWidth) / 2;
+        
+        // Add extra safety margin for iOS (iPhone has issues with viewport)
+        const safetyMargin = 60; // Increased from 40 for better iOS compatibility
+        
+        // Calculate maximum safe position - ensure menu is fully above chat input
+        const maxSafeTop = chatInputTop - contextMenuHeight - safetyMargin;
+        
+        // Always position the menu with safe distance from chat input on mobile
+        top = maxSafeTop;
+        
+        // Ensure we don't go above the top of the screen
+        if (top < 10) {
+            top = 10;
+        }
+        
+        // Final safety check: ensure menu bottom never overlaps with chat input
+        const menuBottom = top + contextMenuHeight;
+        if (menuBottom > chatInputTop - safetyMargin) {
+            top = chatInputTop - contextMenuHeight - safetyMargin;
+        }
+        
+        // Ensure minimum safe distance from chat input (critical for iOS)
+        top = Math.min(top, chatInputTop - contextMenuHeight - safetyMargin);
+        top = Math.max(10, top);
+    } else {
+        // On desktop: Position to the right/left of message
+        left = rect.right + 20; // Position 20px to the right of the message
+        top = rect.top + (rect.height / 2) - (contextMenuHeight / 2); // Center vertically on the element
     
     // Adjust if menu would go off right edge
     if (left + contextMenuWidth > window.innerWidth - 10) {
@@ -5803,21 +6076,18 @@ function showContextMenu(event, messageId, messageData) {
     }
     
     // Adjust if menu would go off bottom edge or overlap with chat input
-    const chatInputArea = document.querySelector('.chat-input-container');
-    const chatInputTop = chatInputArea ? chatInputArea.getBoundingClientRect().top : window.innerHeight - 100;
-    
     if (top + contextMenuHeight > chatInputTop - 10) {
-        // Position above the chat input area
         top = chatInputTop - contextMenuHeight - 20;
     }
     
     // Final check for window bottom edge
     if (top + contextMenuHeight > window.innerHeight - 10) {
         top = window.innerHeight - contextMenuHeight - 10;
+        }
     }
     
-    // Ensure menu doesn't go off left or top edges
-    left = Math.max(10, left);
+    // Ensure menu doesn't go off edges
+    left = Math.max(10, Math.min(left, window.innerWidth - contextMenuWidth - 10));
     top = Math.max(10, top);
     
     contextMenu.style.left = left + 'px';
@@ -5851,22 +6121,84 @@ function showOwnMessageContextMenu(event, messageId, messageData) {
     // Position the context menu on the left side of the message
     const rect = event.target.getBoundingClientRect();
     const contextMenuWidth = 120; // Approximate width of context menu
-    const contextMenuHeight = 60; // Approximate height of context menu
+    const contextMenuHeight = 100; // Increased height to account for copy + unsend options
+    const isMobile = window.innerWidth <= 768;
     
-    // Calculate position relative to the clicked element (left side for own messages)
-    let left = rect.left - contextMenuWidth - 20; // Position 20px to the left of the message
-    let top = rect.top + (rect.height / 2) - (contextMenuHeight / 2); // Center vertically on the element
+    // Get chat input position
+    const chatInputArea = document.querySelector('.chat-input-container');
+    let chatInputTop = chatInputArea ? chatInputArea.getBoundingClientRect().top : window.innerHeight - 100;
     
-    // Ensure the context menu stays within viewport bounds
-    if (left < 10) {
-        left = 10;
+    // On iOS, if keyboard might be visible or chat input is very low, use safer calculation
+    if (isMobile && chatInputTop > window.innerHeight * 0.8) {
+        // Chat input is very low on screen, use a safer estimate
+        chatInputTop = window.innerHeight * 0.7;
     }
-    if (top < 10) {
-        top = 10;
+    
+    let left, top;
+    
+    if (isMobile) {
+        // On mobile: Position to the left of the message (own messages are on the right side)
+        // Calculate left position to be on the left side of the message
+        left = rect.left - contextMenuWidth - 10; // 10px gap from message
+        
+        // If menu would go off left edge, position it inside the message area
+        if (left < 10) {
+            // Position on the right side of the message instead
+            left = rect.right - contextMenuWidth - 10;
+            // If still off-screen, just set to safe left position
+            if (left < 10) {
+                left = 10;
+            }
+        }
+        
+        // Calculate vertical position - align with the middle of the message
+        top = rect.top + (rect.height / 2) - (contextMenuHeight / 2);
+        
+        // Only adjust if it would go off screen or overlap chat input
+        // Ensure we don't go above the top of the screen
+        if (top < 10) {
+            top = 10;
+        }
+        
+        // Check if it would overlap with chat input
+        const safetyMargin = 20; // Smaller margin for better alignment
+        if (top + contextMenuHeight > chatInputTop - safetyMargin) {
+            // Position above the message instead
+            top = rect.top - contextMenuHeight - 10;
+            
+            // If still overlapping, place it just above chat input
+            if (top + contextMenuHeight > chatInputTop - safetyMargin || top < 10) {
+                top = chatInputTop - contextMenuHeight - safetyMargin;
+                top = Math.max(10, top);
+            }
+        }
+    } else {
+        // On desktop: Position to the left of the message (for own messages)
+        left = rect.left - contextMenuWidth - 20; // Position 20px to the left of the message
+        top = rect.top + (rect.height / 2) - (contextMenuHeight / 2); // Center vertically on the element
+        
+        // Ensure the context menu stays within viewport bounds
+        if (left < 10) {
+            left = 10;
+        }
+        if (top < 10) {
+            top = 10;
+        }
+        
+        // Adjust if menu would overlap with chat input
+        if (top + contextMenuHeight > chatInputTop - 10) {
+            top = chatInputTop - contextMenuHeight - 10;
+        }
+        
+        // Final check for window bottom edge
+        if (top + contextMenuHeight > window.innerHeight - 10) {
+            top = window.innerHeight - contextMenuHeight - 10;
+        }
     }
-    if (top + contextMenuHeight > window.innerHeight - 10) {
-        top = window.innerHeight - contextMenuHeight - 10;
-    }
+    
+    // Ensure menu doesn't go off edges
+    left = Math.max(10, Math.min(left, window.innerWidth - contextMenuWidth - 10));
+    top = Math.max(10, top);
     
     contextMenu.style.left = left + 'px';
     contextMenu.style.top = top + 'px';
@@ -6283,6 +6615,115 @@ function restoreReactions(messageId) {
             console.log('Restored reactions for message:', messageId, messageReactions);
         }
     }
+}
+
+function copyMessageText() {
+    console.log('copyMessageText called');
+    console.log('currentContextMessage:', currentContextMessage);
+    
+    if (!currentContextMessage) {
+        console.log('No currentContextMessage, returning');
+        return;
+    }
+    
+    const messageData = currentContextMessage.data;
+    let textToCopy = '';
+    
+    // Get the message text (check both 'text' and 'message' properties)
+    if (messageData.text && messageData.text.trim() !== '') {
+        textToCopy = messageData.text;
+    } else if (messageData.message && messageData.message.trim() !== '') {
+        textToCopy = messageData.message;
+    } else if (messageData.caption && messageData.caption.trim() !== '') {
+        textToCopy = messageData.caption;
+    }
+    
+    console.log('Text to copy:', textToCopy);
+    console.log('Message data:', messageData);
+    
+    if (!textToCopy) {
+        console.log('No text to copy');
+        // Show a notification that there's no text to copy
+        alert('No text to copy from this message');
+        hideContextMenu();
+        hideOwnMessageContextMenu();
+        return;
+    }
+    
+    // Copy to clipboard using modern Clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                console.log('Text copied to clipboard:', textToCopy);
+            })
+            .catch(err => {
+                console.error('Failed to copy text:', err);
+                // Fallback method
+                fallbackCopyText(textToCopy);
+            });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyText(textToCopy);
+    }
+    
+    // Hide the context menu
+    hideContextMenu();
+    hideOwnMessageContextMenu();
+}
+
+function fallbackCopyText(text) {
+    // Create a temporary textarea element
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            console.log('Text copied using fallback method');
+        } else {
+            console.error('Fallback copy failed');
+            alert('Failed to copy text');
+        }
+    } catch (err) {
+        console.error('Fallback copy error:', err);
+        alert('Failed to copy text');
+    }
+    
+    document.body.removeChild(textarea);
+}
+
+function showNotification(message) {
+    // Create a temporary notification
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.background = '#10b981';
+    notification.style.color = 'white';
+    notification.style.padding = '12px 24px';
+    notification.style.borderRadius = '8px';
+    notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    notification.style.zIndex = '10000';
+    notification.style.fontSize = '14px';
+    notification.style.fontWeight = '500';
+    notification.style.animation = 'slideInRight 0.3s ease-out';
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 2000);
 }
 
 function replyToMessage() {
